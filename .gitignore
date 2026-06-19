@@ -1,0 +1,36 @@
+# Dependencies (all sub-projects)
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Uploads
+uploads/
+**/uploads/
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+**/.vite/

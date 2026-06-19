@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply font-sans text-slate-800 bg-slate-50 antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+}
+
+@layer components {
+  .prose-editor {
+    @apply min-h-[200px] border border-slate-200 rounded-lg overflow-hidden;
+  }
+
+  .prose-editor .ProseMirror {
+    @apply p-4 min-h-[200px] focus:outline-none text-sm;
+  }
+
+  .prose-editor .ProseMirror p { @apply mb-3; }
+  .prose-editor .ProseMirror h1 { @apply text-2xl font-bold mb-3; }
+  .prose-editor .ProseMirror h2 { @apply text-xl font-bold mb-3; }
+  .prose-editor .ProseMirror h3 { @apply text-lg font-semibold mb-2; }
+  .prose-editor .ProseMirror ul { @apply list-disc pl-6 mb-3; }
+  .prose-editor .ProseMirror ol { @apply list-decimal pl-6 mb-3; }
+  .prose-editor .ProseMirror li { @apply mb-1; }
+  .prose-editor .ProseMirror blockquote { @apply border-l-4 border-slate-300 pl-4 italic text-slate-600 my-3; }
+  .prose-editor .ProseMirror a { @apply text-blue-600 underline; }
+  .prose-editor .ProseMirror strong { @apply font-bold; }
+  .prose-editor .ProseMirror em { @apply italic; }
+  .prose-editor .ProseMirror u { @apply underline; }
+  .prose-editor .ProseMirror .is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    @apply float-left text-slate-400 pointer-events-none h-0;
+  }
+}
