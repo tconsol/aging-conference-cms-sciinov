@@ -24,6 +24,13 @@ const statusOptions = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
+const PRESENTATION_TYPE_LABELS = {
+  oral_inperson: 'Oral (In-Person)',
+  oral_virtual: 'Oral (Virtual)',
+  poster_inperson: 'Poster (In-Person)',
+  poster_virtual: 'Poster (Virtual)',
+};
+
 export default function Abstracts() {
   const navigate = useNavigate();
 
@@ -170,9 +177,9 @@ export default function Abstracts() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.email}</td>
                     <td className="px-4 py-3 text-slate-600">{item.country}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{item.presentationType || item.category}</td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{PRESENTATION_TYPE_LABELS[item.presentationType] || item.presentationType}</td>
                     <td className="px-4 py-3 text-slate-700 max-w-xs">
-                      <span title={item.title}>{truncate(item.title, 55)}</span>
+                      <span title={item.abstractTitle}>{truncate(item.abstractTitle, 55)}</span>
                     </td>
                     <td className="px-4 py-3">{statusBadge(item.status)}</td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap text-xs">{formatDateTime(item.createdAt)}</td>

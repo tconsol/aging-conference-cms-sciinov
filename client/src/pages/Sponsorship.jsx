@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import {
   Users,
@@ -15,8 +15,17 @@ import {
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
+import Select from '../components/ui/Select';
 import { contactAPI } from '../api/contact';
 import { getErrorMessage } from '../utils/helpers';
+
+const SPONSORSHIP_TYPES = [
+  { value: 'platinum', label: 'Platinum $25,000' },
+  { value: 'gold', label: 'Gold $15,000' },
+  { value: 'silver', label: 'Silver $8,000' },
+  { value: 'bronze', label: 'Bronze $3,500' },
+  { value: 'custom', label: 'Custom Package' },
+];
 
 const INPUT_CLS =
   'w-full h-11 px-4 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white';
@@ -133,6 +142,7 @@ export default function Sponsorship() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm();
@@ -332,21 +342,22 @@ export default function Sponsorship() {
                       />
                     </div>
                     <div>
-                      <label className={LABEL_CLS}>Sponsorship Type *</label>
-                      <select
-                        {...register('sponsorshipType', { required: 'Please select a sponsorship type' })}
-                        className="w-full h-11 px-4 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
-                      >
-                        <option value="">Select a tier...</option>
-                        <option value="platinum">Platinum $25,000</option>
-                        <option value="gold">Gold $15,000</option>
-                        <option value="silver">Silver $8,000</option>
-                        <option value="bronze">Bronze $3,500</option>
-                        <option value="custom">Custom Package</option>
-                      </select>
-                      {errors.sponsorshipType && (
-                        <p className={ERROR_CLS}>{errors.sponsorshipType.message}</p>
-                      )}
+                      <Controller
+                        name="sponsorshipType"
+                        control={control}
+                        rules={{ required: 'Please select a sponsorship type' }}
+                        render={({ field }) => (
+                          <Select
+                            label="Sponsorship Type"
+                            required
+                            placeholder="Select a tier..."
+                            options={SPONSORSHIP_TYPES}
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={errors.sponsorshipType?.message}
+                          />
+                        )}
+                      />
                     </div>
                   </div>
 

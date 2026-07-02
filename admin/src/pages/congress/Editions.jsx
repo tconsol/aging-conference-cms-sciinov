@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Star } from 'lucide-react';
+import { Pencil, Trash2, Star, Plus, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -30,7 +30,11 @@ export default function Editions() {
   const [deleting, setDeleting] = useState(false);
   const [settingActive, setSettingActive] = useState(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm();
+  const { fields: highlightFields, append: appendHighlight, remove: removeHighlight } = useFieldArray({
+    control,
+    name: 'highlights',
+  });
 
   const fetchItems = async () => {
     try {
@@ -58,6 +62,7 @@ export default function Editions() {
         endDate: data.endDate ? data.endDate.slice(0, 10) : '',
         status: data.status,
         description: data.description,
+        highlights: data.highlights?.length ? data.highlights : [],
       });
     } else {
       reset({});
@@ -305,6 +310,53 @@ export default function Editions() {
                 error={errors.description?.message}
                 rows={3}
               />
+            </div>
+
+            <div className="col-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Highlights <span className="text-slate-400">(e.g. Expected Attendees, Countries Represented)</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => appendHighlight({ label: '', value: '' })}
+                >
+                  <Plus size={14} /> Add Highlight
+                </Button>
+              </div>
+
+              {highlightFields.length === 0 ? (
+                <p className="text-xs text-slate-400">No highlights added yet.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {highlightFields.map((field, index) => (
+                    <div key={field.id} className="flex items-start gap-2">
+                      <Input
+                        name={`highlights.${index}.label`}
+                        register={register}
+                        placeholder="Label (e.g. Expected Attendees)"
+                        className="flex-1"
+                      />
+                      <Input
+                        name={`highlights.${index}.value`}
+                        register={register}
+                        placeholder="Value (e.g. 1,200+)"
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeHighlight(index)}
+                        className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                        title="Remove highlight"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </form>

@@ -1,15 +1,16 @@
 ﻿import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Send, FileText, AlertCircle } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
+import Select from '../components/ui/Select';
 import Spinner from '../components/ui/Spinner';
 import { submissionsAPI } from '../api/submissions';
 import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
-import { getErrorMessage, CATEGORY_LABELS } from '../utils/helpers';
+import { getErrorMessage } from '../utils/helpers';
 
 const PRESENTATION_TYPES = [
   { value: 'oral_inperson', label: 'Oral Presentation (In-Person)' },
@@ -24,7 +25,7 @@ export default function AbstractSubmission() {
   const [loading, setLoading] = useState(false);
   const [dates, setDates] = useState([]);
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, reset } = useForm();
 
   useEffect(() => {
     const params = activeEdition?._id ? { edition: activeEdition._id } : {};
@@ -137,9 +138,9 @@ export default function AbstractSubmission() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Institution / Affiliation *</label>
-                      <input {...register('institution', { required: 'Required' })}
+                      <input {...register('organization', { required: 'Required' })}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                      {errors.institution && <p className="text-red-500 text-xs mt-1">{errors.institution.message}</p>}
+                      {errors.organization && <p className="text-red-500 text-xs mt-1">{errors.organization.message}</p>}
                     </div>
                   </div>
 
@@ -151,28 +152,35 @@ export default function AbstractSubmission() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Presentation Type *</label>
-                    <select {...register('presentationType', { required: 'Required' })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                      <option value="">Select presentation type...</option>
-                      {PRESENTATION_TYPES.map((t) => (
-                        <option key={t.value} value={t.value}>{t.label}</option>
-                      ))}
-                    </select>
-                    {errors.presentationType && <p className="text-red-500 text-xs mt-1">{errors.presentationType.message}</p>}
+                    <Controller
+                      name="presentationType"
+                      control={control}
+                      rules={{ required: 'Required' }}
+                      render={({ field }) => (
+                        <Select
+                          label="Presentation Type"
+                          required
+                          placeholder="Select presentation type..."
+                          options={PRESENTATION_TYPES}
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={errors.presentationType?.message}
+                        />
+                      )}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Title *</label>
-                    <input {...register('title', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
+                    <input {...register('abstractTitle', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                    {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
+                    {errors.abstractTitle && <p className="text-red-500 text-xs mt-1">{errors.abstractTitle.message}</p>}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Text * (250â€“400 words)</label>
                     <textarea
-                      {...register('abstract', {
+                      {...register('abstractText', {
                         required: 'Required',
                         minLength: { value: 100, message: 'Too short' },
                         maxLength: { value: 3000, message: 'Max 3000 characters' },
@@ -180,7 +188,7 @@ export default function AbstractSubmission() {
                       rows={8}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y"
                     />
-                    {errors.abstract && <p className="text-red-500 text-xs mt-1">{errors.abstract.message}</p>}
+                    {errors.abstractText && <p className="text-red-500 text-xs mt-1">{errors.abstractText.message}</p>}
                   </div>
 
                   <div>

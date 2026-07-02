@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
 
 /* ── Futuristic card same teal/white/slate palette ── */
-function MemberCard({ member, index }) {
+function MemberCard({ member, index, onSelect }) {
   const [hovered, setHovered] = useState(false);
-  const initials = member.name
-    ? member.name.split(' ').map((w) => w[0]).slice(0, 2).join('')
+  const initials = member.fullName
+    ? member.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')
     : 'M';
 
   return (
@@ -24,6 +25,7 @@ function MemberCard({ member, index }) {
       <div
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        onClick={() => onSelect(member._id)}
         style={{
           position: 'relative',
           background: '#ffffff',
@@ -35,7 +37,7 @@ function MemberCard({ member, index }) {
           flexDirection: 'column',
           alignItems: 'center',
           textAlign: 'center',
-          cursor: 'default',
+          cursor: 'pointer',
           transition: 'border-color 0.25s ease',
           overflow: 'visible',
         }}
@@ -86,7 +88,7 @@ function MemberCard({ member, index }) {
             }}>
               <img
                 src={member.photo}
-                alt={member.name}
+                alt={member.fullName}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             </div>
@@ -120,20 +122,20 @@ function MemberCard({ member, index }) {
           marginBottom: 3,
           lineHeight: 1.3,
         }}>
-          {member.name || 'Committee Member'}
+          {member.fullName || 'Committee Member'}
         </h3>
 
         {/* ── Title ── */}
-        {member.title && (
+        {member.designation && (
           <p style={{ fontSize: 11, color: '#64748b', marginBottom: 2, lineHeight: 1.4 }}>
-            {member.title}
+            {member.designation}
           </p>
         )}
 
         {/* ── Institution ── */}
-        {member.institution && (
+        {member.organization && (
           <p style={{ fontSize: 11, color: '#0d9488', fontWeight: 600, marginBottom: 6, lineHeight: 1.4 }}>
-            {member.institution}
+            {member.organization}
           </p>
         )}
 
@@ -180,7 +182,7 @@ function MemberCard({ member, index }) {
 }
 
 /* ── Role group with circuit-style header ── */
-function RoleGroup({ role, members }) {
+function RoleGroup({ role, members, onSelect }) {
   return (
     <div style={{ marginBottom: 52 }}>
 
@@ -241,7 +243,7 @@ function RoleGroup({ role, members }) {
         gap: 16,
       }}>
         {members.map((m, i) => (
-          <MemberCard key={m._id} member={m} index={i} />
+          <MemberCard key={m._id} member={m} index={i} onSelect={onSelect} />
         ))}
       </div>
     </div>
@@ -249,6 +251,7 @@ function RoleGroup({ role, members }) {
 }
 
 export default function Committee() {
+  const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -311,7 +314,7 @@ export default function Committee() {
           ) : (
             <div>
               {Object.entries(groups).map(([role, group]) => (
-                <RoleGroup key={role} role={role} members={group} />
+                <RoleGroup key={role} role={role} members={group} onSelect={(id) => navigate(`/committee/${id}`)} />
               ))}
             </div>
           )}

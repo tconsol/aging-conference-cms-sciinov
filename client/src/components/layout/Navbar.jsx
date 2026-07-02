@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   {
     label: 'Congress',
     children: [
+      { label: 'Editions', to: '/editions' },
       { label: 'Sessions', to: '/sessions' },
       { label: 'Scientific Program', to: '/program' },
       { label: 'Important Dates', to: '/important-dates' },

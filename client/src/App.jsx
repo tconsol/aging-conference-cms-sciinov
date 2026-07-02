@@ -5,6 +5,7 @@ import SplashScreen from './components/ui/SplashScreen';
 // Pages
 import Home from './pages/Home';
 import About from './pages/About';
+import Editions from './pages/Editions';
 import Sessions from './pages/Sessions';
 import Program from './pages/Program';
 import ImportantDates from './pages/ImportantDates';
@@ -12,6 +13,7 @@ import Venue from './pages/Venue';
 import Speakers from './pages/Speakers';
 import SpeakerDetail from './pages/SpeakerDetail';
 import Committee from './pages/Committee';
+import CommitteeDetail from './pages/CommitteeDetail';
 import Organizers from './pages/Organizers';
 import AbstractSubmission from './pages/AbstractSubmission';
 import Registration from './pages/Registration';
@@ -36,6 +38,7 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/editions" element={<Editions />} />
         <Route path="/sessions" element={<Sessions />} />
         <Route path="/program" element={<Program />} />
         <Route path="/important-dates" element={<ImportantDates />} />
@@ -43,6 +46,7 @@ export default function App() {
         <Route path="/speakers" element={<Speakers />} />
         <Route path="/speakers/:slug" element={<SpeakerDetail />} />
         <Route path="/committee" element={<Committee />} />
+        <Route path="/committee/:id" element={<CommitteeDetail />} />
         <Route path="/organizers" element={<Organizers />} />
         <Route path="/abstract-submission" element={<AbstractSubmission />} />
         <Route path="/registration" element={<Registration />} />

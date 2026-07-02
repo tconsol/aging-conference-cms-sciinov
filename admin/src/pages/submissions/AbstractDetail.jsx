@@ -18,6 +18,13 @@ const statusOptions = [
   { value: 'rejected', label: 'Rejected' },
 ];
 
+const PRESENTATION_TYPE_LABELS = {
+  oral_inperson: 'Oral Presentation (In-Person)',
+  oral_virtual: 'Oral Presentation (Virtual)',
+  poster_inperson: 'Poster (In-Person)',
+  poster_virtual: 'Poster (Virtual)',
+};
+
 function DetailRow({ label, value }) {
   return (
     <div className="grid grid-cols-3 gap-4 py-3 border-b border-slate-50 last:border-0">
@@ -103,7 +110,7 @@ export default function AbstractDetail() {
 
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="text-xl font-bold text-slate-800">{abstract.title}</h1>
+          <h1 className="text-xl font-bold text-slate-800">{abstract.abstractTitle}</h1>
           <p className="text-sm text-slate-500 mt-1">Submitted {formatDateTime(abstract.createdAt)}</p>
         </div>
         <div>{statusBadge(abstract.status)}</div>
@@ -119,7 +126,7 @@ export default function AbstractDetail() {
               <DetailRow label="Author Name" value={abstract.authorName || `${abstract.firstName || ''} ${abstract.lastName || ''}`.trim()} />
               <DetailRow label="Email" value={abstract.email} />
               <DetailRow label="Country" value={abstract.country} />
-              <DetailRow label="Institution / Affiliation" value={abstract.affiliation || abstract.institution} />
+              <DetailRow label="Institution / Affiliation" value={abstract.organization} />
               <DetailRow label="Phone" value={abstract.phone} />
             </dl>
           </div>
@@ -128,14 +135,15 @@ export default function AbstractDetail() {
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
             <h2 className="text-base font-semibold text-slate-700 mb-4">Abstract Details</h2>
             <dl>
-              <DetailRow label="Presentation Type" value={abstract.presentationType || abstract.category} />
+              <DetailRow label="Presentation Type" value={PRESENTATION_TYPE_LABELS[abstract.presentationType] || abstract.presentationType} />
               <DetailRow label="Edition" value={abstract.edition?.title || abstract.editionId} />
-              <DetailRow label="Keywords" value={Array.isArray(abstract.keywords) ? abstract.keywords.join(', ') : abstract.keywords} />
+              <DetailRow label="Keywords" value={abstract.keywords} />
+              <DetailRow label="Co-Authors" value={abstract.coAuthors} />
             </dl>
             <div className="mt-4">
               <p className="text-sm font-medium text-slate-500 mb-2">Abstract Text</p>
               <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {abstract.abstract || abstract.content || '—'}
+                {abstract.abstractText || '—'}
               </div>
             </div>
           </div>

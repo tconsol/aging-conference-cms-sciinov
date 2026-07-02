@@ -23,7 +23,15 @@ exports.getAll = async (req, res, next) => {
       .limit(Number(limit))
       .populate('edition', 'title year')
       .populate('topic', 'title');
-    res.json({ success: true, data: abstracts, total, page: Number(page), limit: Number(limit) });
+
+    const statusCounts = await Abstract.aggregate([
+      { $match: filter },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+    ]);
+    const stats = { total, pending: 0, under_review: 0, approved: 0, rejected: 0 };
+    statusCounts.forEach((s) => { stats[s._id] = s.count; });
+
+    res.json({ success: true, data: abstracts, total, page: Number(page), limit: Number(limit), stats });
   } catch (err) { next(err); }
 };
 

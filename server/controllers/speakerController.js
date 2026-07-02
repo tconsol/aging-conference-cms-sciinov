@@ -7,6 +7,7 @@ exports.getAll = async (req, res, next) => {
     if (req.query.edition) filter.editions = req.query.edition;
     if (req.query.active === 'true') filter.isActive = true;
     if (req.query.featured === 'true') filter.isFeatured = true;
+    if (req.query.search) filter.fullName = { $regex: req.query.search, $options: 'i' };
     const speakers = await Speaker.find(filter).sort({ displayOrder: 1, fullName: 1 }).populate('editions', 'title year');
     res.json({ success: true, data: speakers });
   } catch (err) { next(err); }

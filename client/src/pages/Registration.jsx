@@ -1,41 +1,76 @@
 ﻿import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { CheckCircle, Send } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
+import Select from '../components/ui/Select';
 import Spinner from '../components/ui/Spinner';
 import { submissionsAPI } from '../api/submissions';
+import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 import { getErrorMessage, CATEGORY_LABELS } from '../utils/helpers';
 
+const ATTENDANCE_MODES = [
+  { value: 'in_person', label: 'In-Person' },
+  { value: 'virtual', label: 'Virtual' },
+];
+
 export default function Registration() {
   const { activeEdition } = usecongress();
+  const [editions, setEditions] = useState([]);
+  const [editionsLoading, setEditionsLoading] = useState(true);
   const [pricing, setPricing] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingLoading, setPricingLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, watch, setValue, reset } = useForm();
   const selectedCategory = watch('category');
+  const selectedEdition = watch('edition');
 
   useEffect(() => {
-    submissionsAPI.getActivePricing()
+    congressAPI.getAll()
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        const list = Array.isArray(data) ? data.filter((e) => e.status !== 'past') : [];
+        setEditions(list);
+        const defaultId = (activeEdition?._id && list.some((e) => e._id === activeEdition._id))
+          ? activeEdition._id
+          : list[0]?._id;
+        if (defaultId) setValue('edition', defaultId);
+      })
+      .catch(() => setEditions([]))
+      .finally(() => setEditionsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeEdition]);
+
+  useEffect(() => {
+    if (!selectedEdition) {
+      setPricing([]);
+      return;
+    }
+    setPricingLoading(true);
+    submissionsAPI.getPricing({ edition: selectedEdition })
       .then((res) => {
         const data = res.data?.data ?? res.data ?? [];
         setPricing(Array.isArray(data) ? data : []);
       })
       .catch(() => setPricing([]))
       .finally(() => setPricingLoading(false));
-  }, []);
+  }, [selectedEdition]);
 
   const selectedPricing = pricing.find((p) => p.category === selectedCategory);
 
   const onSubmit = async (data) => {
+    if (!data.edition) {
+      toast.error('Please select a congress edition.');
+      return;
+    }
     setLoading(true);
     try {
-      await submissionsAPI.submitRegistration({ ...data, edition: activeEdition?._id });
+      await submissionsAPI.submitRegistration(data);
       setSubmitted(true);
       reset();
       toast.success('Registration submitted! We will send a confirmation email shortly.');
@@ -104,6 +139,26 @@ export default function Registration() {
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                   <SectionHeader title="Registration Form" centered={false} />
 
+                  <div>
+                    <Controller
+                      name="edition"
+                      control={control}
+                      rules={{ required: 'Please select a congress edition' }}
+                      render={({ field }) => (
+                        <Select
+                          label="Congress Edition"
+                          required
+                          placeholder={editionsLoading ? 'Loading editions...' : 'Select edition...'}
+                          disabled={editionsLoading || editions.length === 0}
+                          options={editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }))}
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={errors.edition?.message}
+                        />
+                      )}
+                    />
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">First Name *</label>
@@ -136,9 +191,9 @@ export default function Registration() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Institution / Organization *</label>
-                      <input {...register('institution', { required: 'Required' })}
+                      <input {...register('organization', { required: 'Required' })}
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                      {errors.institution && <p className="text-red-500 text-xs mt-1">{errors.institution.message}</p>}
+                      {errors.organization && <p className="text-red-500 text-xs mt-1">{errors.organization.message}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">Country *</label>
@@ -149,22 +204,48 @@ export default function Registration() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Registration Category *</label>
-                    <select {...register('category', { required: 'Required' })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
-                      <option value="">Select category...</option>
-                      {pricing.length > 0
-                        ? pricing.map((p) => (
-                          <option key={p.category} value={p.category}>
-                            {CATEGORY_LABELS[p.category] ?? p.category} â€” {p.currency ?? 'USD'} {p.amount}
-                          </option>
-                        ))
-                        : Object.entries(CATEGORY_LABELS).map(([val, lbl]) => (
-                          <option key={val} value={val}>{lbl}</option>
-                        ))
-                      }
-                    </select>
-                    {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+                    <Controller
+                      name="category"
+                      control={control}
+                      rules={{ required: 'Required' }}
+                      render={({ field }) => (
+                        <Select
+                          label="Registration Category"
+                          required
+                          placeholder="Select category..."
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={errors.category?.message}
+                          options={
+                            pricing.length > 0
+                              ? pricing.map((p) => ({
+                                value: p.category,
+                                label: `${CATEGORY_LABELS[p.category] ?? p.category} — ${p.currency ?? 'USD'} ${p.amount}`,
+                              }))
+                              : Object.entries(CATEGORY_LABELS).map(([val, lbl]) => ({ value: val, label: lbl }))
+                          }
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div>
+                    <Controller
+                      name="attendanceMode"
+                      control={control}
+                      rules={{ required: 'Required' }}
+                      render={({ field }) => (
+                        <Select
+                          label="Attendance Mode"
+                          required
+                          placeholder="Select attendance mode..."
+                          options={ATTENDANCE_MODES}
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={errors.attendanceMode?.message}
+                        />
+                      )}
+                    />
                   </div>
 
                   {selectedPricing && (

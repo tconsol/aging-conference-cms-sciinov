@@ -121,8 +121,7 @@ export default function RegistrationDetail() {
               <DetailRow label="Email" value={registration.email} />
               <DetailRow label="Phone" value={registration.phone} />
               <DetailRow label="Country" value={registration.country} />
-              <DetailRow label="Institution" value={registration.institution || registration.affiliation} />
-              <DetailRow label="Designation" value={registration.designation} />
+              <DetailRow label="Institution / Organization" value={registration.organization} />
             </dl>
           </div>
 
