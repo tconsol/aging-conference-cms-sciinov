@@ -5,6 +5,14 @@ import Topbar from './Topbar';
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('admin_sidebar_collapsed') === 'true');
+
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      localStorage.setItem('admin_sidebar_collapsed', String(!c));
+      return !c;
+    });
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
@@ -17,7 +25,12 @@ export default function Layout() {
       )}
 
       {/* Sidebar */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapsed={toggleCollapsed}
+      />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
