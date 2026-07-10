@@ -1,5 +1,4 @@
 ﻿import { useEffect, useState } from 'react';
-import { Globe, Mail, Phone } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
@@ -52,28 +51,10 @@ export default function Organizers() {
                     )}
                     <div className="min-w-0">
                       <h3 className="font-bold text-slate-900">{org.name}</h3>
-                      {org.title && <p className="text-xs text-slate-500 mt-0.5">{org.title}</p>}
-                      {org.organization && <p className="text-xs text-teal-600 font-medium mt-0.5">{org.organization}</p>}
+                      {org.designation && <p className="text-xs text-slate-500 mt-0.5">{org.designation}</p>}
                     </div>
                   </div>
                   {org.bio && <p className="text-sm text-slate-600 mt-4 leading-relaxed">{org.bio}</p>}
-                  <div className="flex flex-col gap-1.5 mt-4">
-                    {org.email && (
-                      <a href={`mailto:${org.email}`} className="flex items-center gap-2 text-xs text-slate-500 hover:text-teal-700 transition-colors">
-                        <Mail size={12} /> {org.email}
-                      </a>
-                    )}
-                    {org.phone && (
-                      <a href={`tel:${org.phone}`} className="flex items-center gap-2 text-xs text-slate-500 hover:text-teal-700 transition-colors">
-                        <Phone size={12} /> {org.phone}
-                      </a>
-                    )}
-                    {org.website && (
-                      <a href={org.website} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-xs text-teal-600 hover:underline">
-                        <Globe size={12} /> Website
-                      </a>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>

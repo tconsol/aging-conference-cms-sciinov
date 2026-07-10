@@ -1,41 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Edit2, Trash2, Plus, MessageSquare } from 'lucide-react';
-import { testimonialsAPI } from '../../api/community';
-import { truncate, buildFormData, getErrorMessage } from '../../utils/helpers';
+import { Edit2, Trash2, Plus, Layers } from 'lucide-react';
+import { faqTopicsAPI } from '../../api/inbox';
+import { getErrorMessage } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
-import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
-import ImageUpload from '../../components/ui/ImageUpload';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
-const RATING_OPTIONS = [
-  { value: '5', label: '5 Excellent' },
-  { value: '4', label: '4 Very Good' },
-  { value: '3', label: '3 Good' },
-  { value: '2', label: '2 Fair' },
-  { value: '1', label: '1 Poor' },
-];
-
-function StarRating({ rating }) {
-  const n = Number(rating) || 0;
-  return (
-    <span className="text-amber-400 text-sm">
-      {'★'.repeat(n)}
-      <span className="text-slate-200">{'★'.repeat(5 - n)}</span>
-    </span>
-  );
-}
-
-export default function Testimonials() {
-  const [testimonials, setTestimonials] = useState([]);
+export default function FAQTopics() {
+  const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -47,15 +27,14 @@ export default function Testimonials() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm();
 
-  const fetchTestimonials = async () => {
+  const fetchTopics = async () => {
     try {
       setLoading(true);
-      const res = await testimonialsAPI.getAll();
-      setTestimonials(res.data.data || res.data || []);
+      const res = await faqTopicsAPI.getAll();
+      setTopics(res.data.data || res.data || []);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -64,19 +43,17 @@ export default function Testimonials() {
   };
 
   useEffect(() => {
-    fetchTestimonials();
+    fetchTopics();
   }, []);
 
   const openAdd = () => {
     setEditingItem(null);
     reset({
       name: '',
-      country: '',
-      designation: '',
-      message: '',
-      rating: '5',
-      isActive: true,
+      subtitle: '',
+      icon: '',
       displayOrder: '',
+      isActive: true,
     });
     setModalOpen(true);
   };
@@ -85,12 +62,10 @@ export default function Testimonials() {
     setEditingItem(item);
     reset({
       name: item.name || '',
-      country: item.country || '',
-      designation: item.designation || '',
-      message: item.message || '',
-      rating: String(item.rating || '5'),
-      isActive: item.isActive ?? true,
+      subtitle: item.subtitle || '',
+      icon: item.icon || '',
       displayOrder: item.displayOrder ?? '',
+      isActive: item.isActive ?? true,
     });
     setModalOpen(true);
   };
@@ -103,31 +78,22 @@ export default function Testimonials() {
   const onSubmit = async (data) => {
     try {
       setSaving(true);
-      const photoFiles = data.photo;
       const payload = {
         name: data.name,
-        country: data.country || '',
-        designation: data.designation || '',
-        message: data.message,
-        rating: Number(data.rating),
+        subtitle: data.subtitle || '',
+        icon: data.icon || '',
         isActive: data.isActive,
         displayOrder: data.displayOrder !== '' ? Number(data.displayOrder) : undefined,
       };
-      if (photoFiles instanceof FileList && photoFiles.length > 0) {
-        payload.photo = photoFiles[0];
-      } else if (photoFiles instanceof File) {
-        payload.photo = photoFiles;
-      }
-      const fd = buildFormData(payload);
       if (editingItem) {
-        await testimonialsAPI.update(editingItem._id, fd);
-        toast.success('Testimonial updated successfully.');
+        await faqTopicsAPI.update(editingItem._id, payload);
+        toast.success('Topic updated successfully.');
       } else {
-        await testimonialsAPI.create(fd);
-        toast.success('Testimonial added successfully.');
+        await faqTopicsAPI.create(payload);
+        toast.success('Topic added successfully.');
       }
       closeModal();
-      fetchTestimonials();
+      fetchTopics();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -139,10 +105,10 @@ export default function Testimonials() {
     if (!deleteTarget) return;
     try {
       setDeleting(true);
-      await testimonialsAPI.delete(deleteTarget._id);
-      toast.success('Testimonial deleted.');
+      await faqTopicsAPI.delete(deleteTarget._id);
+      toast.success('Topic deleted.');
       setDeleteTarget(null);
-      fetchTestimonials();
+      fetchTopics();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -153,9 +119,9 @@ export default function Testimonials() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Testimonials"
-        subtitle="Manage attendee and speaker testimonials"
-        actionLabel="Add Testimonial"
+        title="FAQ Topics"
+        subtitle="Manage the topic sections shown on the public Help & Support page"
+        actionLabel="Add Topic"
         actionIcon={Plus}
         action={openAdd}
       />
@@ -165,13 +131,13 @@ export default function Testimonials() {
           <div className="flex items-center justify-center h-64">
             <Spinner size="lg" />
           </div>
-        ) : testimonials.length === 0 ? (
+        ) : topics.length === 0 ? (
           <EmptyState
-            message="No testimonials yet"
-            description="Add the first testimonial from your attendees."
+            message="No FAQ topics yet"
+            description="Add a topic (e.g. 'Submission & Registration') before adding FAQs under it."
             action={openAdd}
-            actionLabel="Add Testimonial"
-            icon={MessageSquare}
+            actionLabel="Add Topic"
+            icon={Layers}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -179,27 +145,19 @@ export default function Testimonials() {
               <thead>
                 <tr className="bg-slate-50">
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Country</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Designation</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Message</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Rating</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Subtitle</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Icon</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Active</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Order</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {testimonials.map((item) => (
+                {topics.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.name}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.country || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.designation || '—'}</td>
-                    <td className="px-6 py-3 text-slate-500 max-w-[200px]">
-                      {truncate(item.message, 60)}
-                    </td>
-                    <td className="px-6 py-3">
-                      <StarRating rating={item.rating} />
-                    </td>
+                    <td className="px-6 py-3 text-slate-500 max-w-[240px] truncate">{item.subtitle || '—'}</td>
+                    <td className="px-6 py-3 text-slate-500 font-mono text-xs">{item.icon || '—'}</td>
                     <td className="px-6 py-3">
                       <Badge variant={item.isActive ? 'success' : 'default'}>
                         {item.isActive ? 'Active' : 'Inactive'}
@@ -234,88 +192,59 @@ export default function Testimonials() {
       <Modal
         open={modalOpen}
         onClose={closeModal}
-        title={editingItem ? 'Edit Testimonial' : 'Add Testimonial'}
+        title={editingItem ? 'Edit Topic' : 'Add Topic'}
         size="md"
         footer={
           <>
             <Button variant="secondary" onClick={closeModal} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" form="testimonial-form" loading={saving}>
-              {editingItem ? 'Save Changes' : 'Add Testimonial'}
+            <Button type="submit" form="faq-topic-form" loading={saving}>
+              {editingItem ? 'Save Changes' : 'Add Topic'}
             </Button>
           </>
         }
       >
-        <form id="testimonial-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form id="faq-topic-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
             label="Name"
             name="name"
             register={register}
             required="Name is required"
             error={errors.name?.message}
-            placeholder="Full name"
+            placeholder="e.g. Submission & Registration"
           />
-          <ImageUpload
-            label="Photo"
-            name="photo"
-            register={register}
-            watch={watch}
-            currentImage={editingItem?.photo || null}
-            error={errors.photo?.message}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Country"
-              name="country"
-              register={register}
-              error={errors.country?.message}
-              placeholder="e.g. India"
-            />
-            <Input
-              label="Designation"
-              name="designation"
-              register={register}
-              error={errors.designation?.message}
-              placeholder="e.g. Professor"
-            />
-          </div>
           <Textarea
-            label="Message"
-            name="message"
+            label="Subtitle"
+            name="subtitle"
             register={register}
-            required="Message is required"
-            error={errors.message?.message}
-            placeholder="Testimonial text..."
-            rows={4}
+            error={errors.subtitle?.message}
+            placeholder="e.g. Browse questions in this topic"
+            rows={2}
           />
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Rating"
-              name="rating"
-              register={register}
-              required="Rating is required"
-              error={errors.rating?.message}
-              options={RATING_OPTIONS}
-              placeholder="Select rating..."
-            />
-            <Input
-              label="Display Order"
-              name="displayOrder"
-              type="number"
-              register={register}
-              error={errors.displayOrder?.message}
-              placeholder="0"
-            />
-          </div>
+          <Input
+            label="Icon"
+            name="icon"
+            register={register}
+            error={errors.icon?.message}
+            placeholder="e.g. clipboard-list, credit-card, help-circle"
+          />
+          <Input
+            label="Display Order"
+            name="displayOrder"
+            type="number"
+            register={register}
+            error={errors.displayOrder?.message}
+            placeholder="0"
+          />
           <div className="flex items-center gap-3">
             <input
               type="checkbox"
-              id="isActive"
+              id="topicIsActive"
               {...register('isActive')}
               className="w-4 h-4 rounded border-slate-300 text-teal-700 focus:ring-teal-500"
             />
-            <label htmlFor="isActive" className="text-sm font-medium text-slate-700">
+            <label htmlFor="topicIsActive" className="text-sm font-medium text-slate-700">
               Active
             </label>
           </div>
@@ -328,8 +257,8 @@ export default function Testimonials() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Delete Testimonial"
-        message={`Are you sure you want to delete the testimonial from "${deleteTarget?.name}"? This action cannot be undone.`}
+        title="Delete Topic"
+        message={`Are you sure you want to delete "${deleteTarget?.name}"? FAQs under this topic will no longer be grouped correctly.`}
         confirmLabel="Delete"
       />
     </div>

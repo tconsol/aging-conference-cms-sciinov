@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Edit2, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle, Ticket } from 'lucide-react';
-import { helpAPI } from '../../api/inbox';
+import { helpAPI, faqTopicsAPI } from '../../api/inbox';
 import { truncate, getErrorMessage } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
@@ -11,6 +11,7 @@ import Badge from '../../components/ui/Badge';
 import Modal from '../../components/ui/Modal';
 import Textarea from '../../components/ui/Textarea';
 import Input from '../../components/ui/Input';
+import Select from '../../components/ui/Select';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
@@ -32,6 +33,11 @@ function FAQCard({ item, onEdit, onDelete }) {
               <ChevronDown size={16} className="text-slate-400" />
             )}
           </div>
+          {item.topic?.name && (
+            <Badge variant="info" className="flex-shrink-0">
+              {item.topic.name}
+            </Badge>
+          )}
           <span className="text-sm font-semibold text-slate-800 truncate">{item.question}</span>
           {!item.isActive && (
             <Badge variant="default" className="flex-shrink-0">
@@ -69,6 +75,7 @@ function FAQCard({ item, onEdit, onDelete }) {
 export default function HelpFAQs() {
   const navigate = useNavigate();
   const [faqs, setFaqs] = useState([]);
+  const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -95,13 +102,24 @@ export default function HelpFAQs() {
     }
   };
 
+  const fetchTopics = async () => {
+    try {
+      const res = await faqTopicsAPI.getAll();
+      setTopics(res.data.data || res.data || []);
+    } catch {
+      // non-critical
+    }
+  };
+
   useEffect(() => {
     fetchFAQs();
+    fetchTopics();
   }, []);
 
   const openAdd = () => {
     setEditingItem(null);
     reset({
+      topic: '',
       question: '',
       answer: '',
       displayOrder: '',
@@ -113,6 +131,7 @@ export default function HelpFAQs() {
   const openEdit = (item) => {
     setEditingItem(item);
     reset({
+      topic: item.topic?._id || item.topic || '',
       question: item.question || '',
       answer: item.answer || '',
       displayOrder: item.displayOrder ?? '',
@@ -130,6 +149,7 @@ export default function HelpFAQs() {
     try {
       setSaving(true);
       const payload = {
+        topic: data.topic || undefined,
         question: data.question,
         answer: data.answer,
         isActive: data.isActive,
@@ -224,6 +244,15 @@ export default function HelpFAQs() {
         }
       >
         <form id="faq-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <Select
+            label="Topic"
+            name="topic"
+            register={register}
+            required="Topic is required"
+            error={errors.topic?.message}
+            options={topics.map((t) => ({ value: t._id, label: t.name }))}
+            placeholder="Select a topic..."
+          />
           <Textarea
             label="Question"
             name="question"

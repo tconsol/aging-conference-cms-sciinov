@@ -1,15 +1,20 @@
 ﻿import { useEffect, useState } from 'react';
-import { Download, FileText, Image, Film, Archive } from 'lucide-react';
+import { Download, FileText, Image as ImageIcon } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
 import { contentAPI } from '../api/content';
-import { formatDateShort } from '../utils/helpers';
+
+const TYPE_LABELS = {
+  template: 'Templates',
+  flyer: 'Flyers',
+  pdf: 'PDFs',
+  brochure: 'Brochures',
+  other: 'General',
+};
 
 function FileIcon({ type }) {
-  if (type?.includes('image')) return <Image size={20} className="text-teal-600" />;
-  if (type?.includes('video')) return <Film size={20} className="text-teal-600" />;
-  if (type?.includes('zip') || type?.includes('archive')) return <Archive size={20} className="text-teal-600" />;
+  if (type === 'flyer') return <ImageIcon size={20} className="text-teal-600" />;
   return <FileText size={20} className="text-teal-600" />;
 }
 
@@ -27,11 +32,11 @@ export default function Downloads() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Group by category
+  // Group by type
   const groups = downloads.reduce((acc, d) => {
-    const cat = d.category || 'General';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(d);
+    const label = TYPE_LABELS[d.type] || 'General';
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(d);
     return acc;
   }, {});
 
@@ -60,24 +65,22 @@ export default function Downloads() {
                     {items.map((item) => (
                       <a
                         key={item._id}
-                        href={item.fileUrl || item.url || '#'}
+                        href={item.fileUrl || '#'}
                         target="_blank"
                         rel="noreferrer"
                         className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-lg shadow-sm hover:shadow-md hover:border-teal-100 transition-all group"
                       >
-                        <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
-                          <FileIcon type={item.fileType} />
-                        </div>
+                        {item.thumbnail ? (
+                          <img src={item.thumbnail} alt={item.title} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
+                            <FileIcon type={item.type} />
+                          </div>
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-sm text-slate-900 truncate group-hover:text-teal-700 transition-colors">
                             {item.title}
                           </p>
-                          {item.description && (
-                            <p className="text-xs text-slate-500 mt-0.5 truncate">{item.description}</p>
-                          )}
-                          {item.fileSize && (
-                            <p className="text-xs text-slate-400 mt-0.5">{item.fileSize}</p>
-                          )}
                         </div>
                         <Download size={16} className="text-slate-300 group-hover:text-teal-600 transition-colors shrink-0" />
                       </a>

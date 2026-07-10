@@ -169,7 +169,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h2 className="text-sm font-semibold text-slate-800">Recent Messages</h2>
           <button
-            onClick={() => navigate('/inbox')}
+            onClick={() => navigate('/contact')}
             className="text-xs text-teal-700 hover:text-blue-700 font-medium"
           >
             View all →

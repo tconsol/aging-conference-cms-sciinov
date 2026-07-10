@@ -26,3 +26,11 @@ export const organizersAPI = {
   update: (id, data) => api.put(`/organizers/${id}`, data),
   delete: (id) => api.delete(`/organizers/${id}`),
 };
+
+// Speaker Applications
+export const speakerApplicationsAPI = {
+  getAll: (params) => api.get('/speaker-applications', { params }),
+  getOne: (id) => api.get(`/speaker-applications/${id}`),
+  updateStatus: (id, status) => api.patch(`/speaker-applications/${id}/status`, { status }),
+  delete: (id) => api.delete(`/speaker-applications/${id}`),
+};

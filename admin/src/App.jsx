@@ -24,6 +24,8 @@ import Speakers from './pages/people/Speakers';
 import SpeakerForm from './pages/people/SpeakerForm';
 import Committee from './pages/people/Committee';
 import Organizers from './pages/people/Organizers';
+import SpeakerApplications from './pages/people/SpeakerApplications';
+import SpeakerApplicationDetail from './pages/people/SpeakerApplicationDetail';
 
 // Submissions
 import Abstracts from './pages/submissions/Abstracts';
@@ -53,6 +55,7 @@ import Newsletter from './pages/community/Newsletter';
 import Contact from './pages/inbox/Contact';
 import ContactDetail from './pages/inbox/ContactDetail';
 import HelpFAQs from './pages/inbox/HelpFAQs';
+import FAQTopics from './pages/inbox/FAQTopics';
 import HelpTickets from './pages/inbox/HelpTickets';
 import TicketDetail from './pages/inbox/TicketDetail';
 
@@ -97,6 +100,8 @@ export default function App() {
           <Route path="/speakers/:id/edit" element={<SpeakerForm />} />
           <Route path="/committee" element={<Committee />} />
           <Route path="/organizers" element={<Organizers />} />
+          <Route path="/speaker-applications" element={<SpeakerApplications />} />
+          <Route path="/speaker-applications/:id" element={<SpeakerApplicationDetail />} />
 
           {/* Submissions */}
           <Route path="/abstracts" element={<Abstracts />} />
@@ -127,6 +132,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/contact/:id" element={<ContactDetail />} />
           <Route path="/help" element={<HelpFAQs />} />
+          <Route path="/help/topics" element={<FAQTopics />} />
           <Route path="/help/tickets" element={<HelpTickets />} />
           <Route path="/help/tickets/:id" element={<TicketDetail />} />
 

@@ -12,8 +12,9 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import ImageUpload from '../../components/ui/ImageUpload';
 import { editionsAPI } from '../../api/congress';
-import { formatDate, getErrorMessage } from '../../utils/helpers';
+import { formatDate, buildFormData, getErrorMessage } from '../../utils/helpers';
 
 const statusOptions = [
   { value: 'active', label: 'Active' },
@@ -30,7 +31,7 @@ export default function Editions() {
   const [deleting, setDeleting] = useState(false);
   const [settingActive, setSettingActive] = useState(null);
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm();
   const { fields: highlightFields, append: appendHighlight, remove: removeHighlight } = useFieldArray({
     control,
     name: 'highlights',
@@ -73,11 +74,21 @@ export default function Editions() {
   const onSubmit = async (formData) => {
     setSubmitting(true);
     try {
+      const bannerFiles = formData.bannerImage;
+      const payload = { ...formData };
+      if (bannerFiles instanceof FileList && bannerFiles.length > 0) {
+        payload.bannerImage = bannerFiles[0];
+      } else if (bannerFiles instanceof File) {
+        payload.bannerImage = bannerFiles;
+      } else {
+        delete payload.bannerImage;
+      }
+      const fd = buildFormData(payload);
       if (modal.data?._id) {
-        await editionsAPI.update(modal.data._id, formData);
+        await editionsAPI.update(modal.data._id, fd);
         toast.success('Edition updated successfully.');
       } else {
-        await editionsAPI.create(formData);
+        await editionsAPI.create(fd);
         toast.success('Edition created successfully.');
       }
       setModal({ open: false, data: null });
@@ -309,6 +320,17 @@ export default function Editions() {
                 register={register}
                 error={errors.description?.message}
                 rows={3}
+              />
+            </div>
+
+            <div className="col-span-2">
+              <ImageUpload
+                label="Banner Image"
+                name="bannerImage"
+                register={register}
+                watch={watch}
+                currentImage={modal.data?.bannerImage || null}
+                error={errors.bannerImage?.message}
               />
             </div>
 

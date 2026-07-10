@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Images } from 'lucide-react';
+import { Pencil, Trash2, Images, X } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -13,7 +13,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { venuesAPI, editionsAPI } from '../../api/congress';
-import { getErrorMessage } from '../../utils/helpers';
+import { buildFormData, getErrorMessage } from '../../utils/helpers';
 
 export default function Venue() {
   const [items, setItems] = useState([]);
@@ -74,11 +74,19 @@ export default function Venue() {
   const onSubmit = async (formData) => {
     setSubmitting(true);
     try {
+      const payload = { ...formData };
+      const photoFiles = payload.photos;
+      if (photoFiles instanceof FileList && photoFiles.length > 0) {
+        payload.photos = photoFiles;
+      } else {
+        delete payload.photos;
+      }
+      const fd = buildFormData(payload);
       if (modal.data?._id) {
-        await venuesAPI.update(modal.data._id, formData);
+        await venuesAPI.update(modal.data._id, fd);
         toast.success('Venue updated successfully.');
       } else {
-        await venuesAPI.create(formData);
+        await venuesAPI.create(fd);
         toast.success('Venue created successfully.');
       }
       setModal({ open: false, data: null });
@@ -87,6 +95,17 @@ export default function Venue() {
       toast.error(getErrorMessage(err));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleRemovePhoto = async (publicId) => {
+    try {
+      const res = await venuesAPI.removePhoto(modal.data._id, publicId);
+      const updated = res.data.data;
+      setModal((m) => ({ ...m, data: updated }));
+      fetchItems();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -262,6 +281,33 @@ export default function Venue() {
                 error={errors.description?.message}
                 rows={3}
               />
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-slate-700 mb-1.5 block">Photos</label>
+              {modal.data?.photos?.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  {modal.data.photos.map((photo) => (
+                    <div key={photo.publicId} className="relative group">
+                      <img src={photo.url} alt="" className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(photo.publicId)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                {...register('photos')}
+                className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-100 file:text-slate-700 file:text-sm hover:file:bg-slate-200"
+              />
+              <p className="text-xs text-slate-400 mt-1">Add up to 10 photos. New uploads are appended to existing photos.</p>
             </div>
           </div>
         </form>

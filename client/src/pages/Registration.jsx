@@ -61,7 +61,9 @@ export default function Registration() {
       .finally(() => setPricingLoading(false));
   }, [selectedEdition]);
 
-  const selectedPricing = pricing.find((p) => p.category === selectedCategory);
+  const activeTier = pricing.find((p) => p.isActive);
+  const activePrices = activeTier?.prices || {};
+  const selectedAmount = selectedCategory ? activePrices[selectedCategory] : undefined;
 
   const onSubmit = async (data) => {
     if (!data.edition) {
@@ -70,7 +72,15 @@ export default function Registration() {
     }
     setLoading(true);
     try {
-      await submissionsAPI.submitRegistration(data);
+      const { specialRequirements, ...rest } = data;
+      const payload = {
+        ...rest,
+        notes: specialRequirements,
+        pricingTier: activeTier?._id,
+        amount: selectedAmount,
+        currency: 'USD',
+      };
+      await submissionsAPI.submitRegistration(payload);
       setSubmitted(true);
       reset();
       toast.success('Registration submitted! We will send a confirmation email shortly.');
@@ -96,15 +106,14 @@ export default function Registration() {
             <div>
               {pricingLoading ? (
                 <div className="flex justify-center py-8"><Spinner /></div>
-              ) : pricing.length > 0 ? (
+              ) : Object.keys(activePrices).length > 0 ? (
                 <div className="bg-slate-50 rounded-lg border border-slate-100 p-6">
                   <h3 className="font-bold text-slate-900 mb-4">Registration Fees</h3>
                   <div className="flex flex-col gap-3">
-                    {pricing.map((p) => (
-                      <div key={p._id || p.category} className={`p-3 rounded-xl border ${selectedCategory === p.category ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'}`}>
-                        <p className="font-semibold text-sm text-slate-800">{CATEGORY_LABELS[p.category] ?? p.category}</p>
-                        <p className="text-teal-700 font-bold">{p.currency ?? 'USD'} {p.amount?.toLocaleString()}</p>
-                        {p.description && <p className="text-xs text-slate-500 mt-0.5">{p.description}</p>}
+                    {Object.entries(activePrices).filter(([, amount]) => amount > 0).map(([category, amount]) => (
+                      <div key={category} className={`p-3 rounded-xl border ${selectedCategory === category ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white'}`}>
+                        <p className="font-semibold text-sm text-slate-800">{CATEGORY_LABELS[category] ?? category}</p>
+                        <p className="text-teal-700 font-bold">USD {amount.toLocaleString()}</p>
                       </div>
                     ))}
                   </div>
@@ -217,11 +226,13 @@ export default function Registration() {
                           onChange={field.onChange}
                           error={errors.category?.message}
                           options={
-                            pricing.length > 0
-                              ? pricing.map((p) => ({
-                                value: p.category,
-                                label: `${CATEGORY_LABELS[p.category] ?? p.category} — ${p.currency ?? 'USD'} ${p.amount}`,
-                              }))
+                            Object.keys(activePrices).length > 0
+                              ? Object.entries(activePrices)
+                                .filter(([, amount]) => amount > 0)
+                                .map(([category, amount]) => ({
+                                  value: category,
+                                  label: `${CATEGORY_LABELS[category] ?? category} — USD ${amount}`,
+                                }))
                               : Object.entries(CATEGORY_LABELS).map(([val, lbl]) => ({ value: val, label: lbl }))
                           }
                         />
@@ -248,10 +259,10 @@ export default function Registration() {
                     />
                   </div>
 
-                  {selectedPricing && (
+                  {selectedAmount > 0 && (
                     <div className="bg-teal-50 border border-teal-100 rounded-xl p-4">
                       <p className="text-sm text-slate-700">
-                        Fee: <span className="font-bold text-teal-700">{selectedPricing.currency ?? 'USD'} {selectedPricing.amount?.toLocaleString()}</span>
+                        Fee: <span className="font-bold text-teal-700">USD {selectedAmount.toLocaleString()}</span>
                       </p>
                     </div>
                   )}

@@ -1,58 +1,50 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { usecongress } from '../../context/congressContext';
+import { congressAPI } from '../../api/congress';
 
-const NAV_ITEMS = [
-  { label: 'About', to: '/about' },
+const BASE_NAV_ITEMS = [
   {
-    label: 'Congress',
+    label: 'Overview',
     children: [
-      { label: 'Editions', to: '/editions' },
-      { label: 'Sessions', to: '/sessions' },
+      { label: 'About', to: '/about' },
+      { label: 'Scientific Committee', to: '/committee' },
+      { label: 'Become a Speaker', to: '/become-a-speaker' },
+      { label: 'Sponsor / Exhibit', to: '/sponsorship' },
+      { label: 'Organizer Info', to: '/organizers' },
+    ],
+  },
+  {
+    label: 'Speakers',
+    to: '/speakers',
+  },
+  {
+    label: 'Program',
+    children: [
+      { label: 'Scientific Sessions', to: '/sessions' },
       { label: 'Scientific Program', to: '/program' },
+      { label: 'Brochure Download', to: '/brochure' },
+      { label: 'Partners', to: '/partners' },
+    ],
+  },
+  {
+    label: 'Information',
+    children: [
       { label: 'Important Dates', to: '/important-dates' },
       { label: 'Venue', to: '/venue' },
-    ],
-  },
-  {
-    label: 'People',
-    children: [
-      { label: 'Speakers', to: '/speakers' },
-      { label: 'Committee', to: '/committee' },
-      { label: 'Organizers', to: '/organizers' },
-    ],
-  },
-  {
-    label: 'Submissions',
-    children: [
-      { label: 'Submit Abstract', to: '/abstract-submission' },
-      { label: 'Registration', to: '/registration' },
-      { label: 'Pricing', to: '/pricing' },
-    ],
-  },
-  {
-    label: 'Content',
-    children: [
+      { label: 'Guidelines', to: '/guidelines' },
+      { label: 'Publication', to: '/publication-policy' },
+      { label: 'Pricing / Registration', to: '/pricing' },
+      { label: 'Quick Downloads', to: '/downloads' },
       { label: 'News', to: '/news' },
       { label: 'Reports', to: '/reports' },
-      { label: 'Downloads', to: '/downloads' },
+      { label: 'Past Events', to: '/editions?status=past' },
     ],
   },
-  {
-    label: 'Community',
-    children: [
-      { label: 'Partners', to: '/partners' },
-      { label: 'Sponsorship', to: '/sponsorship' },
-    ],
-  },
-  {
-    label: 'Contact',
-    children: [
-      { label: 'Contact Us', to: '/contact' },
-      { label: 'Help & FAQs', to: '/help' },
-    ],
-  },
+  { label: 'Submit Abstract', to: '/abstract-submission' },
+  { label: 'Help & Support', to: '/help' },
+  { label: 'Registration', to: '/registration' },
 ];
 
 function DropdownMenu({ items, isOpen }) {
@@ -67,11 +59,13 @@ function DropdownMenu({ items, isOpen }) {
       }}
     >
       <div
-        className="w-56 overflow-hidden shadow-xl"
+        className="w-56 shadow-xl"
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
           borderTop: '2px solid #0f766e',
+          maxHeight: 340,
+          overflowY: 'auto',
         }}
       >
         {items.map((item, i) => (
@@ -294,9 +288,11 @@ function MobileNavItem({ item, onClose }) {
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { activeEdition } = usecongress();
+  const [editions, setEditions] = useState([]);
+  const { activeEdition, siteSettings } = usecongress();
   const location = useLocation();
   const navigate = useNavigate();
+  const siteName = siteSettings?.siteName || 'Aging Congress';
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -306,7 +302,29 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    congressAPI.getAll()
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        setEditions(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setEditions([]));
+  }, []);
+
   const year = activeEdition?.year ?? new Date().getFullYear();
+
+  const NAV_ITEMS = useMemo(() => {
+    const speakersChildren = editions.map((e) => ({
+      label: `Speakers ${e.year} ${e.city}`,
+      to: `/speakers?edition=${e._id}`,
+    }));
+    return BASE_NAV_ITEMS.map((item) => {
+      if (item.label !== 'Speakers') return item;
+      return speakersChildren.length > 0
+        ? { label: 'Speakers', children: speakersChildren }
+        : { label: 'Speakers', to: '/speakers' };
+    });
+  }, [editions]);
 
   return (
     <>
@@ -336,29 +354,37 @@ export default function Navbar() {
               to="/"
               style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}
             >
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-                  clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))',
-                }}
-              >
-                <span
+              {siteSettings?.logo ? (
+                <img
+                  src={siteSettings.logo}
+                  alt={siteName}
+                  style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }}
+                />
+              ) : (
+                <div
                   style={{
-                    fontSize: 13,
-                    fontWeight: 900,
-                    color: '#ffffff',
-                    letterSpacing: '-0.02em',
-                    lineHeight: 1,
+                    width: 38,
+                    height: 38,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                    clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))',
                   }}
                 >
-                  AC
-                </span>
-              </div>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 900,
+                      color: '#ffffff',
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1,
+                    }}
+                  >
+                    AC
+                  </span>
+                </div>
+              )}
               <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
                 <span
                   style={{
@@ -369,7 +395,7 @@ export default function Navbar() {
                     textTransform: 'uppercase',
                   }}
                 >
-                  Aging Congress
+                  {siteName}
                 </span>
                 <span
                   style={{

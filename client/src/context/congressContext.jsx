@@ -16,7 +16,12 @@ export function congressProvider({ children }) {
       contentAPI.getSiteSettings().catch(() => ({ data: { data: null } })),
     ]).then(([editionRes, settingsRes]) => {
       setActiveEdition(editionRes.data?.data ?? editionRes.data ?? null);
-      setSiteSettings(settingsRes.data?.data ?? settingsRes.data ?? null);
+      const settings = settingsRes.data?.data ?? settingsRes.data ?? null;
+      setSiteSettings(settings);
+      if (settings?.favicon) {
+        const link = document.querySelector('link[rel="icon"]');
+        if (link) link.href = settings.favicon;
+      }
     }).finally(() => setLoading(false));
   }, []);
 

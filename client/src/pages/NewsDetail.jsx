@@ -36,9 +36,9 @@ export default function NewsDetail() {
   return (
     <div className="bg-white">
       {/* Hero image or gradient */}
-      {article.image ? (
+      {article.featuredImage ? (
         <div className="w-full aspect-[21/9] overflow-hidden">
-          <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
+          <img src={article.featuredImage} alt={article.title} className="w-full h-full object-cover" />
         </div>
       ) : (
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 pt-24 pb-16">
@@ -62,9 +62,9 @@ export default function NewsDetail() {
             </Link>
 
             <div className="flex flex-wrap items-center gap-3 mb-4">
-              {article.category && (
+              {article.tags?.[0] && (
                 <span className="flex items-center gap-1 text-xs font-bold text-teal-700 bg-teal-50 px-2 py-1 rounded-full">
-                  <Tag size={10} /> {article.category}
+                  <Tag size={10} /> {article.tags[0]}
                 </span>
               )}
               <span className="flex items-center gap-1 text-xs text-slate-400">
@@ -88,12 +88,6 @@ export default function NewsDetail() {
                 className="prose prose-slate prose-lg max-w-none text-slate-700"
                 dangerouslySetInnerHTML={{ __html: article.content }}
               />
-            )}
-
-            {!article.content && article.body && (
-              <div className="prose prose-slate prose-lg max-w-none text-slate-700">
-                <p>{article.body}</p>
-              </div>
             )}
           </div>
         </div>

@@ -5,6 +5,7 @@ import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { submissionsAPI } from '../api/submissions';
+import { usecongress } from '../context/congressContext';
 import { CATEGORY_LABELS } from '../utils/helpers';
 
 const INCLUDED_FEATURES = [
@@ -22,38 +23,44 @@ const INPERSON_EXTRAS = [
 ];
 
 export default function Pricing() {
-  const [pricing, setPricing] = useState([]);
+  const { activeEdition } = usecongress();
+  const [tier, setTier] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    submissionsAPI.getActivePricing()
+    if (!activeEdition?._id) {
+      setTier(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    submissionsAPI.getActivePricing({ edition: activeEdition._id })
       .then((res) => {
-        const data = res.data?.data ?? res.data ?? [];
-        setPricing(Array.isArray(data) ? data : []);
+        const data = res.data?.data ?? res.data ?? null;
+        setTier(data);
       })
-      .catch(() => setPricing([]))
+      .catch(() => setTier(null))
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeEdition]);
 
-  const inPerson = pricing.filter((p) => p.category?.includes('inperson'));
-  const virtual = pricing.filter((p) => p.category?.includes('virtual'));
-  const other = pricing.filter((p) => !p.category?.includes('inperson') && !p.category?.includes('virtual'));
+  const categories = Object.entries(tier?.prices || {})
+    .filter(([, amount]) => amount > 0)
+    .map(([category, amount]) => ({ category, amount }));
+
+  const inPerson = categories.filter((p) => p.category.includes('inperson'));
+  const virtual = categories.filter((p) => p.category.includes('virtual'));
+  const other = categories.filter((p) => !p.category.includes('inperson') && !p.category.includes('virtual'));
 
   const renderPricingCards = (items, isInPerson = false) => (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {items.map((p) => (
-        <div key={p._id || p.category} className="bg-white rounded-lg border border-slate-100 shadow-sm p-6 flex flex-col">
+        <div key={p.category} className="bg-white rounded-lg border border-slate-100 shadow-sm p-6 flex flex-col">
           <div className="mb-4">
             <h3 className="font-bold text-slate-900 text-lg">{CATEGORY_LABELS[p.category] ?? p.category}</h3>
-            {p.description && <p className="text-sm text-slate-500 mt-1">{p.description}</p>}
+            {tier?.label && <p className="text-sm text-slate-500 mt-1">{tier.label}</p>}
           </div>
           <div className="mb-6">
-            <span className="text-4xl font-bold text-teal-700">{p.currency ?? 'USD'} {p.amount?.toLocaleString()}</span>
-            {p.earlyBirdAmount && (
-              <p className="text-sm text-green-600 font-medium mt-1">
-                Early bird: {p.currency ?? 'USD'} {p.earlyBirdAmount?.toLocaleString()}
-              </p>
-            )}
+            <span className="text-4xl font-bold text-teal-700">USD {p.amount.toLocaleString()}</span>
           </div>
           <ul className="flex flex-col gap-2 mb-6 flex-1">
             {INCLUDED_FEATURES.map((f) => (
@@ -87,7 +94,7 @@ export default function Pricing() {
         <div className="container-custom">
           {loading ? (
             <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-          ) : pricing.length === 0 ? (
+          ) : categories.length === 0 ? (
             <div className="text-center py-20">
               <SectionHeader title="Pricing Coming Soon" subtitle="Registration fees for this edition will be published shortly." />
               <Button to="/contact" size="lg" variant="outline">Contact Us for Information</Button>

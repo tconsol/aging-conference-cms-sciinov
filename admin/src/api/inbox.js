@@ -21,3 +21,12 @@ export const helpAPI = {
   updateTicketStatus: (id, status) => api.patch(`/help/tickets/${id}/status`, { status }),
   deleteTicket: (id) => api.delete(`/help/tickets/${id}`),
 };
+
+// FAQ Topics
+export const faqTopicsAPI = {
+  getAll: () => api.get('/faq-topics'),
+  getOne: (id) => api.get(`/faq-topics/${id}`),
+  create: (data) => api.post('/faq-topics', data),
+  update: (id, data) => api.put(`/faq-topics/${id}`, data),
+  delete: (id) => api.delete(`/faq-topics/${id}`),
+};

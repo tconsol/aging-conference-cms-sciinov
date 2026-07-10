@@ -474,7 +474,7 @@ export default function Home() {
                     &ldquo;
                   </div>
                   <p className="text-slate-700 text-sm leading-relaxed mb-5">
-                    {truncate(t.message || t.content, 180)}
+                    {truncate(t.message, 180)}
                   </p>
                   <div className="flex items-center gap-3 pt-4 border-t border-stone-100">
                     {t.photo ? (

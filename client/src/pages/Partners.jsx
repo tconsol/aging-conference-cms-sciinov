@@ -20,11 +20,17 @@ export default function Partners() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Group by tier/category
+  const TYPE_LABELS = {
+    sponsor: 'Sponsors',
+    partner: 'Partners',
+    media_partner: 'Media Partners',
+  };
+
+  // Group by type
   const groups = partners.reduce((acc, p) => {
-    const tier = p.tier || p.category || 'Partners';
-    if (!acc[tier]) acc[tier] = [];
-    acc[tier].push(p);
+    const label = TYPE_LABELS[p.type] || 'Partners';
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(p);
     return acc;
   }, {});
 

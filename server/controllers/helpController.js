@@ -7,7 +7,7 @@ exports.getAllFAQs = async (req, res, next) => {
   try {
     const filter = {};
     if (req.query.active === 'true') filter.isActive = true;
-    const faqs = await FAQ.find(filter).sort({ displayOrder: 1 });
+    const faqs = await FAQ.find(filter).sort({ displayOrder: 1 }).populate('topic', 'name subtitle icon displayOrder');
     res.json({ success: true, data: faqs });
   } catch (err) { next(err); }
 };

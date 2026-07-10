@@ -24,6 +24,7 @@ export default function AbstractSubmission() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dates, setDates] = useState([]);
+  const [topics, setTopics] = useState([]);
 
   const { register, handleSubmit, control, formState: { errors }, reset } = useForm();
 
@@ -32,19 +33,30 @@ export default function AbstractSubmission() {
     congressAPI.getImportantDates(params)
       .then((res) => {
         const data = res.data?.data ?? res.data ?? [];
-        setDates(Array.isArray(data) ? data.filter((d) => d.title?.toLowerCase().includes('abstract')) : []);
+        setDates(Array.isArray(data) ? data.filter((d) => d.category === 'abstracts') : []);
       })
       .catch(() => {});
+    congressAPI.getSessions(params)
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        setTopics(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setTopics([]));
   }, [activeEdition]);
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const payload = {
-        ...data,
-        edition: activeEdition?._id,
-      };
-      await submissionsAPI.submitAbstract(payload);
+      const { file, ...rest } = data;
+      const fd = new FormData();
+      Object.entries(rest).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') fd.append(key, value);
+      });
+      fd.append('edition', activeEdition?._id || '');
+      if (file instanceof FileList && file.length > 0) {
+        fd.append('file', file[0]);
+      }
+      await submissionsAPI.submitAbstract(fd);
       setSubmitted(true);
       reset();
       toast.success('Abstract submitted successfully!');
@@ -89,7 +101,7 @@ export default function AbstractSubmission() {
                   <div className="flex flex-col gap-2">
                     {dates.map((d) => (
                       <div key={d._id} className="text-sm">
-                        <p className="font-semibold text-slate-700">{d.title}</p>
+                        <p className="font-semibold text-slate-700">{d.label}</p>
                         <p className="text-amber-700">{new Date(d.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                       </div>
                     ))}
@@ -170,6 +182,24 @@ export default function AbstractSubmission() {
                     />
                   </div>
 
+                  {topics.length > 0 && (
+                    <div>
+                      <Controller
+                        name="topic"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            label="Topic / Track"
+                            placeholder="Select a topic..."
+                            options={topics.map((t) => ({ value: t._id, label: t.title }))}
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Title *</label>
                     <input {...register('abstractTitle', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
@@ -203,6 +233,16 @@ export default function AbstractSubmission() {
                     <input {...register('coAuthors')}
                       placeholder="e.g., Jane Smith (Harvard), John Doe (MIT)"
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Document (PDF, DOC, DOCX)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      {...register('file')}
+                      className="block w-full text-sm text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:text-sm hover:file:bg-teal-100"
+                    />
                   </div>
 
                   <Button type="submit" size="lg" loading={loading} disabled={loading}>

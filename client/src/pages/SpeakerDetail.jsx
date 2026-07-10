@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Globe, Linkedin, Twitter, Building } from 'lucide-react';
+import { ArrowLeft, Globe, Building } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
@@ -45,7 +45,7 @@ export default function SpeakerDetail() {
         breadcrumb={[
           { label: 'Home', href: '/' },
           { label: 'Speakers', href: '/speakers' },
-          { label: speaker.name },
+          { label: speaker.fullName },
         ]}
       />
 
@@ -80,36 +80,6 @@ export default function SpeakerDetail() {
                     <span className="text-sm text-slate-700">{speaker.country}</span>
                   </div>
                 )}
-                {(speaker.socialLinks?.linkedin || speaker.linkedin) && (
-                  <a
-                    href={speaker.socialLinks?.linkedin || speaker.linkedin}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 transition-colors"
-                  >
-                    <Linkedin size={16} /> LinkedIn Profile
-                  </a>
-                )}
-                {(speaker.socialLinks?.twitter || speaker.twitter) && (
-                  <a
-                    href={speaker.socialLinks?.twitter || speaker.twitter}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 transition-colors"
-                  >
-                    <Twitter size={16} /> Twitter / X
-                  </a>
-                )}
-                {speaker.website && (
-                  <a
-                    href={speaker.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-sm text-teal-600 hover:text-teal-800 transition-colors"
-                  >
-                    <Globe size={16} /> Personal Website
-                  </a>
-                )}
               </div>
             </div>
 
@@ -124,22 +94,6 @@ export default function SpeakerDetail() {
                     ) : (
                       <p className="leading-relaxed">{speaker.biography}</p>
                     )}
-                  </div>
-                </div>
-              )}
-
-              {speaker.sessions && speaker.sessions.length > 0 && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">Sessions</h2>
-                  <div className="flex flex-col gap-3">
-                    {speaker.sessions.map((session, i) => (
-                      <div key={i} className="bg-teal-50 rounded-xl p-4 border border-teal-100">
-                        <p className="font-semibold text-slate-900">{session.title || session}</p>
-                        {session.date && (
-                          <p className="text-sm text-slate-500 mt-1">{session.date}</p>
-                        )}
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}

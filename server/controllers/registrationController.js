@@ -1,4 +1,5 @@
 const Registration = require('../models/Registration');
+const PricingTier = require('../models/PricingTier');
 const { sendEmail } = require('../utils/email');
 
 exports.getAll = async (req, res, next) => {
@@ -36,7 +37,21 @@ exports.getOne = async (req, res, next) => {
 
 exports.submit = async (req, res, next) => {
   try {
-    const registration = await Registration.create(req.body);
+    const data = { ...req.body };
+    if (data.pricingTier && data.category) {
+      const tier = await PricingTier.findById(data.pricingTier);
+      if (tier) {
+        data.amount = tier.prices?.[data.category] ?? 0;
+        data.currency = 'USD';
+      } else {
+        delete data.pricingTier;
+        delete data.amount;
+      }
+    } else {
+      delete data.amount;
+      delete data.pricingTier;
+    }
+    const registration = await Registration.create(data);
 
     try {
       await sendEmail({

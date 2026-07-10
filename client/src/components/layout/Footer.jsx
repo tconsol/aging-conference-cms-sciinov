@@ -24,6 +24,8 @@ const SUPPORT_LINKS = [
   { label: 'Help & FAQs', to: '/help' },
   { label: 'Sponsorship', to: '/sponsorship' },
   { label: 'Partners', to: '/partners' },
+  { label: 'Testimonials', to: '/testimonials' },
+  { label: 'Newsletter', to: '/newsletter' },
   { label: 'Terms', to: '/terms' },
 ];
 
@@ -43,9 +45,12 @@ const DEFAULT_SOCIALS = [
 
 export default function Footer() {
   const { siteSettings } = usecongress();
+  const siteName = siteSettings?.siteName || 'Aging Congress';
 
-  const socials =
-    siteSettings?.socialLinks?.length > 0 ? siteSettings.socialLinks : DEFAULT_SOCIALS;
+  const activeSocials = Object.entries(siteSettings?.socialLinks || {})
+    .filter(([, url]) => Boolean(url))
+    .map(([platform, url]) => ({ platform, url }));
+  const socials = activeSocials.length > 0 ? activeSocials : DEFAULT_SOCIALS;
 
   return (
     <footer className="bg-slate-950 text-slate-400">
@@ -55,12 +60,16 @@ export default function Footer() {
           {/* Col 1: Brand + social + newsletter */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 bg-teal-700 flex items-center justify-center">
-                <Activity size={16} className="text-white" />
-              </div>
+              {siteSettings?.logo ? (
+                <img src={siteSettings.logo} alt={siteName} className="w-8 h-8 object-contain" />
+              ) : (
+                <div className="w-8 h-8 bg-teal-700 flex items-center justify-center">
+                  <Activity size={16} className="text-white" />
+                </div>
+              )}
               <div className="flex flex-col leading-none">
                 <span className="text-sm font-black text-white tracking-tight">
-                  Aging congress
+                  {siteName}
                 </span>
                 <span className="text-xs text-teal-400 font-semibold">International Series</span>
               </div>
@@ -162,7 +171,7 @@ export default function Footer() {
       <div className="border-t border-slate-800">
         <div className="container-custom py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} Aging congress. All rights reserved.
+            &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
           </p>
           <div className="flex items-center gap-5">
             {[

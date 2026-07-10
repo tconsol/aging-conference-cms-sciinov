@@ -65,18 +65,18 @@ export default function News() {
                   to={`/news/${item.slug}`}
                   className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden hover:shadow-md hover:border-teal-100 transition-all group"
                 >
-                  {item.image && (
+                  {item.featuredImage && (
                     <div className="aspect-[16/9] overflow-hidden">
                       <img
-                        src={item.image}
+                        src={item.featuredImage}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>
                   )}
                   <div className="p-5">
-                    {item.category && (
-                      <span className="text-xs font-bold text-teal-700 uppercase tracking-wide">{item.category}</span>
+                    {item.tags?.[0] && (
+                      <span className="text-xs font-bold text-teal-700 uppercase tracking-wide">{item.tags[0]}</span>
                     )}
                     <h3 className="font-bold text-slate-900 mt-1 group-hover:text-teal-700 transition-colors line-clamp-2 text-base">
                       {item.title}

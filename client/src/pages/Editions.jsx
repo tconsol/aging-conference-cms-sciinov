@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapPin, Calendar, ArrowRight } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -20,6 +21,8 @@ const STATUS_STYLES = {
 };
 
 export default function Editions() {
+  const [searchParams] = useSearchParams();
+  const pastOnly = searchParams.get('status') === 'past';
   const [editions, setEditions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,25 +36,32 @@ export default function Editions() {
       .finally(() => setLoading(false));
   }, []);
 
+  const visibleEditions = pastOnly ? editions.filter((e) => e.status === 'past') : editions;
+
   return (
     <div>
       <PageHero
-        title="Congress Editions"
-        subtitle="Explore past, present, and upcoming editions of the Aging congress."
-        breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Congress' }, { label: 'Editions' }]}
+        title={pastOnly ? 'Past Events' : 'Congress Editions'}
+        subtitle={pastOnly
+          ? 'Browse previous editions of the Aging congress.'
+          : 'Explore past, present, and upcoming editions of the Aging congress.'}
+        breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Congress' }, { label: pastOnly ? 'Past Events' : 'Editions' }]}
       />
 
       <section className="section-padding bg-white">
         <div className="container-custom">
           {loading ? (
             <div className="flex justify-center py-20"><Spinner size="lg" /></div>
-          ) : editions.length === 0 ? (
+          ) : visibleEditions.length === 0 ? (
             <div className="text-center py-20">
-              <SectionHeader title="No editions yet" subtitle="Check back soon for congress edition announcements." />
+              <SectionHeader
+                title={pastOnly ? 'No past events yet' : 'No editions yet'}
+                subtitle={pastOnly ? 'Past editions will appear here once completed.' : 'Check back soon for congress edition announcements.'}
+              />
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {editions.map((ed) => (
+              {visibleEditions.map((ed) => (
                 <div
                   key={ed._id}
                   className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden hover:shadow-md hover:border-teal-100 transition-all flex flex-col"

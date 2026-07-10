@@ -2,20 +2,73 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Globe, Building } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
+import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
+
+function OtherMemberCard({ member }) {
+  const initials = member.fullName
+    ? member.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')
+    : 'M';
+
+  return (
+    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-100 transition-all overflow-hidden flex flex-col">
+      {member.photo ? (
+        <img
+          src={member.photo}
+          alt={member.fullName}
+          className="w-full h-44 object-cover"
+        />
+      ) : (
+        <div className="w-full h-44 bg-teal-50 flex items-center justify-center">
+          <span className="text-3xl font-bold text-teal-700">{initials}</span>
+        </div>
+      )}
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-bold text-slate-900 text-sm leading-snug">
+          {member.fullName || 'Committee Member'}
+        </h3>
+        {member.designation && (
+          <p className="text-xs text-slate-500 mt-0.5">{member.designation}</p>
+        )}
+        {member.organization && (
+          <p className="text-xs text-teal-600 font-medium mt-0.5">{member.organization}</p>
+        )}
+        <div className="mt-auto pt-3">
+          <Button to={`/committee/${member._id}`} variant="secondary" size="sm" className="w-full justify-center">
+            View Profile
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CommitteeDetail() {
   const { id } = useParams();
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [otherMembers, setOtherMembers] = useState([]);
 
   useEffect(() => {
     peopleAPI.getCommitteeMember(id)
       .then((res) => setMember(res.data?.data ?? res.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    peopleAPI.getCommittee()
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        const list = (Array.isArray(data) ? data : [])
+          .filter((m) => m._id !== id)
+          .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+          .slice(0, 3);
+        setOtherMembers(list);
+      })
+      .catch(() => setOtherMembers([]));
   }, [id]);
 
   if (loading) {
@@ -108,6 +161,28 @@ export default function CommitteeDetail() {
           </div>
         </div>
       </section>
+
+      {/* More Committee Members */}
+      {otherMembers.length > 0 && (
+        <section className="section-padding bg-slate-50">
+          <div className="container-custom">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <span className="section-label">Scientific Committee</span>
+                <h2 className="text-2xl font-black text-slate-900">More Committee Members</h2>
+              </div>
+              <Button to="/committee" variant="secondary" size="sm" className="shrink-0">
+                View All
+              </Button>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {otherMembers.map((m) => (
+                <OtherMemberCard key={m._id} member={m} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

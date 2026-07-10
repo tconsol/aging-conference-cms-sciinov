@@ -1,4 +1,5 @@
 const Testimonial = require('../models/Testimonial');
+const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -19,22 +20,41 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const t = await Testimonial.create(req.body);
+    const data = { ...req.body };
+    if (req.file) {
+      const dest = gcsFilename('aging-congress/testimonials', req.file.mimetype, req.file.originalname);
+      const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });
+      data.photo = result.url;
+      data.photoPublicId = result.filename;
+    }
+    const t = await Testimonial.create(data);
     res.status(201).json({ success: true, data: t });
   } catch (err) { next(err); }
 };
 
 exports.update = async (req, res, next) => {
   try {
-    const t = await Testimonial.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!t) return res.status(404).json({ success: false, message: 'Testimonial not found.' });
+    const testimonial = await Testimonial.findById(req.params.id);
+    if (!testimonial) return res.status(404).json({ success: false, message: 'Testimonial not found.' });
+    const data = { ...req.body };
+    if (req.file) {
+      if (testimonial.photoPublicId) await deleteFromGCS(testimonial.photoPublicId);
+      const dest = gcsFilename('aging-congress/testimonials', req.file.mimetype, req.file.originalname);
+      const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });
+      data.photo = result.url;
+      data.photoPublicId = result.filename;
+    }
+    const t = await Testimonial.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
     res.json({ success: true, data: t });
   } catch (err) { next(err); }
 };
 
 exports.remove = async (req, res, next) => {
   try {
-    await Testimonial.findByIdAndDelete(req.params.id);
+    const testimonial = await Testimonial.findById(req.params.id);
+    if (!testimonial) return res.status(404).json({ success: false, message: 'Testimonial not found.' });
+    if (testimonial.photoPublicId) await deleteFromGCS(testimonial.photoPublicId);
+    await testimonial.deleteOne();
     res.json({ success: true, message: 'Testimonial deleted.' });
   } catch (err) { next(err); }
 };

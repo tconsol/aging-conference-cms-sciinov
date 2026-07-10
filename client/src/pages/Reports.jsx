@@ -43,19 +43,24 @@ export default function Reports() {
                   key={report._id}
                   className="bg-white rounded-lg border border-slate-100 shadow-sm p-6 hover:shadow-md hover:border-teal-100 transition-all flex flex-col"
                 >
-                  <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
-                    <FileText size={22} className="text-teal-700" />
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-1">{report.title}</h3>
-                  {report.edition && (
-                    <p className="text-xs text-teal-600 font-medium mb-2">{report.edition?.name ?? report.edition}</p>
+                  {report.coverImage ? (
+                    <img
+                      src={report.coverImage}
+                      alt={report.title}
+                      className="w-full aspect-[16/9] object-cover rounded-lg mb-4"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
+                      <FileText size={22} className="text-teal-700" />
+                    </div>
                   )}
+                  <h3 className="font-bold text-slate-900 mb-1">{report.title}</h3>
                   {report.description && (
                     <p className="text-sm text-slate-600 mb-4 leading-relaxed flex-1">{report.description}</p>
                   )}
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                    {report.publishedAt && (
-                      <span className="text-xs text-slate-400">{formatDateShort(report.publishedAt)}</span>
+                    {report.createdAt && (
+                      <span className="text-xs text-slate-400">{formatDateShort(report.createdAt)}</span>
                     )}
                     {report.fileUrl ? (
                       <a

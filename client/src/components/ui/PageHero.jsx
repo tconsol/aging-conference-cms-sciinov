@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function PageHero({ title, subtitle, breadcrumb = [] }) {
   return (
     <section className="relative bg-slate-950 pt-24 pb-16 overflow-hidden">
@@ -20,9 +22,9 @@ export default function PageHero({ title, subtitle, breadcrumb = [] }) {
               <span key={i} className="flex items-center gap-2">
                 {i > 0 && <span className="text-slate-600">/</span>}
                 {b.href ? (
-                  <a href={b.href} className="hover:text-teal-400 transition-colors">
+                  <Link to={b.href} className="hover:text-teal-400 transition-colors">
                     {b.label}
-                  </a>
+                  </Link>
                 ) : (
                   <span className="text-white">{b.label}</span>
                 )}

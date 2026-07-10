@@ -1,7 +1,111 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, User, ChevronDown } from 'lucide-react';
+import { Menu, LogOut, User, ChevronDown, Search, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { NAV_SEARCH_INDEX } from '../../config/navGroups';
+
+function NavSearch() {
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const ref = useRef(null);
+  const inputRef = useRef(null);
+
+  const results = query.trim()
+    ? NAV_SEARCH_INDEX.filter((item) =>
+        item.label.toLowerCase().includes(query.trim().toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  useEffect(() => { setActiveIndex(0); }, [query]);
+
+  const goTo = (item) => {
+    navigate(item.href);
+    setQuery('');
+    setOpen(false);
+    inputRef.current?.blur();
+  };
+
+  const onKeyDown = (e) => {
+    if (!open || results.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % results.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((i) => (i - 1 + results.length) % results.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      goTo(results[activeIndex]);
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+      inputRef.current?.blur();
+    }
+  };
+
+  return (
+    <div className="relative hidden md:block w-64" ref={ref}>
+      <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={onKeyDown}
+        placeholder="Quick search..."
+        className="w-full h-9 pl-9 pr-8 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 focus:bg-white transition-colors"
+      />
+      {query && (
+        <button
+          onClick={() => { setQuery(''); inputRef.current?.focus(); }}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        >
+          <X size={14} />
+        </button>
+      )}
+
+      {open && query.trim() && (
+        <div
+          className="absolute left-0 right-0 mt-1.5 bg-white rounded-lg overflow-hidden z-50"
+          style={{
+            border: '1px solid #e2e8f0',
+            borderTop: '2px solid #0f766e',
+            boxShadow: '0 8px 24px rgba(15,118,110,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          {results.length === 0 ? (
+            <div className="px-4 py-3 text-sm text-slate-400 text-center">No matching pages</div>
+          ) : (
+            results.map((item, i) => (
+              <button
+                key={item.href}
+                onClick={() => goTo(item)}
+                onMouseEnter={() => setActiveIndex(i)}
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left text-sm transition-colors ${
+                  i === activeIndex ? 'bg-teal-50 text-teal-800' : 'text-slate-600'
+                }`}
+              >
+                <item.icon size={14} className="shrink-0 text-slate-400" />
+                <span className="flex-1 truncate">{item.label}</span>
+                <span className="text-xs text-slate-400 shrink-0">{item.group}</span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuth();
@@ -60,6 +164,11 @@ export default function Topbar({ onMenuClick }) {
         >
           Admin Panel
         </span>
+      </div>
+
+      {/* Quick search */}
+      <div className="ml-2 lg:ml-6">
+        <NavSearch />
       </div>
 
       {/* User dropdown */}

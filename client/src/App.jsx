@@ -29,6 +29,8 @@ import Partners from './pages/Partners';
 import Testimonials from './pages/Testimonials';
 import StaticPage from './pages/StaticPage';
 import Newsletter from './pages/Newsletter';
+import BecomeASpeaker from './pages/BecomeASpeaker';
+import Brochure from './pages/Brochure';
 
 export default function App() {
   return (
@@ -60,6 +62,8 @@ export default function App() {
         <Route path="/sponsorship" element={<Sponsorship />} />
         <Route path="/partners" element={<Partners />} />
         <Route path="/testimonials" element={<Testimonials />} />
+        <Route path="/become-a-speaker" element={<BecomeASpeaker />} />
+        <Route path="/brochure" element={<Brochure />} />
         <Route path="/guidelines" element={<StaticPage pageKey="guidelines" />} />
         <Route path="/publication-policy" element={<StaticPage pageKey="publication" />} />
         <Route path="/terms" element={<StaticPage pageKey="terms" />} />

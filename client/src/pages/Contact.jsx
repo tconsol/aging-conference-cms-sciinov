@@ -55,8 +55,8 @@ export default function Contact() {
     }
   };
 
-  const email = siteSettings?.email || 'contact@agingcongress.com';
-  const phone = siteSettings?.phone || null;
+  const email = siteSettings?.contactEmail || 'contact@agingcongress.com';
+  const phone = siteSettings?.contactPhone || null;
   const address = siteSettings?.address || null;
   const socialLinks = siteSettings?.socialLinks || {};
 

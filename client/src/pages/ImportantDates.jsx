@@ -65,11 +65,8 @@ export default function ImportantDates() {
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                             <div>
                               <h3 className={`font-bold text-base ${isPast ? 'text-slate-500' : 'text-slate-900'}`}>
-                                {d.title}
+                                {d.label}
                               </h3>
-                              {d.description && (
-                                <p className="text-sm text-slate-500 mt-1">{d.description}</p>
-                              )}
                             </div>
                             <div className="flex flex-col items-start sm:items-end gap-1 shrink-0">
                               <span className={`flex items-center gap-1.5 font-semibold text-sm ${isPast ? 'text-slate-400' : 'text-teal-700'}`}>

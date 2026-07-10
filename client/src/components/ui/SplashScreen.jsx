@@ -24,7 +24,7 @@ export default function SplashScreen() {
 
   if (!visible) return null;
 
-  const siteName = siteSettings?.site_name || 'congress';
+  const siteName = siteSettings?.siteName || 'Aging Congress';
 
   return (
     <div className={`splash-screen ${fadeOut ? 'splash-fade-out' : ''}`}>

@@ -13,6 +13,7 @@ const sponsorshipInquirySchema = new mongoose.Schema(
     phone: { type: String, trim: true },
     country: { type: String, trim: true },
     website: { type: String, trim: true },
+    sponsorshipInterest: { type: String, trim: true },
     message: String,
     status: {
       type: String,

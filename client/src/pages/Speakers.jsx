@@ -1,20 +1,25 @@
 ﻿import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import Spinner from '../components/ui/Spinner';
 import SectionHeader from '../components/ui/SectionHeader';
 import { peopleAPI } from '../api/people';
+import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 
 export default function Speakers() {
   const { activeEdition } = usecongress();
+  const [searchParams] = useSearchParams();
+  const editionParam = searchParams.get('edition');
   const [speakers, setSpeakers] = useState([]);
+  const [editionLabel, setEditionLabel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    const params = activeEdition?._id ? { edition: activeEdition._id } : {};
+    const editionId = editionParam || activeEdition?._id;
+    const params = editionId ? { edition: editionId, active: true } : { active: true };
     peopleAPI.getSpeakers(params)
       .then((res) => {
         const data = res.data?.data ?? res.data ?? [];
@@ -22,7 +27,21 @@ export default function Speakers() {
       })
       .catch(() => setSpeakers([]))
       .finally(() => setLoading(false));
-  }, [activeEdition]);
+  }, [editionParam, activeEdition]);
+
+  useEffect(() => {
+    if (!editionParam) {
+      setEditionLabel(null);
+      return;
+    }
+    congressAPI.getAll()
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        const match = Array.isArray(data) ? data.find((e) => e._id === editionParam) : null;
+        setEditionLabel(match ? `${match.year} ${match.city}` : null);
+      })
+      .catch(() => setEditionLabel(null));
+  }, [editionParam]);
 
   const filtered = speakers.filter((s) => {
     if (!query) return true;
@@ -37,8 +56,8 @@ export default function Speakers() {
   return (
     <div>
       <PageHero
-        title="Speakers"
-        subtitle="Meet the world-leading experts presenting at this year's Aging congress."
+        title={editionLabel ? `Speakers — ${editionLabel}` : 'Speakers'}
+        subtitle="Meet the world-leading experts presenting at the Aging congress."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Speakers' }]}
       />
 

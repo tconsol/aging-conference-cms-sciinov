@@ -6,4 +6,5 @@ export const peopleAPI = {
   getCommittee: () => api.get('/committee', { params: { active: true } }),
   getCommitteeMember: (id) => api.get(`/committee/${id}`),
   getOrganizers: () => api.get('/organizers', { params: { active: true } }),
+  applyToSpeak: (data) => api.post('/speaker-applications/submit', data),
 };

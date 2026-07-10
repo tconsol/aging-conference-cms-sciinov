@@ -52,7 +52,7 @@ export default function Testimonials() {
                     ))}
                   </div>
                   <p className="text-slate-600 text-sm leading-relaxed flex-1 mb-5">
-                    "{t.message || t.content}"
+                    "{t.message}"
                   </p>
                   <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
                     {t.photo ? (
@@ -64,8 +64,8 @@ export default function Testimonials() {
                     )}
                     <div>
                       <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                      {(t.role || t.institution) && (
-                        <p className="text-xs text-slate-500">{[t.role, t.institution].filter(Boolean).join(', ')}</p>
+                      {(t.designation || t.country) && (
+                        <p className="text-xs text-slate-500">{[t.designation, t.country].filter(Boolean).join(', ')}</p>
                       )}
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, File, X } from 'lucide-react';
+import { Upload, File as FileIcon } from 'lucide-react';
 
 export default function FileUpload({
   label,
@@ -36,7 +36,7 @@ export default function FileUpload({
       <label className="cursor-pointer group">
         <input type="file" accept={accept} className="hidden" {...inputProps} />
         <div className="flex items-center gap-3 h-10 px-3 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 group-hover:border-blue-400 transition-colors">
-          <File size={16} className="text-slate-400 flex-shrink-0" />
+          <FileIcon size={16} className="text-slate-400 flex-shrink-0" />
           <span className="text-sm text-slate-500 flex-1 truncate">
             {fileName || currentFile || 'Click to select file'}
           </span>
