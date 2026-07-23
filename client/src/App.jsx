@@ -24,6 +24,7 @@ import Reports from './pages/Reports';
 import Downloads from './pages/Downloads';
 import Contact from './pages/Contact';
 import Help from './pages/Help';
+import SupportTickets from './pages/SupportTickets';
 import Sponsorship from './pages/Sponsorship';
 import Partners from './pages/Partners';
 import Testimonials from './pages/Testimonials';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/downloads" element={<Downloads />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/help" element={<Help />} />
+        <Route path="/support-tickets" element={<SupportTickets />} />
         <Route path="/sponsorship" element={<Sponsorship />} />
         <Route path="/partners" element={<Partners />} />
         <Route path="/testimonials" element={<Testimonials />} />

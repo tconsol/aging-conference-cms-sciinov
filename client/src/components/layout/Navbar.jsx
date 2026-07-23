@@ -24,6 +24,7 @@ const BASE_NAV_ITEMS = [
     children: [
       { label: 'Scientific Sessions', to: '/sessions' },
       { label: 'Scientific Program', to: '/program' },
+      { label: 'Submit Abstract', to: '/abstract-submission' },
       { label: 'Brochure Download', to: '/brochure' },
       { label: 'Partners', to: '/partners' },
     ],
@@ -42,9 +43,22 @@ const BASE_NAV_ITEMS = [
       { label: 'Past Events', to: '/editions?status=past' },
     ],
   },
-  { label: 'Submit Abstract', to: '/abstract-submission' },
-  { label: 'Help & Support', to: '/help' },
-  { label: 'Registration', to: '/registration' },
+  {
+    label: 'Help & Support',
+    children: [
+      { label: 'FAQs', to: '/help' },
+      { label: 'Support Tickets', to: '/support-tickets' },
+      { label: 'Contact Us', to: '/contact' },
+    ],
+  },
+  {
+    label: 'Others',
+    children: [
+      { label: 'Testimonials', to: '/testimonials' },
+      { label: 'Newsletter', to: '/newsletter' },
+      { label: 'Terms & Conditions', to: '/terms' },
+    ],
+  },
 ];
 
 function DropdownMenu({ items, isOpen }) {

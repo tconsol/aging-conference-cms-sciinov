@@ -1,21 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
 import * as LucideIcons from 'lucide-react';
-import { Plus, Search, Send, CheckCircle, LifeBuoy, HelpCircle, MessageCircleQuestion } from 'lucide-react';
+import { Plus, Search, LifeBuoy, HelpCircle } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
-import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
 import Button from '../components/ui/Button';
 import { contactAPI } from '../api/contact';
-import { getErrorMessage } from '../utils/helpers';
-
-const INPUT_CLS =
-  'w-full h-11 px-4 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white';
-const TEXTAREA_CLS =
-  'w-full px-4 py-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white';
-const LABEL_CLS = 'block text-sm font-semibold text-slate-700 mb-1.5';
-const ERROR_CLS = 'text-xs text-red-500 mt-1';
 
 function toPascalCase(str) {
   return str.split(/[-_\s]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('');
@@ -70,15 +59,6 @@ export default function Help() {
   const [faqsLoading, setFaqsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openFaqId, setOpenFaqId] = useState(null);
-  const [ticketSubmitted, setTicketSubmitted] = useState(false);
-  const [ticketSubmitting, setTicketSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm();
 
   useEffect(() => {
     contactAPI
@@ -90,25 +70,6 @@ export default function Help() {
       .catch(() => setFaqs([]))
       .finally(() => setFaqsLoading(false));
   }, []);
-
-  const onTicketSubmit = async (data) => {
-    setTicketSubmitting(true);
-    try {
-      await contactAPI.submitTicket({
-        name: data.name,
-        email: data.email,
-        subject: data.subject,
-        message: data.message,
-      });
-      setTicketSubmitted(true);
-      reset();
-      toast.success('Support ticket submitted! We will respond shortly.');
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setTicketSubmitting(false);
-    }
-  };
 
   // Group FAQs by topic, falling back to a "General Queries" bucket for topicless FAQs
   const topicMap = new Map();
@@ -139,9 +100,9 @@ export default function Help() {
   return (
     <div>
       <PageHero
-        title="Help & Support"
+        title="FAQs"
         subtitle="Your questions answered — everything you need to know about the Aging congress."
-        breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Help & Support' }]}
+        breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Help & Support' }, { label: 'FAQs' }]}
       />
 
       {/* Search + Popular Topics */}
@@ -260,98 +221,18 @@ export default function Help() {
         </div>
       </section>
 
-      {/* Support Ticket Section */}
+      {/* Still need help CTA */}
       <section className="section-padding bg-stone-50">
         <div className="container-custom">
-          <div className="max-w-2xl mx-auto">
-            <SectionHeader
-              label="Support"
-              title="Still need help? Submit a support request"
-              subtitle="Our team typically responds within one business day."
-            />
-
-            {ticketSubmitted ? (
-              <div className="flex flex-col items-start gap-4 bg-white border border-teal-200 rounded-2xl p-8">
-                <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle size={24} className="text-teal-700" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 mb-1">Ticket Submitted!</h3>
-                  <p className="text-slate-600 text-sm">
-                    We've received your request and will follow up via email shortly.
-                  </p>
-                </div>
-                <Button variant="outline" onClick={() => setTicketSubmitted(false)}>
-                  Submit Another Request
-                </Button>
-              </div>
-            ) : (
-              <div className="bg-white border border-stone-200 rounded-2xl p-6 lg:p-8">
-                <div className="flex items-center gap-3 border-b border-stone-200 pb-4 mb-6">
-                  <div className="w-9 h-9 bg-teal-50 rounded-lg flex items-center justify-center shrink-0">
-                    <MessageCircleQuestion size={18} className="text-teal-700" />
-                  </div>
-                  <p className="text-lg font-black text-slate-900">Support Request</p>
-                </div>
-                <form onSubmit={handleSubmit(onTicketSubmit)} className="flex flex-col gap-5">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className={LABEL_CLS}>Full Name *</label>
-                      <input
-                        {...register('name', { required: 'Name is required' })}
-                        placeholder="Your full name"
-                        className={INPUT_CLS}
-                      />
-                      {errors.name && <p className={ERROR_CLS}>{errors.name.message}</p>}
-                    </div>
-                    <div>
-                      <label className={LABEL_CLS}>Email Address *</label>
-                      <input
-                        type="email"
-                        {...register('email', {
-                          required: 'Email is required',
-                          pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
-                        })}
-                        placeholder="you@example.com"
-                        className={INPUT_CLS}
-                      />
-                      {errors.email && <p className={ERROR_CLS}>{errors.email.message}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={LABEL_CLS}>Subject *</label>
-                    <input
-                      {...register('subject', { required: 'Subject is required' })}
-                      placeholder="Briefly describe your issue"
-                      className={INPUT_CLS}
-                    />
-                    {errors.subject && <p className={ERROR_CLS}>{errors.subject.message}</p>}
-                  </div>
-
-                  <div>
-                    <label className={LABEL_CLS}>Message *</label>
-                    <textarea
-                      {...register('message', {
-                        required: 'Message is required',
-                        minLength: { value: 10, message: 'Please provide more detail' },
-                      })}
-                      rows={5}
-                      placeholder="Describe your issue in detail..."
-                      className={TEXTAREA_CLS}
-                    />
-                    {errors.message && <p className={ERROR_CLS}>{errors.message.message}</p>}
-                  </div>
-
-                  <div>
-                    <Button type="submit" variant="primary" size="lg" loading={ticketSubmitting}>
-                      <Send size={16} />
-                      Submit Ticket
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            )}
+          <div className="max-w-2xl mx-auto text-center bg-white border border-stone-200 rounded-2xl p-10">
+            <LifeBuoy size={32} className="text-teal-600 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-slate-900 mb-2">Still need help?</h3>
+            <p className="text-slate-600 text-sm mb-6">
+              Can't find what you're looking for? Submit a support ticket and our team will respond within one business day.
+            </p>
+            <Button to="/support-tickets" variant="primary">
+              Submit a Support Ticket
+            </Button>
           </div>
         </div>
       </section>

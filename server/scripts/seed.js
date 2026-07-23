@@ -21,6 +21,14 @@ const Download           = require('../models/Download');
 const Brochure           = require('../models/Brochure');
 const Testimonial        = require('../models/Testimonial');
 const FAQ                = require('../models/FAQ');
+const FAQTopic           = require('../models/FAQTopic');
+const Abstract           = require('../models/Abstract');
+const Registration       = require('../models/Registration');
+const ContactMessage     = require('../models/ContactMessage');
+const SupportTicket      = require('../models/SupportTicket');
+const SpeakerApplication = require('../models/SpeakerApplication');
+const SponsorshipInquiry = require('../models/SponsorshipInquiry');
+const NewsletterSubscriber = require('../models/NewsletterSubscriber');
 
 const FORCE = process.argv.includes('--force');
 
@@ -33,7 +41,9 @@ async function clearAll() {
     Admin, SiteSettings, StaticPage, Edition, ScientificSession,
     Speaker, CommitteeMember, Organizer, Venue, ImportantDate,
     ProgramSlot, PricingTier, Partner, NewsArticle, Report,
-    Download, Brochure, Testimonial, FAQ,
+    Download, Brochure, Testimonial, FAQ, FAQTopic, Abstract,
+    Registration, ContactMessage, SupportTicket, SpeakerApplication,
+    SponsorshipInquiry, NewsletterSubscriber,
   ];
   for (const M of models) {
     await M.deleteMany({});
