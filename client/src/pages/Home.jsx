@@ -52,7 +52,7 @@ const FEATURES = [
 ];
 
 export default function Home() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, loading: congressLoading } = usecongress();
   const [speakers, setSpeakers] = useState([]);
   const [news, setNews] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -61,6 +61,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (congressLoading) return;
     const editionId = activeEdition?._id;
     Promise.all([
       peopleAPI.getSpeakers({ featured: true, limit: 6 }).catch(() => ({ data: { data: [] } })),
@@ -103,7 +104,7 @@ export default function Home() {
       );
       setVenue(venueRes.data?.data ?? venueRes.data ?? null);
     }).finally(() => setLoading(false));
-  }, [activeEdition]);
+  }, [activeEdition, congressLoading]);
 
   const congressDate = activeEdition?.startDate || activeEdition?.date;
 

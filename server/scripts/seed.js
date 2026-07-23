@@ -357,7 +357,7 @@ async function seedProgram(edition, speakers) {
 // ─────────────────────────────────────────────
 async function seedPricing(edition) {
   section('Seeding pricing tiers...');
-  await PricingTier.insertMany([
+  const tiers = await PricingTier.insertMany([
     {
       edition: edition._id,
       name: 'early_bird',
@@ -387,6 +387,7 @@ async function seedPricing(edition) {
     },
   ]);
   log('3 pricing tiers: early_bird ($450), mid_term ($600), on_spot ($750)');
+  return tiers;
 }
 
 // ─────────────────────────────────────────────
@@ -645,63 +646,219 @@ async function seedTestimonials() {
 }
 
 // ─────────────────────────────────────────────
-// 19. FAQs
+// 19. FAQ TOPICS
 // ─────────────────────────────────────────────
-async function seedFAQs() {
+async function seedFAQTopics() {
+  section('Seeding FAQ topics...');
+  const topics = await FAQTopic.insertMany([
+    { name: 'About the congress',           subtitle: 'General information about the event.',            icon: 'info',        displayOrder: 1, isActive: true },
+    { name: 'Abstract Submission',            subtitle: 'Submitting and presenting your research.',        icon: 'file-text',   displayOrder: 2, isActive: true },
+    { name: 'Registration & Pricing',         subtitle: 'Fees, discounts, and cancellation policy.',        icon: 'credit-card', displayOrder: 3, isActive: true },
+    { name: 'Attending & Virtual Access',     subtitle: 'In-person and virtual attendance options.',        icon: 'video',       displayOrder: 4, isActive: true },
+    { name: 'Sponsorship & Exhibits',         subtitle: 'Partnering with the Aging congress.',              icon: 'users',       displayOrder: 5, isActive: true },
+  ]);
+  log(`${topics.length} FAQ topics created`);
+  return topics;
+}
+
+// ─────────────────────────────────────────────
+// 20. FAQs
+// ─────────────────────────────────────────────
+async function seedFAQs(topics) {
   section('Seeding FAQs...');
+  const [about, abstract, pricing, attending, sponsorship] = topics;
   await FAQ.insertMany([
     {
+      topic: about._id,
       question: 'What is the Aging congress?',
       answer: 'The Aging congress is an annual international scientific congress dedicated to advancing the understanding of biological aging, geroscience, and longevity medicine. It brings together researchers, clinicians, and policymakers from over 45 countries.',
       displayOrder: 1,
     },
     {
+      topic: abstract._id,
       question: 'Who can submit an abstract?',
       answer: 'Any researcher including graduate students, postdoctoral fellows, and faculty may submit an abstract. Work must be original and not previously published in full. Each corresponding author may submit up to 2 abstracts.',
       displayOrder: 2,
     },
     {
+      topic: abstract._id,
       question: 'What are the abstract submission requirements?',
       answer: 'Abstracts must be 250–400 words, written in English, and follow the IMRaD structure (Introduction, Methods, Results, and Discussion/Conclusion). Files must be submitted as PDF or Word documents (max 20MB). No tables or figures in the abstract body.',
       displayOrder: 3,
     },
     {
+      topic: abstract._id,
       question: 'What presentation formats are available?',
       answer: 'We offer four formats: Oral In-Person (15 min + 5 min Q&A), Poster In-Person (printed A0 poster), Virtual Oral (12 min pre-recorded video + live Q&A), and Virtual Poster. You select your preferred format during submission.',
       displayOrder: 4,
     },
     {
+      topic: abstract._id,
       question: 'When will I receive notification of acceptance?',
       answer: 'All submitters will receive an acceptance or rejection notification by August 15th, 2025. Notifications are sent to the corresponding author\'s email address provided during submission.',
       displayOrder: 5,
     },
     {
+      topic: pricing._id,
       question: 'Is there a student discount?',
       answer: 'Yes. A student registration category is available at a significantly reduced rate ($150 early bird). Proof of current enrollment (valid student ID or enrollment letter) must be uploaded during registration.',
       displayOrder: 6,
     },
     {
+      topic: attending._id,
       question: 'Can I attend virtually?',
       answer: 'Yes. All plenary sessions, keynote addresses, and selected scientific sessions will be live-streamed. Virtual registrants receive access to the live stream, recordings (for 30 days post-congress), and the digital proceedings.',
       displayOrder: 7,
     },
     {
+      topic: pricing._id,
       question: 'What is the cancellation and refund policy?',
       answer: 'Cancellations received more than 30 days before the congress start date will receive a full refund minus a $50 processing fee. Cancellations within 30 days of the congress are non-refundable. Substitutions are permitted up to 7 days before the event.',
       displayOrder: 8,
     },
     {
+      topic: pricing._id,
       question: 'Are visa invitation letters provided?',
       answer: 'Yes. After completing registration, you may request an official visa invitation letter from your registration confirmation page. Letters are issued within 3–5 business days and are sent to the email address on file.',
       displayOrder: 9,
     },
     {
+      topic: sponsorship._id,
       question: 'How do I apply for sponsorship or exhibition space?',
       answer: 'Please visit our Sponsorship page to review tier options and submit an inquiry. Our partnerships team will respond within 3 business days. Exhibition space is allocated on a first-come, first-served basis.',
       displayOrder: 10,
     },
   ]);
-  log('10 FAQs created');
+  log('10 FAQs created (linked to 5 topics)');
+}
+
+// ─────────────────────────────────────────────
+// 21. ABSTRACT SUBMISSIONS
+// ─────────────────────────────────────────────
+async function seedAbstracts(edition, sessions) {
+  section('Seeding abstract submissions...');
+  const [molecular, senolytics, neuro, cardio, metabolic, oncology, frailty, ai] = sessions;
+
+  await Abstract.insertMany([
+    { edition: edition._id, firstName: 'Mei',      lastName: 'Zhang',      email: 'mei.zhang@example.edu',      phone: '+86 138 0013 8000', country: 'China',       organization: 'Peking University',            presentationType: 'oral_inperson',   topic: molecular._id,  abstractTitle: 'Telomerase Reactivation Reverses Senescence Markers in Aged Fibroblasts', abstractText: 'This study examines the effects of controlled telomerase reactivation on senescence-associated markers in primary human fibroblasts derived from aged donors, demonstrating measurable reductions in p16INK4a expression and improved proliferative capacity.', keywords: 'telomerase, senescence, fibroblasts', coAuthors: 'Li Wei, Chen Yu', status: 'approved',    submittedAt: new Date('2025-05-12') },
+    { edition: edition._id, firstName: 'Daniel',   lastName: 'Okafor',     email: 'd.okafor@example.edu',       phone: '+234 803 555 0192', country: 'Nigeria',     organization: 'University of Lagos',          presentationType: 'poster_inperson', topic: senolytics._id, abstractTitle: 'Dasatinib and Quercetin Combination Therapy in a Murine Model of Age-Related Frailty', abstractText: 'We evaluated the senolytic combination of dasatinib and quercetin in aged mice, observing significant improvements in grip strength, gait speed, and reductions in circulating senescence-associated secretory phenotype (SASP) factors.', keywords: 'senolytics, frailty, SASP', coAuthors: 'Adaeze Nwosu', status: 'approved',   submittedAt: new Date('2025-05-18') },
+    { edition: edition._id, firstName: 'Sophia',   lastName: 'Mueller',    email: 'sophia.mueller@example.edu', phone: '+49 30 1234 5678',  country: 'Germany',     organization: 'Charité Berlin',               presentationType: 'oral_virtual',    topic: neuro._id,      abstractTitle: 'Tau Propagation Dynamics Across Cortical Regions in Early-Stage Alzheimer\'s Disease', abstractText: 'Using longitudinal PET imaging, we mapped the spread of tau pathology across cortical networks in a cohort of 84 patients with early-stage Alzheimer\'s disease, identifying novel predictive biomarkers of progression rate.', keywords: 'tau, Alzheimer\'s, PET imaging', coAuthors: 'Hans Richter, Anna Fischer', status: 'under_review', submittedAt: new Date('2025-06-02') },
+    { edition: edition._id, firstName: 'Carlos',   lastName: 'Reyes',      email: 'carlos.reyes@example.edu',   phone: '+52 55 1234 5678',  country: 'Mexico',      organization: 'UNAM',                          presentationType: 'poster_virtual',  topic: cardio._id,     abstractTitle: 'Arterial Stiffness as a Predictor of Cardiovascular Events in Octogenarians', abstractText: 'A prospective cohort study of 312 octogenarians examining pulse wave velocity as a predictive marker for major adverse cardiovascular events over a 5-year follow-up period.', keywords: 'arterial stiffness, cardiovascular risk, octogenarians', coAuthors: '', status: 'pending', submittedAt: new Date('2025-06-20') },
+    { edition: edition._id, firstName: 'Priya',    lastName: 'Sharma',     email: 'priya.sharma@example.edu',   phone: '+91 98765 43210',   country: 'India',       organization: 'AIIMS New Delhi',              presentationType: 'oral_inperson',   topic: metabolic._id,  abstractTitle: 'Caloric Restriction Mimetics and AMPK Activation in Skeletal Muscle Aging', abstractText: 'We investigated the effects of a novel AMPK-activating compound on mitochondrial biogenesis and insulin sensitivity in skeletal muscle biopsies from healthy older adults undergoing a 12-week intervention.', keywords: 'AMPK, caloric restriction, muscle aging', coAuthors: 'Rajesh Kumar', status: 'approved', submittedAt: new Date('2025-05-25') },
+    { edition: edition._id, firstName: 'Olumide',  lastName: 'Adeyemi',    email: 'o.adeyemi@example.edu',      phone: '+234 802 555 0147', country: 'Nigeria',     organization: 'University of Ibadan',         presentationType: 'poster_inperson', topic: oncology._id,   abstractTitle: 'Immunosenescence and Response to Checkpoint Inhibitor Therapy in Elderly Cancer Patients', abstractText: 'Retrospective analysis of 156 elderly patients receiving PD-1/PD-L1 checkpoint inhibitors, correlating markers of immunosenescence with treatment response and progression-free survival.', keywords: 'immunosenescence, checkpoint inhibitors, geriatric oncology', coAuthors: 'Folake Bello', status: 'rejected', adminNotes: 'Sample size too small for the claimed statistical power; encourage resubmission with expanded cohort.', submittedAt: new Date('2025-06-10') },
+    { edition: edition._id, firstName: 'Isabella', lastName: 'Conti',      email: 'isabella.conti@example.edu', phone: '+39 06 1234 5678',  country: 'Italy',       organization: 'Sapienza University of Rome',  presentationType: 'oral_virtual',    topic: frailty._id,    abstractTitle: 'Resistance Training Protocols for Sarcopenia Reversal in Community-Dwelling Older Adults', abstractText: 'A randomized controlled trial comparing two resistance training protocols in 210 community-dwelling adults aged 70+, measuring changes in appendicular lean mass, gait speed, and SPPB scores.', keywords: 'sarcopenia, resistance training, frailty', coAuthors: 'Marco Bianchi, Giulia Russo', status: 'approved', submittedAt: new Date('2025-05-30') },
+    { edition: edition._id, firstName: 'Wei',      lastName: 'Tan',        email: 'wei.tan@example.edu',        phone: '+65 6123 4567',     country: 'Singapore',   organization: 'National University of Singapore', presentationType: 'oral_inperson', topic: ai._id,        abstractTitle: 'Deep Learning-Based Biological Age Prediction from Retinal Fundus Images', abstractText: 'We trained a convolutional neural network on 45,000 retinal fundus images to predict biological age, achieving a mean absolute error of 3.2 years and identifying accelerated aging in diabetic subgroups.', keywords: 'deep learning, biological age, retinal imaging', coAuthors: 'Hui Ling Koh', status: 'approved', submittedAt: new Date('2025-06-05') },
+    { edition: edition._id, firstName: 'Amina',    lastName: 'Diallo',     email: 'amina.diallo@example.edu',   phone: '+221 77 123 4567',  country: 'Senegal',     organization: 'Cheikh Anta Diop University',  presentationType: 'poster_virtual',  topic: molecular._id,  abstractTitle: 'Epigenetic Clock Acceleration Associated with Chronic Psychosocial Stress in West African Cohorts', abstractText: 'Using the GrimAge epigenetic clock, we assessed biological age acceleration in a cohort of 198 adults exposed to varying levels of chronic psychosocial stress, finding significant associations with cortisol dysregulation.', keywords: 'epigenetic clock, stress, GrimAge', coAuthors: 'Fatou Ndiaye', status: 'under_review', submittedAt: new Date('2025-06-25') },
+    { edition: edition._id, firstName: 'Robert',   lastName: 'Hayes',      email: 'robert.hayes@example.edu',   phone: '+1 617 555 0134',   country: 'USA',         organization: 'Boston University',            presentationType: 'oral_inperson',   topic: metabolic._id,  abstractTitle: 'NAD+ Precursor Supplementation and Mitochondrial Function in Aged Human Skeletal Muscle', abstractText: 'A double-blind placebo-controlled trial of nicotinamide riboside supplementation in 96 older adults, assessing changes in mitochondrial respiratory capacity via high-resolution respirometry.', keywords: 'NAD+, mitochondria, nicotinamide riboside', coAuthors: 'Jennifer Walsh', status: 'pending', submittedAt: new Date('2025-06-28') },
+    { edition: edition._id, firstName: 'Hana',     lastName: 'Kobayashi',  email: 'hana.kobayashi@example.edu', phone: '+81 3 1234 5678',   country: 'Japan',       organization: 'University of Tokyo',          presentationType: 'poster_inperson', topic: neuro._id,      abstractTitle: 'Gut Microbiome Composition and Cognitive Decline Trajectories in a Longitudinal Japanese Cohort', abstractText: 'We characterized gut microbiome diversity in 267 participants over a 6-year longitudinal study, identifying specific taxa associated with slower rates of cognitive decline.', keywords: 'gut microbiome, cognitive decline, longitudinal study', coAuthors: 'Takeshi Yamamoto', status: 'approved', submittedAt: new Date('2025-06-08') },
+    { edition: edition._id, firstName: 'Emma',     lastName: 'Johansson',  email: 'emma.johansson@example.edu', phone: '+46 8 123 456',     country: 'Sweden',      organization: 'Karolinska Institute',         presentationType: 'oral_virtual',    topic: cardio._id,     abstractTitle: 'Sex Differences in Vascular Aging Trajectories: A 20-Year Population Cohort Analysis', abstractText: 'Analysis of vascular aging biomarkers across sex in a 20-year population-based cohort of 4,200 participants, revealing divergent trajectories in arterial elasticity post-menopause.', keywords: 'vascular aging, sex differences, cohort study', coAuthors: 'Erik Lindgren', status: 'under_review', submittedAt: new Date('2025-07-01') },
+  ]);
+  log('12 abstract submissions created (mixed statuses)');
+}
+
+// ─────────────────────────────────────────────
+// 22. REGISTRATIONS
+// ─────────────────────────────────────────────
+async function seedRegistrations(edition, pricingTiers) {
+  section('Seeding registrations...');
+  const earlyBird = pricingTiers.find((t) => t.name === 'early_bird');
+
+  await Registration.insertMany([
+    { edition: edition._id, firstName: 'Grace',    lastName: 'Kim',        email: 'grace.kim@example.edu',        phone: '+82 2 1234 5678',   country: 'South Korea', organization: 'Seoul National University',    category: 'oral_inperson',      attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.oral_inperson,      paymentStatus: 'confirmed', transactionId: 'TXN-84021', registeredAt: new Date('2025-05-14') },
+    { edition: edition._id, firstName: 'Thabo',    lastName: 'Nkosi',      email: 'thabo.nkosi@example.edu',      phone: '+27 11 123 4567',   country: 'South Africa', organization: 'University of Cape Town',     category: 'poster_inperson',    attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.poster_inperson,    paymentStatus: 'confirmed', transactionId: 'TXN-84055', registeredAt: new Date('2025-05-20') },
+    { edition: edition._id, firstName: 'Laura',    lastName: 'Bennett',    email: 'laura.bennett@example.com',    phone: '+1 415 555 0110',   country: 'USA',          organization: 'Independent Researcher',      category: 'listener_inperson',  attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.listener_inperson,  paymentStatus: 'confirmed', transactionId: 'TXN-84102', registeredAt: new Date('2025-06-01') },
+    { edition: edition._id, firstName: 'Yusuf',    lastName: 'Demir',      email: 'yusuf.demir@example.edu',      phone: '+90 212 123 4567',  country: 'Turkey',       organization: 'Istanbul University',         category: 'oral_virtual',       attendanceMode: 'virtual',   pricingTier: earlyBird._id, amount: earlyBird.prices.oral_virtual,       paymentStatus: 'pending',   registeredAt: new Date('2025-06-10') },
+    { edition: edition._id, firstName: 'Camille',  lastName: 'Laurent',    email: 'camille.laurent@example.edu',  phone: '+33 1 23 45 67 89',  country: 'France',       organization: 'Sorbonne Université',         category: 'poster_virtual',     attendanceMode: 'virtual',   pricingTier: earlyBird._id, amount: earlyBird.prices.poster_virtual,     paymentStatus: 'confirmed', transactionId: 'TXN-84167', registeredAt: new Date('2025-06-12') },
+    { edition: edition._id, firstName: 'Arjun',    lastName: 'Mehta',      email: 'arjun.mehta@example.com',      phone: '+91 22 1234 5678',  country: 'India',        organization: 'Tata Consultancy Services',   category: 'listener_virtual',   attendanceMode: 'virtual',   pricingTier: earlyBird._id, amount: earlyBird.prices.listener_virtual,   paymentStatus: 'confirmed', transactionId: 'TXN-84203', registeredAt: new Date('2025-06-15') },
+    { edition: edition._id, firstName: 'Zoe',      lastName: 'Papadopoulos', email: 'zoe.papadopoulos@example.edu', phone: '+30 21 0123 4567', country: 'Greece',      organization: 'National and Kapodistrian University of Athens', category: 'student', attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.student, paymentStatus: 'confirmed', transactionId: 'TXN-84240', registeredAt: new Date('2025-06-18') },
+    { edition: edition._id, firstName: 'Miguel',   lastName: 'Santos',     email: 'miguel.santos@example.edu',    phone: '+351 21 123 4567',  country: 'Portugal',     organization: 'University of Lisbon',        category: 'student',            attendanceMode: 'virtual',   pricingTier: earlyBird._id, amount: earlyBird.prices.student,            paymentStatus: 'pending',   registeredAt: new Date('2025-06-22') },
+    { edition: edition._id, firstName: 'Aisha',    lastName: 'Rahman',     email: 'aisha.rahman@example.edu',     phone: '+880 2 123 4567',   country: 'Bangladesh',   organization: 'University of Dhaka',         category: 'oral_inperson',      attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.oral_inperson,      paymentStatus: 'cancelled', notes: 'Attendee requested cancellation due to travel restrictions.', registeredAt: new Date('2025-05-28') },
+    { edition: edition._id, firstName: 'Noah',     lastName: 'Andersen',   email: 'noah.andersen@example.edu',    phone: '+47 22 12 34 56',   country: 'Norway',       organization: 'University of Oslo',          category: 'poster_inperson',    attendanceMode: 'in_person', pricingTier: earlyBird._id, amount: earlyBird.prices.poster_inperson,    paymentStatus: 'confirmed', transactionId: 'TXN-84298', registeredAt: new Date('2025-07-02') },
+  ]);
+  log('10 registrations created (mixed payment statuses)');
+}
+
+// ─────────────────────────────────────────────
+// 23. CONTACT MESSAGES
+// ─────────────────────────────────────────────
+async function seedContactMessages() {
+  section('Seeding contact messages...');
+  await ContactMessage.insertMany([
+    { name: 'Helena Brandt',   email: 'helena.brandt@example.com',   phone: '+49 89 123 4567',  subject: 'Invoice request for registration', message: 'Hello, could you please send an official invoice for my registration payment? I need it for my institution\'s reimbursement process. Thank you.', isRead: true,  submittedAt: new Date('2025-06-05') },
+    { name: 'Tomás Villanueva', email: 'tomas.villanueva@example.com', phone: '+34 91 123 4567', subject: 'Group registration discount inquiry', message: 'We have a group of 6 researchers from our department who would like to attend. Do you offer any group discounts for registrations of 5 or more?', isRead: true,  submittedAt: new Date('2025-06-10') },
+    { name: 'Ngozi Eze',        email: 'ngozi.eze@example.com',       phone: '+234 1 234 5678',  subject: 'Accessibility accommodations',    message: 'I use a wheelchair and wanted to confirm the venue is fully accessible, including the poster session hall and workshop rooms. Please advise.', isRead: false, submittedAt: new Date('2025-06-14') },
+    { name: 'Owen Fitzgerald',  email: 'owen.fitzgerald@example.com', phone: '+353 1 234 5678',  subject: 'Press / media accreditation',     message: 'I am a science journalist covering longevity research. Is press accreditation available for the congress, and what is the process to apply?', isRead: false, submittedAt: new Date('2025-06-19') },
+    { name: 'Ingrid Larsen',    email: 'ingrid.larsen@example.com',   phone: '+45 33 12 34 56',  subject: 'Hotel recommendations near venue', message: 'Could you recommend hotels within walking distance of the Boston Convention & Exhibition Center? Preferably in a moderate price range.', isRead: true,  submittedAt: new Date('2025-06-24') },
+    { name: 'Rahul Verma',      email: 'rahul.verma@example.com',     phone: '+91 11 2345 6789', subject: 'Abstract withdrawal request',     message: 'I need to withdraw my accepted abstract (submitted under my email) due to unforeseen circumstances. Please confirm once processed.', isRead: false, submittedAt: new Date('2025-07-01') },
+    { name: 'Beatriz Nunes',    email: 'beatriz.nunes@example.com',   phone: '+55 11 2345 6789', subject: 'Dietary requirements for gala dinner', message: 'I have a severe nut allergy. Could you confirm that this can be accommodated at the welcome reception and gala dinner?', isRead: false, submittedAt: new Date('2025-07-05') },
+    { name: 'Adrian Kowalski',  email: 'adrian.kowalski@example.com', phone: '+48 22 123 45 67', subject: 'Certificate of attendance format', message: 'Will the digital certificate of attendance include CME/CPD credit hours? My institution requires this for professional development records.', isRead: false, submittedAt: new Date('2025-07-10') },
+  ]);
+  log('8 contact messages created (mixed read status)');
+}
+
+// ─────────────────────────────────────────────
+// 24. SUPPORT TICKETS
+// ─────────────────────────────────────────────
+async function seedSupportTickets() {
+  section('Seeding support tickets...');
+  await SupportTicket.insertMany([
+    { name: 'Faisal Al-Sayed',  email: 'faisal.alsayed@example.com',  subject: 'Cannot upload abstract file', message: 'I keep getting an error when trying to upload my abstract PDF. The file is 8MB and in the correct format. Can you help me troubleshoot?', status: 'resolved',    submittedAt: new Date('2025-06-01') },
+    { name: 'Charlotte Dubois', email: 'charlotte.dubois@example.com', subject: 'Payment charged twice',      message: 'I was charged twice for my registration fee on my credit card statement. Please investigate and refund the duplicate charge.', status: 'in_progress', submittedAt: new Date('2025-06-08') },
+    { name: 'Kenji Watanabe',   email: 'kenji.watanabe@example.com',  subject: 'Unable to reset password',   message: 'The password reset email for my registration portal account never arrives, even after multiple attempts. My spam folder is also empty.', status: 'open',        submittedAt: new Date('2025-06-16') },
+    { name: 'Sofia Ricci',      email: 'sofia.ricci@example.com',     subject: 'Wrong presentation type selected', message: 'I accidentally selected "Poster" instead of "Oral" during submission. Is it possible to change this before the review deadline?', status: 'resolved', submittedAt: new Date('2025-06-21') },
+    { name: 'Benjamin Osei',    email: 'benjamin.osei@example.com',   subject: 'Confirmation email not received', message: 'I completed my registration payment successfully but never received a confirmation email. Can you resend it or confirm my registration status?', status: 'in_progress', submittedAt: new Date('2025-06-29') },
+    { name: 'Nadia Petrova',    email: 'nadia.petrova@example.com',   subject: 'Co-author cannot be added to abstract', message: 'The submission form only allows me to add 3 co-authors, but our paper has 5. Is there a way to add all co-authors?', status: 'open', submittedAt: new Date('2025-07-04') },
+  ]);
+  log('6 support tickets created (mixed statuses)');
+}
+
+// ─────────────────────────────────────────────
+// 25. SPEAKER APPLICATIONS
+// ─────────────────────────────────────────────
+async function seedSpeakerApplications(edition) {
+  section('Seeding speaker applications...');
+  await SpeakerApplication.insertMany([
+    { edition: edition._id, name: 'Dr. Henrik Lindqvist', email: 'henrik.lindqvist@example.edu', phone: '+46 8 765 4321',  country: 'Sweden',  organization: 'Uppsala University',        designation: 'Associate Professor of Molecular Biology', expertise: 'Cellular senescence, SASP biology', bio: 'Dr. Lindqvist leads a research group focused on the secretory phenotype of senescent cells and its role in age-related inflammation.', message: 'I would be honoured to present our recent findings on SASP modulation via novel small-molecule inhibitors.', status: 'shortlisted', submittedAt: new Date('2025-04-10') },
+    { edition: edition._id, name: 'Dr. Chidinma Eze',      email: 'chidinma.eze@example.edu',     phone: '+234 1 987 6543', country: 'Nigeria', organization: 'University of Nigeria',      designation: 'Senior Lecturer in Gerontology',           expertise: 'Frailty assessment in African populations', bio: 'Dr. Eze has conducted extensive fieldwork on frailty prevalence and risk factors across West African aging cohorts.', message: 'My talk would present the first large-scale frailty prevalence data from a Sub-Saharan African population.', status: 'approved', submittedAt: new Date('2025-04-15') },
+    { edition: edition._id, name: 'Prof. Isabelle Fontaine', email: 'isabelle.fontaine@example.edu', phone: '+33 4 12 34 56 78', country: 'France', organization: 'Université de Lyon',       designation: 'Professor of Neuroscience',                expertise: 'Neuroinflammation and cognitive aging',     bio: 'Prof. Fontaine studies the role of microglial activation in age-related cognitive decline using advanced imaging techniques.', message: 'I would like to propose a talk on our new PET tracer for imaging neuroinflammation in vivo.', status: 'pending', submittedAt: new Date('2025-05-02') },
+    { edition: edition._id, name: 'Dr. Sanjay Gupta',      email: 'sanjay.gupta@example.edu',     phone: '+91 80 1234 5678', country: 'India',   organization: 'Indian Institute of Science', designation: 'Assistant Professor',                      expertise: 'Mitochondrial dysfunction in aging',         bio: 'Dr. Gupta\'s lab investigates mitophagy pathways and their decline with age using C. elegans and mouse models.', message: 'I am interested in presenting a poster or short talk on our mitophagy screening platform.', status: 'pending', submittedAt: new Date('2025-05-20') },
+    { edition: edition._id, name: 'Dr. Rebecca Stone',     email: 'rebecca.stone@example.edu',    phone: '+1 212 555 0198',  country: 'USA',     organization: 'Columbia University',        designation: 'Assistant Professor of Medicine',          expertise: 'Clinical trials in geroscience-guided therapeutics', bio: 'Dr. Stone is the lead investigator on two ongoing Phase II trials of geroprotective compounds.', message: 'I would like to share interim results from our metformin-rapamycin combination trial.', status: 'rejected', submittedAt: new Date('2025-04-28') },
+    { edition: edition._id, name: 'Dr. Pieter van der Berg', email: 'pieter.vanderberg@example.edu', phone: '+31 20 123 4567', country: 'Netherlands', organization: 'Leiden University Medical Center', designation: 'Associate Professor of Epidemiology', expertise: 'Longevity genetics and population studies', bio: 'Dr. van der Berg co-directs the Leiden Longevity Study, one of Europe\'s largest family-based longevity cohorts.', message: 'I propose a plenary talk summarizing 20 years of findings from the Leiden Longevity Study.', status: 'shortlisted', submittedAt: new Date('2025-05-08') },
+  ]);
+  log('6 speaker applications created (mixed statuses)');
+}
+
+// ─────────────────────────────────────────────
+// 26. SPONSORSHIP INQUIRIES
+// ─────────────────────────────────────────────
+async function seedSponsorshipInquiries() {
+  section('Seeding sponsorship inquiries...');
+  await SponsorshipInquiry.insertMany([
+    { organizationName: 'Longevity Biotech Inc.',       contactPerson: 'Michael Torres',   email: 'michael.torres@longevitybiotech.example.com', phone: '+1 650 555 0142', country: 'USA',        website: 'https://longevitybiotech.example.com', sponsorshipInterest: 'Gold Tier Sponsorship', message: 'We are interested in exhibiting our senolytic drug pipeline and would like to discuss Gold tier benefits, including speaking slots.', status: 'follow_up', submittedAt: new Date('2025-05-05') },
+    { organizationName: 'GeroDx Diagnostics',           contactPerson: 'Sarah Whitfield',  email: 'sarah.whitfield@gerodx.example.com',           phone: '+1 415 555 0187', country: 'USA',        website: 'https://gerodx.example.com',           sponsorshipInterest: 'Exhibition Booth',       message: 'We would like a standard exhibition booth to showcase our epigenetic age testing kits to congress attendees.', status: 'closed',    submittedAt: new Date('2025-05-12') },
+    { organizationName: 'NutraLongevity Labs',          contactPerson: 'Anke Schmidt',     email: 'anke.schmidt@nutralongevity.example.com',       phone: '+49 40 123 4567', country: 'Germany',    website: 'https://nutralongevity.example.com',   sponsorshipInterest: 'Silver Tier Sponsorship', message: 'Interested in Silver tier sponsorship including branded materials in delegate bags. Please send the full prospectus.', status: 'new',       submittedAt: new Date('2025-06-01') },
+    { organizationName: 'Pacific Rim Health Ventures',  contactPerson: 'Jonathan Lee',     email: 'jonathan.lee@pacificrimhealth.example.com',     phone: '+65 6789 0123',  country: 'Singapore',  website: 'https://pacificrimhealth.example.com', sponsorshipInterest: 'Media Partnership',       message: 'We publish a healthy-aging investment newsletter and would like to discuss a media partnership in exchange for coverage.', status: 'read',       submittedAt: new Date('2025-06-09') },
+    { organizationName: 'ElderCare Robotics',           contactPerson: 'Priyanka Desai',   email: 'priyanka.desai@eldercarerobotics.example.com',  phone: '+91 22 6789 0123', country: 'India',      website: 'https://eldercarerobotics.example.com', sponsorshipInterest: 'Platinum Tier Sponsorship', message: 'Our assistive robotics company would like to explore Platinum sponsorship, including a live product demo session.', status: 'new', submittedAt: new Date('2025-06-15') },
+  ]);
+  log('5 sponsorship inquiries created (mixed statuses)');
+}
+
+// ─────────────────────────────────────────────
+// 27. NEWSLETTER SUBSCRIBERS
+// ─────────────────────────────────────────────
+async function seedNewsletterSubscribers() {
+  section('Seeding newsletter subscribers...');
+  await NewsletterSubscriber.insertMany([
+    { email: 'subscriber1@example.com',  subscribedAt: new Date('2025-03-05') },
+    { email: 'subscriber2@example.com',  subscribedAt: new Date('2025-03-18') },
+    { email: 'subscriber3@example.com',  subscribedAt: new Date('2025-04-02') },
+    { email: 'subscriber4@example.com',  subscribedAt: new Date('2025-04-20') },
+    { email: 'subscriber5@example.com',  subscribedAt: new Date('2025-05-11') },
+    { email: 'subscriber6@example.com',  subscribedAt: new Date('2025-05-29') },
+    { email: 'subscriber7@example.com',  subscribedAt: new Date('2025-06-14') },
+    { email: 'subscriber8@example.com',  subscribedAt: new Date('2025-07-02') },
+  ]);
+  log('8 newsletter subscribers created');
 }
 
 // ─────────────────────────────────────────────
@@ -743,14 +900,24 @@ async function main() {
   await seedVenue(edition);
   await seedImportantDates(edition);
   await seedProgram(edition, speakers);
-  await seedPricing(edition);
+  const pricingTiers = await seedPricing(edition);
   await seedPartners();
   await seedNews();
   await seedReports();
   await seedDownloads();
   await seedBrochure(edition);
   await seedTestimonials();
-  await seedFAQs();
+
+  const topics = await seedFAQTopics();
+  await seedFAQs(topics);
+
+  await seedAbstracts(edition, sessions);
+  await seedRegistrations(edition, pricingTiers);
+  await seedContactMessages();
+  await seedSupportTickets();
+  await seedSpeakerApplications(edition);
+  await seedSponsorshipInquiries();
+  await seedNewsletterSubscribers();
 
   console.log('\n══════════════════════════════════════════');
   console.log('  Seed complete!');

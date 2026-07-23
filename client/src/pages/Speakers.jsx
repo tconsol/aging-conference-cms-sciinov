@@ -9,7 +9,7 @@ import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 
 export default function Speakers() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, loading: congressLoading } = usecongress();
   const [searchParams] = useSearchParams();
   const editionParam = searchParams.get('edition');
   const [speakers, setSpeakers] = useState([]);
@@ -18,6 +18,8 @@ export default function Speakers() {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
+    if (!editionParam && congressLoading) return;
+
     const editionId = editionParam || activeEdition?._id;
     const params = editionId ? { edition: editionId, active: true } : { active: true };
     peopleAPI.getSpeakers(params)
@@ -27,7 +29,7 @@ export default function Speakers() {
       })
       .catch(() => setSpeakers([]))
       .finally(() => setLoading(false));
-  }, [editionParam, activeEdition]);
+  }, [editionParam, activeEdition, congressLoading]);
 
   useEffect(() => {
     if (!editionParam) {

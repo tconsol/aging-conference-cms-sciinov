@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
+import { usecongress } from '../../context/congressContext';
 
 export default function PageHero({ title, subtitle, breadcrumb = [] }) {
+  const { activeEdition } = usecongress();
+  const kicker = activeEdition?.year ? `congress ${activeEdition.year}` : 'congress';
+
   return (
     <section className="relative bg-slate-950 pt-24 pb-16 overflow-hidden">
       {/* Fine grid pattern */}
@@ -32,7 +36,7 @@ export default function PageHero({ title, subtitle, breadcrumb = [] }) {
             ))}
           </nav>
         )}
-        <span className="section-label !text-teal-400 !border-teal-500">congress 2025</span>
+        <span className="section-label !text-teal-400 !border-teal-500">{kicker}</span>
         <h1 className="text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">{title}</h1>
         <div className="w-20 h-1 bg-teal-500 mb-6" />
         {subtitle && (

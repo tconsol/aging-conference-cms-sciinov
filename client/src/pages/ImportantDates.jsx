@@ -18,11 +18,13 @@ function DateStatus({ date }) {
 }
 
 export default function ImportantDates() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, loading: congressLoading } = usecongress();
   const [dates, setDates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (congressLoading) return;
+
     const params = activeEdition?._id ? { edition: activeEdition._id } : {};
     congressAPI.getImportantDates(params)
       .then((res) => {
@@ -31,7 +33,7 @@ export default function ImportantDates() {
       })
       .catch(() => setDates([]))
       .finally(() => setLoading(false));
-  }, [activeEdition]);
+  }, [activeEdition, congressLoading]);
 
   return (
     <div>

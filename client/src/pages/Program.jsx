@@ -8,12 +8,14 @@ import { usecongress } from '../context/congressContext';
 import { formatDateShort } from '../utils/helpers';
 
 export default function Program() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, loading: congressLoading } = usecongress();
   const [program, setProgram] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeDay, setActiveDay] = useState(0);
 
   useEffect(() => {
+    if (congressLoading) return;
+
     const params = activeEdition?._id ? { edition: activeEdition._id } : {};
     congressAPI.getProgram(params)
       .then((res) => {
@@ -22,7 +24,7 @@ export default function Program() {
       })
       .catch(() => setProgram([]))
       .finally(() => setLoading(false));
-  }, [activeEdition]);
+  }, [activeEdition, congressLoading]);
 
   // Group by day
   const days = program.reduce((acc, item) => {

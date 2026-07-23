@@ -5,7 +5,7 @@ import { contentAPI } from '../api/content';
 const congressContext = createContext({});
 export const usecongress = () => useContext(congressContext);
 
-export function congressProvider({ children }) {
+export function CongressProvider({ children }) {
   const [activeEdition, setActiveEdition] = useState(null);
   const [siteSettings, setSiteSettings] = useState(null);
   const [loading, setLoading] = useState(true);

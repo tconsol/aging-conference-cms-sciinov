@@ -7,11 +7,13 @@ import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 
 export default function Venue() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, loading: congressLoading } = usecongress();
   const [venue, setVenue] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (congressLoading) return;
+
     const fetch = activeEdition?._id
       ? congressAPI.getVenueByEdition(activeEdition._id)
       : congressAPI.getVenues({ limit: 1 });
@@ -23,7 +25,7 @@ export default function Venue() {
       })
       .catch(() => setVenue(null))
       .finally(() => setLoading(false));
-  }, [activeEdition]);
+  }, [activeEdition, congressLoading]);
 
   return (
     <div>
