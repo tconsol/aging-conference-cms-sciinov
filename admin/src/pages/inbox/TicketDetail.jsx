@@ -123,7 +123,7 @@ export default function TicketDetail() {
               name="status"
               options={STATUS_OPTIONS}
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(val) => setStatus(val)}
               placeholder="Select status..."
               className="w-48"
             />

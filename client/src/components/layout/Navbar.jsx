@@ -448,6 +448,12 @@ export default function Navbar() {
                   0% { transform: scale(1); opacity: 0.6; }
                   100% { transform: scale(1.55); opacity: 0; }
                 }
+                @keyframes nav-icon-bounce {
+                  0%,100%{transform:translateY(0) scale(1)}
+                  30%{transform:translateY(-3px) scale(1.15)}
+                  60%{transform:translateY(1px) scale(0.95)}
+                }
+                .nav-reg-icon { animation: nav-icon-bounce 2.2s ease-in-out infinite; transform-origin: center; }
                 .nav-register-btn {
                   position: relative;
                   overflow: hidden;
@@ -515,6 +521,12 @@ export default function Navbar() {
                   onClick={() => navigate('/registration')}
                   className="nav-register-btn"
                 >
+                  <svg className="nav-reg-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    <path d="M21 21v-2a4 4 0 0 0-3-3.87"/>
+                  </svg>
                   Register <span className="arrow">→</span>
                 </button>
               </div>

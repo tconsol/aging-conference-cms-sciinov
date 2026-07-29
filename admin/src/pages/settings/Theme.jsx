@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Palette, RefreshCw, Eye } from 'lucide-react';
+import { Palette, RefreshCw, Eye, Monitor } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { siteSettingsAPI } from '../../api/settings';
 import { THEME_DEFAULTS as DEFAULTS, THEME_PRESETS as PRESETS } from '../../config/themePresets';
+import { isAdminThemeEnabled, toggleAdminTheme } from '../../hooks/useAdminTheme';
 
 function ColorField({ label, name, description, register, watch }) {
   const val = watch(name) || '#000000';
@@ -37,6 +38,7 @@ function ColorField({ label, name, description, register, watch }) {
 export default function Theme() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [adminTheme, setAdminTheme] = useState(() => isAdminThemeEnabled());
 
   const { register, handleSubmit, reset, watch } = useForm({ defaultValues: DEFAULTS });
 
@@ -55,10 +57,17 @@ export default function Theme() {
       .finally(() => setFetching(false));
   }, [reset]);
 
+  const handleAdminThemeToggle = (val) => {
+    const current = watch();
+    toggleAdminTheme(val, current);
+    setAdminTheme(val);
+  };
+
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       await siteSettingsAPI.updateTheme(data);
+      if (adminTheme) toggleAdminTheme(true, data);
       toast.success('Theme saved.');
     } catch {
       toast.error('Failed to save.');
@@ -133,6 +142,40 @@ export default function Theme() {
             <ColorField label="Primary Dark"  name="primaryDark"  description="Hover state for buttons and active elements" register={register} watch={watch} />
             <ColorField label="Primary Light" name="primaryLight" description="Subtle backgrounds, ghost button hover" register={register} watch={watch} />
             <ColorField label="Accent Color"  name="accentColor"  description="Highlights — badges, featured tags, stars" register={register} watch={watch} />
+          </div>
+
+          {/* Admin panel theme toggle */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                  <Monitor size={15} className="text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">Apply to admin panel</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Theme colors affect this admin UI too</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleAdminThemeToggle(!adminTheme)}
+                className="relative shrink-0"
+                style={{ width: 44, height: 24 }}
+                aria-pressed={adminTheme}
+              >
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: 12,
+                  background: adminTheme ? 'var(--brand, #0d9488)' : '#e2e8f0',
+                  transition: 'background 0.2s',
+                }} />
+                <div style={{
+                  position: 'absolute', top: 3, left: adminTheme ? 23 : 3,
+                  width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                  transition: 'left 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                }} />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

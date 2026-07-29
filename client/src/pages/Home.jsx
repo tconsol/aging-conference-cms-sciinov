@@ -1,4 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+
+function CountUp({ value, duration = 1800 }) {
+  const { num, suffix, prefix } = useMemo(() => {
+    const prefix = value.match(/^[^0-9]*/)?.[0] || '';
+    const suffix = value.match(/[^0-9,]+$/)?.[0] || '';
+    const num = parseInt(value.replace(/[^0-9]/g, ''), 10) || 0;
+    return { num, suffix, prefix };
+  }, [value]);
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStarted(true); }, { threshold: 0.4 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!started) return;
+    let t0 = null;
+    const step = (ts) => {
+      if (!t0) t0 = ts;
+      const p = Math.min((ts - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setCount(Math.round(eased * num));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [started, num, duration]);
+  const display = num >= 1000 ? count.toLocaleString() : count;
+  return <span ref={ref}>{prefix}{display}{suffix}</span>;
+}
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -64,6 +95,7 @@ import CountdownTimer from '../components/ui/CountdownTimer';
 import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
 import JourneySection from '../components/sections/JourneySection';
+import Silk from '../components/ui/Silk';
 import { formatDateShort, truncate } from '../utils/helpers';
 
 const ICON_MAP = {
@@ -93,6 +125,19 @@ export default function Home() {
   const [dates, setDates] = useState([]);
   const [venue, setVenue] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [silkColor, setSilkColor] = useState('#0d9488');
+
+  useEffect(() => {
+    const read = () => {
+      const color = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
+      if (color) setSilkColor(color);
+    };
+    read();
+    // Also observe root style attribute changes so live theme switches update silk
+    const observer = new MutationObserver(read);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    return () => observer.disconnect();
+  }, [siteSettings?.theme?.primaryColor]);
 
   useEffect(() => {
     if (congressLoading) return;
@@ -136,85 +181,118 @@ export default function Home() {
   return (
     <div>
       {/* ── HERO ── */}
-      <section className="relative min-h-[92vh] flex items-center bg-slate-950 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage:
-              'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
-          }}
-        />
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-teal-600" />
+      <style>{`
+        @keyframes h-up-1   { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes h-line   { from{width:0} to{width:80px} }
+        .ha1{animation:h-up-1 .65s ease both .05s}
+        .ha2{animation:h-up-1 .65s ease both .18s}
+        .ha3{animation:h-up-1 .65s ease both .3s}
+        .ha4{animation:h-up-1 .65s ease both .42s}
+        .ha5{animation:h-up-1 .65s ease both .54s}
+        .ha6{animation:h-up-1 .65s ease both .66s}
+        .hsc{animation:h-up-1 .5s ease both}
+        .hsc:nth-child(1){animation-delay:.5s}
+        .hsc:nth-child(2){animation-delay:.62s}
+        .hsc:nth-child(3){animation-delay:.74s}
+        .hsc:nth-child(4){animation-delay:.86s}
+        .hero-stat:hover{transform:translateY(-3px)}
+      `}</style>
 
-        <div className="container-custom relative z-10 py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+      <section style={{ position:'relative', minHeight:'100vh', display:'flex', flexDirection:'column', justifyContent:'center', backgroundColor:'#020817', overflow:'hidden' }}>
+
+        {/* Silk background */}
+        <div style={{ position:'absolute', inset:0, opacity:0.38 }}>
+          <Silk speed={3} scale={1.2} color={silkColor} noiseIntensity={1.8} rotation={0} />
+        </div>
+
+        {/* Dark overlay so text stays readable */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(135deg,rgba(2,8,23,0.78) 0%,rgba(2,8,23,0.55) 50%,rgba(2,8,23,0.72) 100%)' }} />
+
+        {/* ── CONTENT ── */}
+        <div className="container-custom" style={{ position:'relative', zIndex:10, paddingTop:96, paddingBottom:96 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:48 }} className="lg:hero-two-col">
+
+            <style>{`
+              @media(min-width:1024px){
+                .lg\\:hero-two-col{ grid-template-columns: 55% 45% !important; gap: 64px !important; align-items: center; }
+              }
+            `}</style>
+
+            {/* ── LEFT ── */}
             <div>
+              {/* Live badge */}
               {activeEdition && (
-                <div className="flex items-center gap-2 mb-8">
-                  <span className="w-2 h-2 bg-teal-400 rounded-sm animate-pulse" />
-                  <span className="text-teal-400 text-xs font-bold uppercase tracking-[0.2em]">
-                    {activeEdition.name ?? `${activeEdition.year} Edition`}{' '}
-                    {hero.tagline || 'Registration Open'}
+                <div className="ha1" style={{ display:'inline-flex', alignItems:'center', gap:10, marginBottom:28, padding:'7px 16px', borderRadius:999, border:'1px solid color-mix(in srgb,var(--brand) 30%,transparent)', background:'color-mix(in srgb,var(--brand) 7%,transparent)' }}>
+                  <span style={{ position:'relative', display:'flex', width:8, height:8 }}>
+                    <span className="animate-ping" style={{ position:'absolute', inset:0, borderRadius:'50%', background:'var(--brand)', opacity:0.7 }} />
+                    <span style={{ position:'relative', width:8, height:8, borderRadius:'50%', background:'var(--brand)', display:'block' }} />
+                  </span>
+                  <span style={{ fontSize:11, fontWeight:700, letterSpacing:'0.16em', textTransform:'uppercase', color:'var(--brand)' }}>
+                    {activeEdition.name ?? `${activeEdition.year} Edition`} · {hero.tagline || 'Registration Open'}
                   </span>
                 </div>
               )}
 
-              <h1 className="font-black leading-none text-white mb-6">
-                <span className="block text-5xl sm:text-6xl lg:text-7xl text-slate-400 font-normal">
-                  {hero.titleLine1 || "The World's"}
-                </span>
-                <span className="block text-6xl sm:text-7xl lg:text-8xl text-white">
-                  {hero.titleLine2 || 'Aging Science'}
-                </span>
-                <span className="block text-6xl sm:text-7xl lg:text-8xl text-teal-400">
-                  {hero.titleLine3 || 'congress.'}
-                </span>
-              </h1>
+              {/* Headline */}
+              <div className="ha2">
+                <h1 style={{ margin:0, padding:0, lineHeight:1.0 }}>
+                  <span style={{ display:'block', fontSize:'clamp(2.2rem,4.5vw,3.75rem)', fontWeight:300, color:'#94a3b8', letterSpacing:'-0.02em' }}>
+                    {hero.titleLine1 || "The World's"}
+                  </span>
+                  <span style={{ display:'block', fontSize:'clamp(2.8rem,5.5vw,4.75rem)', fontWeight:900, color:'#ffffff', letterSpacing:'-0.03em', marginTop:4 }}>
+                    {hero.titleLine2 || 'Aging Science'}
+                  </span>
+                  <span style={{ display:'block', fontSize:'clamp(2.8rem,5.5vw,4.75rem)', fontWeight:900, letterSpacing:'-0.03em', marginTop:2, color:'var(--brand)' }}>
+                    {hero.titleLine3 || 'Congress.'}
+                  </span>
+                </h1>
+              </div>
 
-              <div className="w-24 h-1 bg-teal-500 my-7" />
+              {/* Divider */}
+              <div className="ha3" style={{ marginTop:28, marginBottom:24 }}>
+                <div style={{ height:3, borderRadius:2, background:'linear-gradient(90deg,var(--brand),transparent)', animation:'h-line 1s ease .5s both', width:0 }} />
+              </div>
 
-              <p className="text-xl text-slate-300 max-w-xl mb-8 leading-relaxed">
-                {hero.subtitle ||
-                  'Join world-leading researchers, clinicians, and innovators shaping the future of healthy aging and longevity science.'}
+              {/* Subtitle */}
+              <p className="ha3" style={{ fontSize:'1.1rem', color:'#94a3b8', maxWidth:520, lineHeight:1.7, margin:'0 0 28px' }}>
+                {hero.subtitle || 'Join world-leading researchers, clinicians, and innovators shaping the future of healthy aging and longevity science.'}
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-8">
+              {/* Date + Venue chips */}
+              <div className="ha4" style={{ display:'flex', flexWrap:'wrap', gap:10, marginBottom:32 }}>
                 {activeEdition?.startDate && (
-                  <div className="flex items-center gap-2 border border-slate-700 px-4 py-2 rounded-lg">
-                    <Calendar size={14} className="text-teal-400" />
-                    <span className="text-slate-300 text-sm font-medium">
-                      {formatDateShort(activeEdition.startDate)}
-                      {activeEdition.endDate && ` – ${formatDateShort(activeEdition.endDate)}`}
-                    </span>
-                  </div>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border:'1px solid rgba(255,255,255,0.09)', background:'rgba(255,255,255,0.04)', fontSize:13, color:'#cbd5e1', fontWeight:500 }}>
+                    <Calendar size={13} color='var(--brand)' />
+                    {formatDateShort(activeEdition.startDate)}{activeEdition.endDate ? ` – ${formatDateShort(activeEdition.endDate)}` : ''}
+                  </span>
                 )}
                 {venue && (
-                  <div className="flex items-center gap-2 border border-slate-700 px-4 py-2 rounded-lg">
-                    <MapPin size={14} className="text-teal-400" />
-                    <span className="text-slate-300 text-sm font-medium">
-                      {venue.city}{venue.country ? `, ${venue.country}` : ''}
-                    </span>
-                  </div>
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:999, border:'1px solid rgba(255,255,255,0.09)', background:'rgba(255,255,255,0.04)', fontSize:13, color:'#cbd5e1', fontWeight:500 }}>
+                    <MapPin size={13} color='var(--brand)' />
+                    {venue.city}{venue.country ? `, ${venue.country}` : ''}
+                  </span>
                 )}
               </div>
 
-              <div className="flex flex-wrap gap-4 mb-10">
+              {/* CTA buttons */}
+              <div className="ha5" style={{ display:'flex', flexWrap:'wrap', gap:14, marginBottom:40 }}>
                 <Button to={hero.ctaPrimaryLink || '/registration'} size="lg" variant="primary">
                   {hero.ctaPrimaryLabel || 'Register Now'} <ArrowRight size={16} />
                 </Button>
-                <Button
+                <Link
                   to={hero.ctaSecondaryLink || '/abstract-submission'}
-                  size="lg"
-                  className="border-2 border-white/30 text-white hover:bg-white/10 bg-transparent rounded-lg px-8 py-3 text-base font-semibold transition-all duration-200"
+                  style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'12px 28px', borderRadius:8, border:'1px solid rgba(255,255,255,0.15)', color:'#e2e8f0', fontSize:'0.95rem', fontWeight:600, textDecoration:'none', transition:'all 0.2s', background:'rgba(255,255,255,0.04)' }}
+                  onMouseEnter={e=>{ e.currentTarget.style.background='rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.25)'; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.background='rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'; }}
                 >
-                  {hero.ctaSecondaryLabel || 'Submit Abstract'}
-                </Button>
+                  {hero.ctaSecondaryLabel || 'Submit Abstract'} <ChevronRight size={16} />
+                </Link>
               </div>
 
+              {/* Countdown */}
               {congressDate && (
-                <div>
-                  <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mb-3">
+                <div className="ha6">
+                  <p style={{ fontSize:10, fontWeight:700, letterSpacing:'0.18em', textTransform:'uppercase', color:'#475569', marginBottom:10 }}>
                     {hero.countdownLabel || 'Congress Begins In'}
                   </p>
                   <CountdownTimer targetDate={congressDate} />
@@ -222,20 +300,53 @@ export default function Home() {
               )}
             </div>
 
-            {/* Right: Stats grid */}
-            <div className="hidden lg:grid grid-cols-2 gap-4">
-              {stats.map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="bg-white/5 border border-white/10 rounded-lg p-7 flex flex-col justify-between"
-                >
-                  <span className="text-5xl font-black text-white">{value}</span>
-                  <span className="text-sm text-slate-400 mt-3 font-medium">{label}</span>
-                </div>
-              ))}
+            {/* ── RIGHT: 2×2 Stats ── */}
+            <div className="hidden lg:block">
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                {stats.map(({ label, value }, i) => (
+                  <div
+                    key={label}
+                    className="hsc hero-stat"
+                    style={{
+                      padding:'28px 24px',
+                      borderRadius:16,
+                      border:'1px solid rgba(255,255,255,0.07)',
+                      background: i === 0
+                        ? 'linear-gradient(135deg,color-mix(in srgb,var(--brand) 18%,transparent),color-mix(in srgb,var(--brand) 6%,transparent))'
+                        : 'rgba(255,255,255,0.03)',
+                      cursor:'default',
+                      transition:'transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
+                      position:'relative',
+                      overflow:'hidden',
+                    }}
+                    onMouseEnter={e=>{
+                      e.currentTarget.style.borderColor='color-mix(in srgb,var(--brand) 40%,transparent)';
+                      e.currentTarget.style.boxShadow='0 8px 32px color-mix(in srgb,var(--brand) 15%,transparent)';
+                    }}
+                    onMouseLeave={e=>{
+                      e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';
+                      e.currentTarget.style.boxShadow='none';
+                    }}
+                  >
+                    {i === 0 && <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:'var(--brand)', borderRadius:'16px 16px 0 0' }} />}
+                    <div style={{ fontSize:'2.5rem', fontWeight:900, color:'#ffffff', lineHeight:1, letterSpacing:'-0.02em' }}>{value}</div>
+                    <div style={{ fontSize:'0.72rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.14em', color:'#64748b', marginTop:10 }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Decorative bottom line */}
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginTop:24, paddingLeft:4, opacity:0.5 }}>
+                <div style={{ width:32, height:1, background:'var(--brand)' }} />
+                <span style={{ fontSize:10, color:'#475569', fontWeight:600, letterSpacing:'0.16em', textTransform:'uppercase' }}>Global Science Congress</span>
+              </div>
             </div>
+
           </div>
         </div>
+
+        {/* Bottom fade */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, height:80, background:'linear-gradient(to bottom,transparent,rgba(2,8,23,0.6))', pointerEvents:'none' }} />
       </section>
 
       {/* ── STATS BAR ── */}
@@ -244,7 +355,7 @@ export default function Home() {
           <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-teal-600">
             {stats.map(({ label, value }) => (
               <div key={label} className="text-center px-6">
-                <div className="text-3xl font-black text-white">{value}</div>
+                <div className="text-3xl font-black text-white"><CountUp value={value} /></div>
                 <div className="text-teal-200 text-sm mt-1 font-medium">{label}</div>
               </div>
             ))}

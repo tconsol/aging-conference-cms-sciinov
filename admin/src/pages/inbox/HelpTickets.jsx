@@ -233,7 +233,7 @@ export default function HelpTickets() {
             name="status"
             options={STATUS_OPTIONS}
             value={newStatus}
-            onChange={(e) => setNewStatus(e.target.value)}
+            onChange={(val) => setNewStatus(val)}
             placeholder="Select status..."
           />
         </div>

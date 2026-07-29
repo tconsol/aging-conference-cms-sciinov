@@ -27,11 +27,14 @@ export default function ConfirmDialog({
 
   const isDanger = confirmVariant === 'danger';
 
-  const accentColor = isDanger ? '#dc2626' : '#0f766e';
-  const accentLight = isDanger ? '#fef2f2' : '#f0fdf9';
-  const iconColor   = isDanger ? '#dc2626' : '#0f766e';
-  const btnBg       = isDanger ? '#dc2626' : '#0f766e';
-  const btnHover    = isDanger ? '#b91c1c' : '#0d6b63';
+  const accentColor   = isDanger ? '#dc2626' : 'var(--brand-dark)';
+  const accentLight   = isDanger ? '#fef2f2' : 'var(--brand-light)';
+  const iconColor     = isDanger ? '#dc2626' : 'var(--brand-dark)';
+  const btnBg         = isDanger ? '#dc2626' : 'var(--brand-dark)';
+  const btnHover      = isDanger ? '#b91c1c' : 'color-mix(in srgb, var(--brand-dark) 82%, black)';
+  // alpha versions for template literals (hex+alpha trick doesn't work with CSS vars)
+  const accentAlpha60 = isDanger ? '#dc262699' : 'color-mix(in srgb, var(--brand-dark) 60%, transparent)';
+  const accentAlpha18 = isDanger ? '#dc262630' : 'color-mix(in srgb, var(--brand-dark) 18%, transparent)';
 
   const IconComp = isDanger ? Trash2 : Pencil;
 
@@ -55,7 +58,7 @@ export default function ConfirmDialog({
         {/* Top stripe */}
         <div style={{
           height: 2,
-          background: `linear-gradient(90deg, ${accentColor}99, ${accentColor}, ${accentColor}99)`,
+          background: `linear-gradient(90deg, ${accentAlpha60}, ${accentColor}, ${accentAlpha60})`,
         }} />
 
         {/* Cut corner fill */}
@@ -73,7 +76,7 @@ export default function ConfirmDialog({
               className="w-10 h-10 flex items-center justify-center flex-shrink-0"
               style={{
                 background: accentLight,
-                border: `1px solid ${accentColor}30`,
+                border: `1px solid ${accentAlpha18}`,
                 clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%)',
               }}
             >

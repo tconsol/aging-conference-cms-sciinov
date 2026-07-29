@@ -10,6 +10,8 @@
   "dependencies": {
     "axios": "^1.7.7",
     "framer-motion": "^12.43.0",
+    "lord-icon-element": "^4.1.2",
+    "lottie-web": "^5.13.0",
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

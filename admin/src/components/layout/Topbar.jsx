@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { NAV_SEARCH_INDEX } from '../../config/navGroups';
 import { THEME_PRESETS } from '../../config/themePresets';
 import { siteSettingsAPI } from '../../api/settings';
+import { applyAdminThemeNow } from '../../hooks/useAdminTheme';
 import toast from 'react-hot-toast';
 
 function NavSearch() {
@@ -82,7 +83,7 @@ function NavSearch() {
           className="absolute left-0 right-0 mt-1.5 bg-white rounded-lg overflow-hidden z-50"
           style={{
             border: '1px solid #e2e8f0',
-            borderTop: '2px solid #0f766e',
+            borderTop: '2px solid var(--brand-dark)',
             boxShadow: '0 8px 24px rgba(15,118,110,0.1), 0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
@@ -139,6 +140,7 @@ function ThemeSwitcher() {
     try {
       await siteSettingsAPI.updateTheme(preset);
       setActiveColor(preset.primaryColor);
+      applyAdminThemeNow(preset);
       toast.success(`Theme: ${preset.name}`);
       setOpen(false);
     } catch {
@@ -154,11 +156,11 @@ function ThemeSwitcher() {
         onClick={() => setOpen((o) => !o)}
         title="Quick theme switcher"
         className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
-        style={{ borderColor: open ? '#0f766e' : undefined }}
+        style={{ borderColor: open ? 'var(--brand-dark)' : undefined }}
       >
         <div
           className="w-3.5 h-3.5 rounded-full border border-white shadow-sm"
-          style={{ backgroundColor: activeColor || '#0d9488' }}
+          style={{ backgroundColor: activeColor || 'var(--brand)' }}
         />
         <Palette size={14} className="text-slate-500" />
         <ChevronDown
@@ -174,7 +176,7 @@ function ThemeSwitcher() {
           className="absolute right-0 mt-1.5 w-72 bg-white rounded-xl z-50 overflow-hidden"
           style={{
             border: '1px solid #e2e8f0',
-            borderTop: '2px solid #0f766e',
+            borderTop: '2px solid var(--brand-dark)',
             boxShadow: '0 12px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
           }}
         >
@@ -274,7 +276,7 @@ export default function Topbar({ onMenuClick }) {
         onClick={onMenuClick}
         className="lg:hidden p-2 transition-colors"
         style={{ color: '#64748b' }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = '#0f766e'; }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-dark)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
       >
         <Menu size={20} />
@@ -286,7 +288,7 @@ export default function Topbar({ onMenuClick }) {
           Aging Congress
         </span>
         <span style={{ color: '#cbd5e1', fontSize: 12 }}>·</span>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f766e' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-dark)' }}>
           Admin Panel
         </span>
       </div>
@@ -308,8 +310,8 @@ export default function Topbar({ onMenuClick }) {
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
             style={{
-              border: dropdownOpen ? '1px solid #0f766e' : '1px solid #e2e8f0',
-              background: dropdownOpen ? '#f0fdf9' : 'white',
+              border: dropdownOpen ? '1px solid var(--brand-dark)' : '1px solid #e2e8f0',
+              background: dropdownOpen ? 'var(--brand-light)' : 'white',
               clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%)',
             }}
           >
@@ -317,7 +319,7 @@ export default function Topbar({ onMenuClick }) {
               style={{
                 width: 28,
                 height: 28,
-                background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+                background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -340,7 +342,7 @@ export default function Topbar({ onMenuClick }) {
               size={13}
               strokeWidth={2.5}
               style={{
-                color: dropdownOpen ? '#0f766e' : '#94a3b8',
+                color: dropdownOpen ? 'var(--brand-dark)' : '#94a3b8',
                 transition: 'transform 0.15s ease',
                 transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
@@ -352,7 +354,7 @@ export default function Topbar({ onMenuClick }) {
               className="absolute right-0 mt-1 w-52 bg-white z-50"
               style={{
                 border: '1px solid #e2e8f0',
-                borderTop: '2px solid #0f766e',
+                borderTop: '2px solid var(--brand-dark)',
                 boxShadow: '0 8px 24px rgba(15,118,110,0.1), 0 2px 8px rgba(0,0,0,0.06)',
               }}
             >
@@ -366,7 +368,7 @@ export default function Topbar({ onMenuClick }) {
               <button
                 onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 transition-colors"
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.color = '#0f766e'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-light)'; e.currentTarget.style.color = 'var(--brand-dark)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}
               >
                 <User size={14} />
