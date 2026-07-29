@@ -101,7 +101,7 @@ export default function Program() {
   useEffect(() => { fetchDependencies(); }, []);
   useEffect(() => { fetchItems(); }, [filterEdition]);
 
-  const editionOptions = editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }));
+  const editionOptions = editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }));
   const speakerOptions = [
     { value: '', label: 'No speaker' },
     ...speakers.map((s) => ({ value: s._id, label: s.fullName })),

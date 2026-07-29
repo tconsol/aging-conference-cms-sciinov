@@ -120,7 +120,7 @@ export default function Brochure() {
             name="edition"
             register={register}
             error={errors.edition?.message}
-            options={editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }))}
+            options={editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }))}
             placeholder="Select Edition (optional)"
           />
           <FileUpload

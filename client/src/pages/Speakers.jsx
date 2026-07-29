@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ArrowRight, MapPin } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import Spinner from '../components/ui/Spinner';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -91,31 +91,53 @@ export default function Speakers() {
                 <Link
                   key={speaker._id}
                   to={`/speakers/${speaker.slug}`}
-                  className="bg-white rounded-lg border border-slate-100 shadow-sm p-5 hover:shadow-md hover:border-teal-100 transition-all group text-center"
+                  className="group relative bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                 >
-                  {speaker.photo ? (
-                    <img
-                      src={speaker.photo}
-                      alt={speaker.fullName}
-                      className="w-20 h-20 rounded-lg object-cover mx-auto mb-4"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-lg bg-teal-100 flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-teal-700">{speaker.fullName?.[0] ?? 'S'}</span>
+                  {/* Photo / Avatar */}
+                  <div className="relative h-52 w-full overflow-hidden bg-gradient-to-br from-teal-500 to-emerald-600">
+                    {speaker.photo ? (
+                      <>
+                        <img
+                          src={speaker.photo}
+                          alt={speaker.fullName}
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-6xl font-bold text-white/90 select-none">
+                          {speaker.fullName?.[0] ?? 'S'}
+                        </span>
+                      </div>
+                    )}
+                    {/* Hover overlay arrow */}
+                    <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <ArrowRight size={14} className="text-white" />
                     </div>
-                  )}
-                  <h3 className="font-bold text-slate-900 group-hover:text-teal-700 transition-colors text-sm">
-                    {speaker.fullName}
-                  </h3>
-                  {speaker.designation && (
-                    <p className="text-xs text-slate-500 mt-0.5">{speaker.designation}</p>
-                  )}
-                  {speaker.organization && (
-                    <p className="text-xs text-teal-600 font-medium mt-1">{speaker.organization}</p>
-                  )}
-                  {speaker.country && (
-                    <p className="text-xs text-slate-400 mt-1">{speaker.country}</p>
-                  )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-900 group-hover:text-teal-700 transition-colors text-sm leading-snug line-clamp-1">
+                      {speaker.fullName}
+                    </h3>
+                    {speaker.designation && (
+                      <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{speaker.designation}</p>
+                    )}
+                    {speaker.organization && (
+                      <p className="text-xs font-semibold text-teal-600 mt-2 line-clamp-1">{speaker.organization}</p>
+                    )}
+                    {speaker.country && (
+                      <div className="flex items-center gap-1 mt-2">
+                        <MapPin size={11} className="text-slate-400 shrink-0" />
+                        <span className="text-xs text-slate-400">{speaker.country}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom accent bar */}
+                  <div className="h-0.5 bg-gradient-to-r from-teal-400 to-emerald-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
                 </Link>
               ))}
             </div>

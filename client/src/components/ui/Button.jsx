@@ -17,10 +17,10 @@ export default function Button({
     'inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed';
 
   const variants = {
-    primary: 'bg-teal-700 hover:bg-teal-800 text-white',
-    secondary: 'border-2 border-teal-700 text-teal-700 hover:bg-teal-700 hover:text-white bg-transparent',
+    primary: 'btn-brand',
+    secondary: 'btn-brand-outline',
     outline: 'border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white bg-transparent',
-    ghost: 'bg-transparent hover:bg-teal-50 text-teal-700',
+    ghost: 'bg-transparent text-brand hover:bg-brand-light',
     white: 'bg-white text-slate-900 hover:bg-stone-100',
     danger: 'bg-red-600 hover:bg-red-700 text-white',
   };

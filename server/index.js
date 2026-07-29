@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
@@ -20,28 +19,6 @@ app.use(cors({
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Try again later.' },
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many login attempts. Try again later.' },
-});
-const submitLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: { success: false, message: 'Too many submissions. Try again later.' },
-});
-
-app.use('/api/', globalLimiter);
 
 // Health
 app.get('/api/health', (req, res) => {
@@ -107,19 +84,19 @@ app.get('/api/dashboard', protect, async (req, res, next) => {
 });
 
 // Routes
-app.use('/api/auth', authLimiter, require('./routes/authRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/editions', require('./routes/editionRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/program', require('./routes/programRoutes'));
 app.use('/api/speakers', require('./routes/speakerRoutes'));
-app.use('/api/speaker-applications', submitLimiter, require('./routes/speakerApplicationRoutes'));
+app.use('/api/speaker-applications', require('./routes/speakerApplicationRoutes'));
 app.use('/api/committee', require('./routes/committeeRoutes'));
-app.use('/api/abstracts', submitLimiter, require('./routes/abstractRoutes'));
-app.use('/api/registrations', submitLimiter, require('./routes/registrationRoutes'));
+app.use('/api/abstracts', require('./routes/abstractRoutes'));
+app.use('/api/registrations', require('./routes/registrationRoutes'));
 app.use('/api/pricing', require('./routes/pricingRoutes'));
 app.use('/api/important-dates', require('./routes/importantDateRoutes'));
 app.use('/api/venues', require('./routes/venueRoutes'));
-app.use('/api/sponsorship', submitLimiter, require('./routes/sponsorshipRoutes'));
+app.use('/api/sponsorship', require('./routes/sponsorshipRoutes'));
 app.use('/api/partners', require('./routes/partnerRoutes'));
 app.use('/api/news', require('./routes/newsRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
@@ -130,8 +107,8 @@ app.use('/api/organizers', require('./routes/organizerRoutes'));
 app.use('/api/testimonials', require('./routes/testimonialRoutes'));
 app.use('/api/help', require('./routes/helpRoutes'));
 app.use('/api/faq-topics', require('./routes/faqTopicRoutes'));
-app.use('/api/newsletter', submitLimiter, require('./routes/newsletterRoutes'));
-app.use('/api/contact', submitLimiter, require('./routes/contactRoutes'));
+app.use('/api/newsletter', require('./routes/newsletterRoutes'));
+app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/site-settings', require('./routes/siteSettingsRoutes'));
 app.use('/api/admin-users', require('./routes/adminUserRoutes'));
 

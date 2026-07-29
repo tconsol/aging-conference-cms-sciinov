@@ -77,7 +77,7 @@ function DropdownMenu({ items, isOpen }) {
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
-          borderTop: '2px solid #0f766e',
+          borderTop: '2px solid var(--brand-dark)',
           maxHeight: 340,
           overflowY: 'auto',
         }}
@@ -88,7 +88,7 @@ function DropdownMenu({ items, isOpen }) {
             to={item.to}
             className="flex items-center gap-3 px-4 py-2.5 transition-colors duration-150"
             style={{ borderBottom: '1px solid #f1f5f9' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-light)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           >
             <span
@@ -96,7 +96,7 @@ function DropdownMenu({ items, isOpen }) {
                 fontSize: '9px',
                 fontFamily: 'monospace',
                 fontWeight: 700,
-                color: '#14b8a6',
+                color: 'var(--brand)',
                 letterSpacing: '0.05em',
                 flexShrink: 0,
               }}
@@ -106,7 +106,7 @@ function DropdownMenu({ items, isOpen }) {
             <span
               className="text-sm font-medium transition-colors duration-150"
               style={{ color: '#334155' }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#0f766e'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-dark)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = '#334155'; }}
             >
               {item.label}
@@ -154,7 +154,7 @@ function NavItem({ item, isActive }) {
     padding: '6px 12px',
     position: 'relative',
     transition: 'color 0.15s ease',
-    color: highlighted ? '#0f766e' : '#475569',
+    color: highlighted ? 'var(--brand-dark)' : '#475569',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
@@ -170,14 +170,14 @@ function NavItem({ item, isActive }) {
       <Link
         to={item.to}
         style={linkStyle}
-        onMouseEnter={(e) => { if (!highlighted) e.currentTarget.style.color = '#0d9488'; }}
+        onMouseEnter={(e) => { if (!highlighted) e.currentTarget.style.color = 'var(--brand)'; }}
         onMouseLeave={(e) => { if (!highlighted) e.currentTarget.style.color = '#475569'; }}
       >
         {item.label}
         {highlighted && (
           <span style={{
             position: 'absolute', bottom: 0, left: 12, right: 12,
-            height: '1.5px', background: '#0f766e',
+            height: '1.5px', background: 'var(--brand-dark)',
           }} />
         )}
       </Link>
@@ -189,7 +189,7 @@ function NavItem({ item, isActive }) {
       <button
         onClick={() => setOpen((o) => !o)}
         style={linkStyle}
-        onMouseEnter={(e) => { if (!highlighted) e.currentTarget.style.color = '#0d9488'; }}
+        onMouseEnter={(e) => { if (!highlighted) e.currentTarget.style.color = 'var(--brand)'; }}
         onMouseLeave={(e) => { if (!highlighted) e.currentTarget.style.color = '#475569'; }}
       >
         {item.label}
@@ -204,7 +204,7 @@ function NavItem({ item, isActive }) {
         {highlighted && (
           <span style={{
             position: 'absolute', bottom: 0, left: 12, right: 12,
-            height: '1.5px', background: '#0f766e',
+            height: '1.5px', background: 'var(--brand-dark)',
           }} />
         )}
       </button>
@@ -240,11 +240,11 @@ function MobileNavItem({ item, onClose }) {
       <Link
         to={item.to}
         onClick={onClose}
-        style={{ ...baseStyle, color: isHere ? '#0f766e' : '#64748b', textDecoration: 'none' }}
+        style={{ ...baseStyle, color: isHere ? 'var(--brand-dark)' : '#64748b', textDecoration: 'none' }}
       >
         {item.label}
         {isHere && (
-          <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#0f766e' }} />
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--brand-dark)' }} />
         )}
       </Link>
     );
@@ -254,14 +254,14 @@ function MobileNavItem({ item, onClose }) {
     <div>
       <button
         onClick={() => setOpen((o) => !o)}
-        style={{ ...baseStyle, color: open ? '#0f766e' : '#64748b', textAlign: 'left' }}
+        style={{ ...baseStyle, color: open ? 'var(--brand-dark)' : '#64748b', textAlign: 'left' }}
       >
         {item.label}
         <ChevronDown
           size={9}
           strokeWidth={3}
           style={{
-            color: '#14b8a6',
+            color: 'var(--brand)',
             transition: 'transform 0.2s',
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
           }}
@@ -282,12 +282,12 @@ function MobileNavItem({ item, onClose }) {
                 fontSize: '13px',
                 fontWeight: 500,
                 borderBottom: '1px solid #f1f5f9',
-                color: location.pathname === child.to ? '#0f766e' : '#64748b',
+                color: location.pathname === child.to ? 'var(--brand-dark)' : '#64748b',
                 textDecoration: 'none',
                 transition: 'color 0.15s',
               }}
             >
-              <span style={{ fontSize: '9px', color: '#14b8a6', fontWeight: 700, letterSpacing: '0.05em' }}>
+              <span style={{ fontSize: '9px', color: 'var(--brand)', fontWeight: 700, letterSpacing: '0.05em' }}>
                 {String(i + 1).padStart(2, '0')}
               </span>
               {child.label}
@@ -349,7 +349,7 @@ export default function Navbar() {
           zIndex: 40,
           background: '#ffffff',
           boxShadow: scrolled
-            ? '0 1px 0 #e2e8f0, 0 4px 24px rgba(15,118,110,0.08)'
+            ? '0 1px 0 #e2e8f0, 0 4px 24px color-mix(in srgb, var(--brand-dark) 8%, transparent)'
             : '0 1px 0 #e2e8f0',
           transition: 'box-shadow 0.3s ease',
         }}
@@ -357,7 +357,7 @@ export default function Navbar() {
         {/* Teal accent stripe */}
         <div style={{
           height: 2,
-          background: 'linear-gradient(90deg, #0f766e 0%, #14b8a6 40%, #2dd4bf 60%, #14b8a6 80%, #0f766e 100%)',
+          background: 'linear-gradient(90deg, var(--brand-dark) 0%, var(--brand) 40%, var(--brand) 60%, var(--brand) 80%, var(--brand-dark) 100%)',
         }} />
 
         <div className="container-custom">
@@ -382,7 +382,7 @@ export default function Navbar() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                    background: 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%)',
                     clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))',
                   }}
                 >
@@ -414,7 +414,7 @@ export default function Navbar() {
                 <span
                   style={{
                     fontSize: 9.5,
-                    color: '#14b8a6',
+                    color: 'var(--brand)',
                     letterSpacing: '0.18em',
                     marginTop: 3,
                     textTransform: 'uppercase',
@@ -439,35 +439,85 @@ export default function Navbar() {
 
             {/* Right: CTA + hamburger */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button
-                onClick={() => navigate('/registration')}
-                className="hidden sm:inline-flex"
-                style={{
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: '10.5px',
-                  fontWeight: 800,
-                  letterSpacing: '0.13em',
-                  textTransform: 'uppercase',
-                  padding: '9px 20px',
-                  background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  cursor: 'pointer',
-                  clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))',
-                  transition: 'opacity 0.15s ease, box-shadow 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.88';
-                  e.currentTarget.style.boxShadow = '0 0 18px rgba(15,118,110,0.35)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                Register →
-              </button>
+              <style>{`
+                @keyframes nav-shimmer {
+                  0% { transform: translateX(-100%) skewX(-15deg); }
+                  100% { transform: translateX(250%) skewX(-15deg); }
+                }
+                @keyframes nav-pulse-ring {
+                  0% { transform: scale(1); opacity: 0.6; }
+                  100% { transform: scale(1.55); opacity: 0; }
+                }
+                .nav-register-btn {
+                  position: relative;
+                  overflow: hidden;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 6px;
+                  font-size: 10.5px;
+                  font-weight: 800;
+                  letter-spacing: 0.13em;
+                  text-transform: uppercase;
+                  padding: 9px 22px;
+                  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, color-mix(in srgb, var(--brand) 70%, white) 100%);
+                  color: #ffffff;
+                  border: none;
+                  cursor: pointer;
+                  border-radius: 6px;
+                  transition: transform 0.18s ease, box-shadow 0.18s ease;
+                  box-shadow: 0 2px 12px color-mix(in srgb, var(--brand) 30%, transparent);
+                }
+                .nav-register-btn::before {
+                  content: '';
+                  position: absolute;
+                  top: 0; left: 0;
+                  width: 40%;
+                  height: 100%;
+                  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+                  animation: nav-shimmer 2.4s ease-in-out infinite;
+                }
+                .nav-register-btn::after {
+                  content: '';
+                  position: absolute;
+                  inset: 0;
+                  border-radius: 6px;
+                  border: 1px solid rgba(255,255,255,0.25);
+                  pointer-events: none;
+                }
+                .nav-register-btn:hover {
+                  transform: translateY(-1px) scale(1.03);
+                  box-shadow: 0 6px 24px color-mix(in srgb, var(--brand) 45%, transparent);
+                }
+                .nav-register-btn:active {
+                  transform: translateY(0) scale(0.98);
+                }
+                .nav-register-btn .arrow {
+                  display: inline-block;
+                  transition: transform 0.2s ease;
+                }
+                .nav-register-btn:hover .arrow {
+                  transform: translateX(3px);
+                }
+                .nav-register-pulse {
+                  position: absolute;
+                  inset: 0;
+                  border-radius: 6px;
+                  background: var(--brand);
+                  animation: nav-pulse-ring 2s ease-out infinite;
+                  z-index: -1;
+                  pointer-events: none;
+                }
+              `}</style>
+
+              <div style={{ position: 'relative', zIndex: 0 }} className="hidden sm:block">
+                <div className="nav-register-pulse" />
+                <button
+                  onClick={() => navigate('/registration')}
+                  className="nav-register-btn"
+                >
+                  Register <span className="arrow">→</span>
+                </button>
+              </div>
 
               <button
                 onClick={() => setMobileOpen((o) => !o)}
@@ -480,7 +530,7 @@ export default function Navbar() {
                   cursor: 'pointer',
                   transition: 'color 0.15s',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#0f766e'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-dark)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
                 aria-label="Toggle menu"
               >
@@ -510,22 +560,18 @@ export default function Navbar() {
               <Link
                 to="/registration"
                 onClick={() => setMobileOpen(false)}
+                className="nav-register-btn"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '11px',
-                  fontWeight: 800,
-                  letterSpacing: '0.13em',
-                  textTransform: 'uppercase',
-                  padding: '14px',
-                  background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
-                  color: '#ffffff',
                   textDecoration: 'none',
-                  clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))',
+                  width: '100%',
+                  padding: '14px',
                 }}
               >
-                Register Now →
+                Register Now <span className="arrow" style={{ marginLeft: 4 }}>→</span>
               </Link>
             </div>
           </div>

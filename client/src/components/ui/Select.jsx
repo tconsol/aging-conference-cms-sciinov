@@ -62,8 +62,8 @@ export default function Select({
           onClick={() => setOpen((o) => !o)}
           className="w-full px-4 py-2.5 text-sm text-left flex items-center justify-between rounded-xl border transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
           style={{
-            borderColor: error ? '#f87171' : open ? '#0d9488' : '#e2e8f0',
-            boxShadow: open ? '0 0 0 2px rgba(13,148,136,0.25)' : 'none',
+            borderColor: error ? '#f87171' : open ? 'var(--brand)' : '#e2e8f0',
+            boxShadow: open ? '0 0 0 2px color-mix(in srgb, var(--brand) 25%, transparent)' : 'none',
           }}
         >
           <span className={selected ? 'text-slate-800' : 'text-slate-400'}>
@@ -74,7 +74,7 @@ export default function Select({
             strokeWidth={2.5}
             className="shrink-0 transition-transform duration-150"
             style={{
-              color: open ? '#0d9488' : '#94a3b8',
+              color: open ? 'var(--brand)' : '#94a3b8',
               transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
             }}
           />
@@ -86,8 +86,8 @@ export default function Select({
             style={{
               top: 'calc(100% + 4px)',
               border: '1px solid #e2e8f0',
-              borderTop: '2px solid #0d9488',
-              boxShadow: '0 8px 24px rgba(13,148,136,0.12), 0 2px 8px rgba(0,0,0,0.06)',
+              borderTop: '2px solid var(--brand)',
+              boxShadow: '0 8px 24px color-mix(in srgb, var(--brand) 12%, transparent), 0 2px 8px rgba(0,0,0,0.06)',
             }}
           >
             {searchable && (
@@ -117,8 +117,8 @@ export default function Select({
                       onClick={() => { onChange(opt.value); setOpen(false); }}
                       className="w-full px-4 py-2.5 text-sm text-left flex items-center justify-between transition-colors duration-100 hover:bg-teal-50"
                       style={{
-                        background: isSelected ? '#f0fdfa' : 'transparent',
-                        color: isSelected ? '#0d9488' : '#334155',
+                        background: isSelected ? 'var(--brand-light)' : 'transparent',
+                        color: isSelected ? 'var(--brand)' : '#334155',
                         fontWeight: isSelected ? 600 : 400,
                         borderBottom: i < filteredOptions.length - 1 ? '1px solid #f8fafc' : 'none',
                       }}

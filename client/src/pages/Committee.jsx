@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { MapPin, ArrowRight } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
-import Button from '../components/ui/Button';
 import { peopleAPI } from '../api/people';
 
 function MemberCard({ member }) {
@@ -12,42 +12,53 @@ function MemberCard({ member }) {
     : 'M';
 
   return (
-    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-100 transition-all overflow-hidden flex flex-col">
-      {member.photo ? (
-        <img
-          src={member.photo}
-          alt={member.fullName}
-          className="w-full aspect-square object-cover"
-        />
-      ) : (
-        <div className="w-full aspect-square bg-teal-50 flex items-center justify-center">
-          <span className="text-4xl font-bold text-teal-700">{initials}</span>
+    <Link
+      to={`/committee/${member._id}`}
+      className="group relative bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
+    >
+      {/* Photo / Avatar */}
+      <div className="relative h-52 w-full overflow-hidden bg-gradient-to-br from-teal-500 to-emerald-600">
+        {member.photo ? (
+          <>
+            <img
+              src={member.photo}
+              alt={member.fullName}
+              className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="text-6xl font-bold text-white/90 select-none">{initials}</span>
+          </div>
+        )}
+        <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <ArrowRight size={14} className="text-white" />
         </div>
-      )}
+      </div>
 
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-bold text-slate-900 text-base leading-snug">
+      {/* Info */}
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-bold text-slate-900 group-hover:text-teal-700 transition-colors text-sm leading-snug line-clamp-1">
           {member.fullName || 'Committee Member'}
         </h3>
         {member.designation && (
-          <p className="text-sm text-slate-500 mt-0.5">{member.designation}</p>
+          <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">{member.designation}</p>
         )}
         {member.organization && (
-          <p className="text-sm text-teal-600 font-medium mt-0.5">{member.organization}</p>
+          <p className="text-xs font-semibold text-teal-600 mt-2 line-clamp-1">{member.organization}</p>
         )}
         {member.country && (
-          <p className="flex items-center gap-1.5 text-xs text-slate-400 mt-2">
-            <MapPin size={12} className="shrink-0" /> {member.country}
-          </p>
+          <div className="flex items-center gap-1 mt-2">
+            <MapPin size={11} className="text-slate-400 shrink-0" />
+            <span className="text-xs text-slate-400">{member.country}</span>
+          </div>
         )}
-
-        <div className="mt-auto pt-4">
-          <Button to={`/committee/${member._id}`} variant="secondary" size="sm" className="w-full justify-center">
-            View Profile
-          </Button>
-        </div>
       </div>
-    </div>
+
+      {/* Bottom accent bar */}
+      <div className="h-0.5 bg-gradient-to-r from-teal-400 to-emerald-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+    </Link>
   );
 }
 
@@ -84,7 +95,7 @@ export default function Committee() {
               <SectionHeader title="Committee Forthcoming" subtitle="Committee members will be announced prior to the congress." />
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {sortedMembers.map((member) => (
                 <MemberCard key={member._id} member={member} />
               ))}

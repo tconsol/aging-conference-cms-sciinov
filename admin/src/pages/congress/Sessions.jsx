@@ -9,6 +9,7 @@ import Dropdown from '../../components/ui/Dropdown';
 import Textarea from '../../components/ui/Textarea';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
@@ -25,6 +26,20 @@ export default function Sessions() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await sessionsAPI.update(item._id, { isActive: !item.isActive });
+      setItems((prev) => prev.map((s) => s._id === item._id ? { ...s, isActive: !s.isActive } : s));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
@@ -53,7 +68,7 @@ export default function Sessions() {
   useEffect(() => { fetchEditions(); }, []);
   useEffect(() => { fetchItems(); }, [filterEdition]);
 
-  const editionOptions = editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }));
+  const editionOptions = editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }));
 
   const openModal = (data = null) => {
     if (data) {
@@ -156,9 +171,11 @@ export default function Sessions() {
                     </td>
                     <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
                     <td className="px-6 py-3">
-                      <Badge variant={item.isActive ? 'success' : 'default'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-1">

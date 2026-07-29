@@ -70,7 +70,7 @@ export default function ImportantDates() {
   useEffect(() => { fetchEditions(); }, []);
   useEffect(() => { fetchItems(); }, [filterEdition]);
 
-  const editionOptions = editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }));
+  const editionOptions = editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }));
 
   const openModal = (data = null) => {
     if (data) {

@@ -8,6 +8,7 @@ import { formatDateTime, getErrorMessage } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -41,6 +42,20 @@ export default function AdminUsers() {
   const [deleting, setDeleting] = useState(false);
   const [resetPasswordTarget, setResetPasswordTarget] = useState(null);
   const [resetting, setResetting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await adminUsersAPI.update(item._id, { isActive: !item.isActive });
+      setUsers((prev) => prev.map((u) => u._id === item._id ? { ...u, isActive: !u.isActive } : u));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const {
     register,
@@ -218,9 +233,11 @@ export default function AdminUsers() {
                       </Badge>
                     </td>
                     <td className="px-6 py-3">
-                      <Badge variant={item.isActive ? 'success' : 'default'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
                       {formatDateTime(item.lastLogin) || '—'}

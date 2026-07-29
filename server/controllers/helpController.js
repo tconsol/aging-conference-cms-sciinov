@@ -1,5 +1,6 @@
 const FAQ = require('../models/FAQ');
 const SupportTicket = require('../models/SupportTicket');
+const nextDisplayOrder = require('../utils/autoOrder');
 const { sendEmail } = require('../utils/email');
 
 // FAQs
@@ -14,7 +15,9 @@ exports.getAllFAQs = async (req, res, next) => {
 
 exports.createFAQ = async (req, res, next) => {
   try {
-    const faq = await FAQ.create(req.body);
+    const faqData = { ...req.body };
+    if (!faqData.displayOrder) faqData.displayOrder = await nextDisplayOrder(FAQ);
+    const faq = await FAQ.create(faqData);
     res.status(201).json({ success: true, data: faq });
   } catch (err) { next(err); }
 };

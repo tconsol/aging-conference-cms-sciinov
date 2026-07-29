@@ -1,4 +1,5 @@
 const PricingTier = require('../models/PricingTier');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -28,10 +29,12 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    if (req.body.isActive) {
-      await PricingTier.updateMany({ edition: req.body.edition, isActive: true }, { isActive: false });
+    const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(PricingTier);
+    if (data.isActive) {
+      await PricingTier.updateMany({ edition: data.edition, isActive: true }, { isActive: false });
     }
-    const tier = await PricingTier.create(req.body);
+    const tier = await PricingTier.create(data);
     res.status(201).json({ success: true, data: tier });
   } catch (err) { next(err); }
 };

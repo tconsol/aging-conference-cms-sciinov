@@ -7,6 +7,7 @@ import { truncate, buildFormData, getErrorMessage } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
@@ -42,6 +43,20 @@ export default function Testimonials() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await testimonialsAPI.update(item._id, { isActive: !item.isActive });
+      setTestimonials((prev) => prev.map((t) => t._id === item._id ? { ...t, isActive: !t.isActive } : t));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const {
     register,
@@ -201,9 +216,11 @@ export default function Testimonials() {
                       <StarRating rating={item.rating} />
                     </td>
                     <td className="px-6 py-3">
-                      <Badge variant={item.isActive ? 'success' : 'default'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
                     <td className="px-6 py-3 text-right">

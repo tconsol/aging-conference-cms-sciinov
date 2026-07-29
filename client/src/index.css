@@ -179,6 +179,131 @@
   100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
 }
 
+/* ── Brand CSS Variables (overridden at runtime from siteSettings.theme) ── */
+:root {
+  --brand:        #0d9488;
+  --brand-dark:   #0f766e;
+  --brand-light:  #f0fdfa;
+  --brand-accent: #f59e0b;
+}
+
+/* ── Button helpers (used by Button.jsx) ── */
+.btn-brand { background-color: var(--brand); color: #fff; }
+.btn-brand:hover:not(:disabled) { background-color: var(--brand-dark); }
+.btn-brand-outline { border: 2px solid var(--brand); color: var(--brand); background: transparent; }
+.btn-brand-outline:hover:not(:disabled) { background-color: var(--brand); color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBAL TEAL → BRAND OVERRIDES
+   Every Tailwind teal-* class remapped to CSS vars so the admin Theme panel
+   controls the entire client colour scheme at runtime.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Backgrounds ── */
+.bg-teal-50  { background-color: var(--brand-light) !important; }
+.bg-teal-100 { background-color: color-mix(in srgb, var(--brand) 12%, white) !important; }
+.bg-teal-200 { background-color: color-mix(in srgb, var(--brand) 24%, white) !important; }
+.bg-teal-400 { background-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.bg-teal-500 { background-color: var(--brand) !important; }
+.bg-teal-600 { background-color: var(--brand) !important; }
+.bg-teal-700 { background-color: var(--brand-dark) !important; }
+.bg-teal-800 { background-color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
+
+.hover\:bg-teal-50:hover  { background-color: var(--brand-light) !important; }
+.hover\:bg-teal-100:hover { background-color: color-mix(in srgb, var(--brand) 12%, white) !important; }
+.hover\:bg-teal-400:hover { background-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.hover\:bg-teal-500:hover { background-color: var(--brand) !important; }
+.hover\:bg-teal-600:hover { background-color: var(--brand) !important; }
+.hover\:bg-teal-700:hover { background-color: var(--brand-dark) !important; }
+.hover\:bg-teal-800:hover { background-color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
+
+/* Opacity-modified backgrounds */
+.bg-teal-50\/50  { background-color: color-mix(in srgb, var(--brand-light) 50%, transparent) !important; }
+.bg-teal-100\/50 { background-color: color-mix(in srgb, var(--brand) 6%, transparent) !important; }
+.bg-teal-500\/10 { background-color: color-mix(in srgb, var(--brand) 10%, transparent) !important; }
+.bg-teal-500\/20 { background-color: color-mix(in srgb, var(--brand) 20%, transparent) !important; }
+.bg-teal-500\/30 { background-color: color-mix(in srgb, var(--brand) 30%, transparent) !important; }
+.bg-teal-700\/50 { background-color: color-mix(in srgb, var(--brand-dark) 50%, transparent) !important; }
+
+/* ── Text ── */
+.text-teal-200 { color: color-mix(in srgb, var(--brand) 38%, white) !important; }
+.text-teal-300 { color: color-mix(in srgb, var(--brand) 58%, white) !important; }
+.text-teal-400 { color: color-mix(in srgb, var(--brand) 75%, white) !important; }
+.text-teal-500 { color: var(--brand) !important; }
+.text-teal-600 { color: var(--brand) !important; }
+.text-teal-700 { color: var(--brand-dark) !important; }
+.text-teal-800 { color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
+
+.hover\:text-teal-300:hover { color: color-mix(in srgb, var(--brand) 58%, white) !important; }
+.hover\:text-teal-600:hover { color: var(--brand) !important; }
+.hover\:text-teal-700:hover { color: var(--brand-dark) !important; }
+.hover\:text-teal-800:hover { color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
+
+/* group-hover text */
+.group:hover .group-hover\:text-teal-300 { color: color-mix(in srgb, var(--brand) 58%, white) !important; }
+.group:hover .group-hover\:text-teal-600 { color: var(--brand) !important; }
+.group:hover .group-hover\:text-teal-700 { color: var(--brand-dark) !important; }
+
+/* ── Borders ── */
+.border-teal-100 { border-color: color-mix(in srgb, var(--brand) 14%, white) !important; }
+.border-teal-200 { border-color: color-mix(in srgb, var(--brand) 26%, white) !important; }
+.border-teal-400 { border-color: color-mix(in srgb, var(--brand) 70%, white) !important; }
+.border-teal-500 { border-color: var(--brand) !important; }
+.border-teal-600 { border-color: var(--brand) !important; }
+.border-teal-700 { border-color: var(--brand-dark) !important; }
+
+.hover\:border-teal-100:hover { border-color: color-mix(in srgb, var(--brand) 14%, white) !important; }
+.hover\:border-teal-200:hover { border-color: color-mix(in srgb, var(--brand) 26%, white) !important; }
+.hover\:border-teal-400:hover { border-color: color-mix(in srgb, var(--brand) 70%, white) !important; }
+.hover\:border-teal-500:hover { border-color: var(--brand) !important; }
+.hover\:border-teal-700\/50:hover { border-color: color-mix(in srgb, var(--brand-dark) 50%, transparent) !important; }
+
+/* Opacity-modified borders */
+.border-teal-400\/50 { border-color: color-mix(in srgb, var(--brand) 50%, transparent) !important; }
+.border-teal-400\/60 { border-color: color-mix(in srgb, var(--brand) 60%, transparent) !important; }
+.border-teal-500\/20 { border-color: color-mix(in srgb, var(--brand) 20%, transparent) !important; }
+.border-teal-500\/30 { border-color: color-mix(in srgb, var(--brand) 30%, transparent) !important; }
+.border-teal-500\/40 { border-color: color-mix(in srgb, var(--brand) 40%, transparent) !important; }
+
+/* Divide */
+.divide-teal-600 > * + * { border-color: color-mix(in srgb, var(--brand) 55%, white) !important; }
+
+/* ── Gradients ── */
+.from-teal-400 { --tw-gradient-from: color-mix(in srgb, var(--brand) 72%, white) !important; --tw-gradient-from-position: ; --tw-gradient-to: color-mix(in srgb, var(--brand) 72%, white) 0% !important; }
+.from-teal-500 { --tw-gradient-from: var(--brand) !important; --tw-gradient-to: color-mix(in srgb, var(--brand) 0%, transparent) !important; }
+.from-teal-600 { --tw-gradient-from: var(--brand) !important; --tw-gradient-to: color-mix(in srgb, var(--brand) 0%, transparent) !important; }
+.to-teal-700   { --tw-gradient-to: var(--brand-dark) !important; }
+.to-emerald-500 { --tw-gradient-to: var(--brand-dark) !important; }
+.to-emerald-600 { --tw-gradient-to: var(--brand-dark) !important; }
+.to-emerald-700 { --tw-gradient-to: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
+.via-teal-500  { --tw-gradient-via: var(--brand) !important; }
+
+/* ── Rings / Focus ── */
+.ring-teal-400 { --tw-ring-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.ring-teal-500 { --tw-ring-color: var(--brand) !important; }
+.ring-teal-600 { --tw-ring-color: var(--brand-dark) !important; }
+.focus\:ring-teal-400:focus { --tw-ring-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.focus\:ring-teal-500:focus { --tw-ring-color: var(--brand) !important; }
+.focus\:ring-teal-600:focus { --tw-ring-color: var(--brand-dark) !important; }
+.focus\:border-teal-400:focus { border-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.focus-within\:ring-teal-500:focus-within { --tw-ring-color: var(--brand) !important; }
+.focus-within\:border-teal-400:focus-within { border-color: color-mix(in srgb, var(--brand) 72%, white) !important; }
+
+/* Opacity-modified rings */
+.ring-teal-400\/30 { --tw-ring-color: color-mix(in srgb, var(--brand) 30%, transparent) !important; }
+.ring-teal-500\/30 { --tw-ring-color: color-mix(in srgb, var(--brand) 30%, transparent) !important; }
+
+/* ── Fill (SVG) ── */
+.fill-teal-400 { fill: color-mix(in srgb, var(--brand) 72%, white) !important; }
+.fill-teal-500 { fill: var(--brand) !important; }
+
+/* ── Accent color (amber → --brand-accent) ── */
+.text-amber-400  { color: var(--brand-accent) !important; }
+.text-amber-500  { color: var(--brand-accent) !important; }
+.bg-amber-500    { background-color: var(--brand-accent) !important; }
+.fill-amber-400  { fill: var(--brand-accent) !important; }
+.border-amber-400 { border-color: var(--brand-accent) !important; }
+
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -199,7 +324,9 @@
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
   .section-label {
-    @apply text-xs font-bold uppercase tracking-[0.2em] text-teal-600 border-l-4 border-teal-500 pl-3 mb-6 block;
+    @apply text-xs font-bold uppercase tracking-[0.2em] pl-3 mb-6 block;
+    color: var(--brand);
+    border-left: 4px solid var(--brand);
   }
   .prose-content h1 {
     @apply text-3xl font-black mb-4;
@@ -214,6 +341,7 @@
     @apply list-disc list-inside text-slate-700 mb-4 space-y-1;
   }
   .prose-content a {
-    @apply text-teal-600 underline;
+    color: var(--brand);
+    text-decoration: underline;
   }
 }

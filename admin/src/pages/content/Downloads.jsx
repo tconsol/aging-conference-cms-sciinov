@@ -7,6 +7,7 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import PageHeader from '../../components/ui/PageHeader';
 import EmptyState from '../../components/ui/EmptyState';
@@ -39,6 +40,20 @@ export default function Downloads() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await downloadsAPI.update(item._id, { isActive: !item.isActive });
+      setItems((prev) => prev.map((d) => d._id === item._id ? { ...d, isActive: !d.isActive } : d));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const {
     register,
@@ -190,11 +205,11 @@ export default function Downloads() {
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.displayOrder}</td>
                     <td className="px-4 py-3">
-                      {item.isActive ? (
-                        <Badge variant="success">Active</Badge>
-                      ) : (
-                        <Badge variant="default">Inactive</Badge>
-                      )}
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

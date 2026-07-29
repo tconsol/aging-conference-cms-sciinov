@@ -1,4 +1,5 @@
 const ProgramSlot = require('../models/ProgramSlot');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -22,7 +23,9 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const slot = await ProgramSlot.create(req.body);
+    const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(ProgramSlot);
+    const slot = await ProgramSlot.create(data);
     res.status(201).json({ success: true, data: slot });
   } catch (err) { next(err); }
 };

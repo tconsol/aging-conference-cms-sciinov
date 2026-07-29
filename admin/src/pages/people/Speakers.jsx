@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Pencil, Trash2 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
@@ -48,6 +49,20 @@ export default function Speakers() {
   const [search, setSearch] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await speakersAPI.update(item._id, { isActive: !item.isActive });
+      setItems((prev) => prev.map((s) => s._id === item._id ? { ...s, isActive: !s.isActive } : s));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const fetchEditions = async () => {
     try {
@@ -109,7 +124,7 @@ export default function Speakers() {
         <Dropdown
           value={filterEdition}
           onChange={setFilterEdition}
-          options={[{ value: '', label: 'All Editions' }, ...editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }))]}
+          options={[{ value: '', label: 'All Editions' }, ...editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }))]}
           className="w-56"
         />
       </div>
@@ -171,9 +186,11 @@ export default function Speakers() {
                       )}
                     </td>
                     <td className="px-6 py-3">
-                      <Badge variant={item.isActive ? 'success' : 'default'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-1">

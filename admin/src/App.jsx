@@ -62,6 +62,8 @@ import TicketDetail from './pages/inbox/TicketDetail';
 // Settings
 import SiteSettings from './pages/settings/SiteSettings';
 import AdminUsers from './pages/settings/AdminUsers';
+import Homepage from './pages/settings/Homepage';
+import Theme from './pages/settings/Theme';
 
 export default function App() {
   const { loading } = useAuth();
@@ -137,6 +139,8 @@ export default function App() {
           <Route path="/help/tickets/:id" element={<TicketDetail />} />
 
           {/* Settings */}
+          <Route path="/homepage" element={<Homepage />} />
+          <Route path="/theme" element={<Theme />} />
           <Route path="/settings" element={<SiteSettings />} />
           <Route path="/admin-users" element={<AdminUsers />} />
         </Route>

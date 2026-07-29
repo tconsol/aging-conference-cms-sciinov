@@ -7,6 +7,7 @@ import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
@@ -48,6 +49,20 @@ export default function Committee() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await committeeAPI.update(item._id, { isActive: !item.isActive });
+      setItems((prev) => prev.map((c) => c._id === item._id ? { ...c, isActive: !c.isActive } : c));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
 
@@ -178,9 +193,11 @@ export default function Committee() {
                     <td className="px-6 py-3 text-slate-600">{item.country || '—'}</td>
                     <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
                     <td className="px-6 py-3">
-                      <Badge variant={item.isActive ? 'success' : 'default'}>
-                        {item.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-1">

@@ -1,4 +1,5 @@
 const ScientificSession = require('../models/ScientificSession');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -20,7 +21,9 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const session = await ScientificSession.create(req.body);
+    const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(ScientificSession);
+    const session = await ScientificSession.create(data);
     res.status(201).json({ success: true, data: session });
   } catch (err) { next(err); }
 };

@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, User, ChevronDown, Search, X } from 'lucide-react';
+import { Menu, LogOut, User, ChevronDown, Search, X, Palette, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { NAV_SEARCH_INDEX } from '../../config/navGroups';
+import { THEME_PRESETS } from '../../config/themePresets';
+import { siteSettingsAPI } from '../../api/settings';
+import toast from 'react-hot-toast';
 
 function NavSearch() {
   const navigate = useNavigate();
@@ -107,6 +110,138 @@ function NavSearch() {
   );
 }
 
+function ThemeSwitcher() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(null);
+  const [activeColor, setActiveColor] = useState(null);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    siteSettingsAPI.get()
+      .then((res) => {
+        const theme = (res.data?.data ?? res.data)?.theme;
+        if (theme?.primaryColor) setActiveColor(theme.primaryColor);
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const applyPreset = async (preset) => {
+    setSaving(preset.primaryColor);
+    try {
+      await siteSettingsAPI.updateTheme(preset);
+      setActiveColor(preset.primaryColor);
+      toast.success(`Theme: ${preset.name}`);
+      setOpen(false);
+    } catch {
+      toast.error('Failed to apply theme.');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        title="Quick theme switcher"
+        className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+        style={{ borderColor: open ? '#0f766e' : undefined }}
+      >
+        <div
+          className="w-3.5 h-3.5 rounded-full border border-white shadow-sm"
+          style={{ backgroundColor: activeColor || '#0d9488' }}
+        />
+        <Palette size={14} className="text-slate-500" />
+        <ChevronDown
+          size={11}
+          strokeWidth={2.5}
+          className="text-slate-400"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}
+        />
+      </button>
+
+      {open && (
+        <div
+          className="absolute right-0 mt-1.5 w-72 bg-white rounded-xl z-50 overflow-hidden"
+          style={{
+            border: '1px solid #e2e8f0',
+            borderTop: '2px solid #0f766e',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
+          <div className="px-4 py-3 border-b border-slate-100">
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Quick Theme</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Saves immediately to client site</p>
+          </div>
+          <div className="p-3 grid grid-cols-4 gap-2 max-h-72 overflow-y-auto">
+            {THEME_PRESETS.map((preset) => {
+              const isActive = activeColor === preset.primaryColor;
+              const isSaving = saving === preset.primaryColor;
+              return (
+                <button
+                  key={preset.name}
+                  onClick={() => applyPreset(preset)}
+                  disabled={!!saving}
+                  title={preset.name}
+                  className="flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all hover:bg-slate-50 disabled:opacity-60"
+                  style={{
+                    borderColor: isActive ? preset.primaryColor : '#e2e8f0',
+                    background: isActive ? `${preset.primaryColor}10` : undefined,
+                  }}
+                >
+                  <div className="relative">
+                    <div
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-md"
+                      style={{ backgroundColor: preset.primaryColor }}
+                    />
+                    <div
+                      className="w-4 h-4 rounded-full border-2 border-white absolute -bottom-1 -right-1"
+                      style={{ backgroundColor: preset.accentColor }}
+                    />
+                    {isSaving && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    {isActive && !isSaving && (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center rounded-full"
+                        style={{ background: `${preset.primaryColor}cc` }}
+                      >
+                        <Check size={14} stroke="white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-semibold text-slate-600 text-center leading-tight truncate w-full">
+                    {preset.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="px-4 py-2.5 border-t border-slate-100">
+            <button
+              onClick={() => { navigate('/theme'); setOpen(false); }}
+              className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              Advanced settings →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Topbar({ onMenuClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -147,21 +282,11 @@ export default function Topbar({ onMenuClick }) {
 
       {/* Breadcrumb label */}
       <div className="hidden lg:flex items-center gap-2">
-        <span
-          style={{ fontSize: 13, fontWeight: 500, color: '#64748b' }}
-        >
+        <span style={{ fontSize: 13, fontWeight: 500, color: '#64748b' }}>
           Aging Congress
         </span>
         <span style={{ color: '#cbd5e1', fontSize: 12 }}>·</span>
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: '#0f766e',
-          }}
-        >
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f766e' }}>
           Admin Panel
         </span>
       </div>
@@ -171,94 +296,96 @@ export default function Topbar({ onMenuClick }) {
         <NavSearch />
       </div>
 
-      {/* User dropdown */}
-      <div className="relative ml-auto" ref={dropdownRef}>
-        <button
-          onClick={() => setDropdownOpen(!dropdownOpen)}
-          className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
-          style={{
-            border: dropdownOpen ? '1px solid #0f766e' : '1px solid #e2e8f0',
-            background: dropdownOpen ? '#f0fdf9' : 'white',
-            clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%)',
-          }}
-        >
-          {/* Avatar */}
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              background: 'linear-gradient(135deg, #0f766e, #0d9488)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)',
-              flexShrink: 0,
-            }}
-          >
-            {initials}
-          </div>
-          <div className="hidden sm:block text-left">
-            <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.name}</p>
-            <p className="text-xs text-slate-400 capitalize leading-tight">
-              {user?.role?.replace('_', ' ')}
-            </p>
-          </div>
-          <ChevronDown
-            size={13}
-            strokeWidth={2.5}
-            style={{
-              color: dropdownOpen ? '#0f766e' : '#94a3b8',
-              transition: 'transform 0.15s ease',
-              transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-            }}
-          />
-        </button>
+      {/* Right side */}
+      <div className="flex items-center gap-2 ml-auto">
 
-        {/* Dropdown */}
-        {dropdownOpen && (
-          <div
-            className="absolute right-0 mt-1 w-52 bg-white z-50"
+        {/* Theme switcher */}
+        <ThemeSwitcher />
+
+        {/* User dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2.5 px-3 py-1.5 transition-all"
             style={{
-              border: '1px solid #e2e8f0',
-              borderTop: '2px solid #0f766e',
-              boxShadow: '0 8px 24px rgba(15,118,110,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+              border: dropdownOpen ? '1px solid #0f766e' : '1px solid #e2e8f0',
+              background: dropdownOpen ? '#f0fdf9' : 'white',
+              clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 0 100%)',
             }}
           >
-            {/* User info */}
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <p style={{ fontSize: 10, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                Signed in as
-              </p>
-              <p className="text-sm font-medium text-slate-800 truncate mt-0.5">{user?.email}</p>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 700,
+                clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)',
+                flexShrink: 0,
+              }}
+            >
+              {initials}
             </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.name}</p>
+              <p className="text-xs text-slate-400 capitalize leading-tight">
+                {user?.role?.replace('_', ' ')}
+              </p>
+            </div>
+            <ChevronDown
+              size={13}
+              strokeWidth={2.5}
+              style={{
+                color: dropdownOpen ? '#0f766e' : '#94a3b8',
+                transition: 'transform 0.15s ease',
+                transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+            />
+          </button>
 
-            {/* Profile */}
-            <button
-              onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 transition-colors"
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.color = '#0f766e'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}
+          {dropdownOpen && (
+            <div
+              className="absolute right-0 mt-1 w-52 bg-white z-50"
+              style={{
+                border: '1px solid #e2e8f0',
+                borderTop: '2px solid #0f766e',
+                boxShadow: '0 8px 24px rgba(15,118,110,0.1), 0 2px 8px rgba(0,0,0,0.06)',
+              }}
             >
-              <User size={14} />
-              Profile Settings
-            </button>
+              <div className="px-4 py-3" style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <p style={{ fontSize: 10, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Signed in as
+                </p>
+                <p className="text-sm font-medium text-slate-800 truncate mt-0.5">{user?.email}</p>
+              </div>
 
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors"
-              style={{ color: '#dc2626', borderTop: '1px solid #f1f5f9' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <LogOut size={14} />
-              Sign Out
-            </button>
-          </div>
-        )}
+              <button
+                onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 transition-colors"
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.color = '#0f766e'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; }}
+              >
+                <User size={14} />
+                Profile Settings
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors"
+                style={{ color: '#dc2626', borderTop: '1px solid #f1f5f9' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <LogOut size={14} />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

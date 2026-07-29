@@ -4,6 +4,8 @@ import api from './axios';
 export const siteSettingsAPI = {
   get: () => api.get('/site-settings'),
   update: (data) => api.put('/site-settings', data),
+  updateHomepage: (data) => api.patch('/site-settings', { homepage: data }),
+  updateTheme: (data) => api.patch('/site-settings', { theme: data }),
 };
 
 // Admin Users

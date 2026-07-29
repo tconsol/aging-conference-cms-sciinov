@@ -9,6 +9,19 @@ exports.get = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.patch = async (req, res, next) => {
+  try {
+    let settings = await SiteSettings.findOne();
+    if (!settings) settings = await SiteSettings.create({});
+    const updated = await SiteSettings.findByIdAndUpdate(
+      settings._id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+    res.json({ success: true, data: updated });
+  } catch (err) { next(err); }
+};
+
 exports.update = async (req, res, next) => {
   try {
     let settings = await SiteSettings.findOne();

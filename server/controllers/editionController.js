@@ -26,6 +26,9 @@ exports.getOne = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const data = { ...req.body };
+    if (data.highlights && typeof data.highlights === 'string') {
+      try { data.highlights = JSON.parse(data.highlights); } catch { data.highlights = []; }
+    }
     if (req.file) {
       const dest = gcsFilename('aging-congress/editions', req.file.mimetype, req.file.originalname);
       const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });
@@ -46,6 +49,9 @@ exports.update = async (req, res, next) => {
     if (!edition) return res.status(404).json({ success: false, message: 'Edition not found.' });
 
     const data = { ...req.body };
+    if (data.highlights && typeof data.highlights === 'string') {
+      try { data.highlights = JSON.parse(data.highlights); } catch { data.highlights = []; }
+    }
     if (req.file) {
       if (edition.bannerImagePublicId) await deleteFromGCS(edition.bannerImagePublicId);
       const dest = gcsFilename('aging-congress/editions', req.file.mimetype, req.file.originalname);

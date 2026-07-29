@@ -1,5 +1,6 @@
 const CommitteeMember = require('../models/CommitteeMember');
 const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -21,6 +22,7 @@ exports.getOne = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(CommitteeMember);
     if (req.file) {
       const dest = gcsFilename('aging-congress/committee', req.file.mimetype, req.file.originalname);
       const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });

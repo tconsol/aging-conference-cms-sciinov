@@ -4,7 +4,7 @@ import {
   Newspaper, BarChart2, Download, BookMarked, ScrollText, BookCopy,
   FileCheck, Handshake, MessageSquareQuote, Mail, MessageCircle,
   LifeBuoy, Settings, ShieldCheck, Building,
-  UserPlus, Layers, Info, Ticket,
+  UserPlus, Layers, Info, Ticket, LayoutTemplate, Palette,
 } from 'lucide-react';
 
 // Grouped to mirror the public client site's navbar (Overview / Speakers / Program /
@@ -74,6 +74,8 @@ export const navGroups = [
   {
     label: 'Settings',
     items: [
+      { label: 'Homepage CMS', icon: LayoutTemplate, href: '/homepage' },
+      { label: 'Theme Colors', icon: Palette, href: '/theme' },
       { label: 'Site Settings', icon: Settings, href: '/settings' },
       { label: 'Admin Users', icon: ShieldCheck, href: '/admin-users' },
     ],

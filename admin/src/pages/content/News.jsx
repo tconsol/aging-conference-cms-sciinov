@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Pencil, Trash2, Newspaper, Plus } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Badge, { statusBadge } from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
@@ -30,6 +31,21 @@ export default function News() {
   const [statusFilter, setStatusFilter] = useState('');
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    const next = item.status === 'published' ? 'draft' : 'published';
+    try {
+      setTogglingId(item._id);
+      await newsAPI.update(item._id, { status: next });
+      setItems((prev) => prev.map((n) => n._id === item._id ? { ...n, status: next } : n));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const LIMIT = 12;
 
@@ -138,7 +154,13 @@ export default function News() {
                       <span title={item.title}>{truncate(item.title, 60)}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.author}</td>
-                    <td className="px-4 py-3">{statusBadge(item.status)}</td>
+                    <td className="px-4 py-3">
+                      <StatusToggle
+                        isActive={item.status === 'published'}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatDate(item.publishedAt)}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

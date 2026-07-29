@@ -1,4 +1,5 @@
 const FAQTopic = require('../models/FAQTopic');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -19,7 +20,9 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const topic = await FAQTopic.create(req.body);
+    const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(FAQTopic);
+    const topic = await FAQTopic.create(data);
     res.status(201).json({ success: true, data: topic });
   } catch (err) { next(err); }
 };

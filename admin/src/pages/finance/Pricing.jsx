@@ -8,6 +8,7 @@ import Select from '../../components/ui/Select';
 import Dropdown from '../../components/ui/Dropdown';
 import Modal from '../../components/ui/Modal';
 import Badge, { statusBadge } from '../../components/ui/Badge';
+import StatusToggle from '../../components/ui/StatusToggle';
 import Spinner from '../../components/ui/Spinner';
 import PageHeader from '../../components/ui/PageHeader';
 import EmptyState from '../../components/ui/EmptyState';
@@ -33,6 +34,20 @@ export default function Pricing() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+
+  const toggleStatus = async (item) => {
+    try {
+      setTogglingId(item._id);
+      await pricingAPI.update(item._id, { isActive: !item.isActive });
+      setItems((prev) => prev.map((p) => p._id === item._id ? { ...p, isActive: !p.isActive } : p));
+      toast.success('Status updated.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
@@ -122,7 +137,7 @@ export default function Pricing() {
     }
   };
 
-  const editionOptions = editions.map((e) => ({ value: e._id, label: `${e.title} (${e.year})` }));
+  const editionOptions = editions.map((e) => ({ value: e._id, label: String(e.title).includes(String(e.year)) ? e.title : `${e.title} (${e.year})` }));
 
   return (
     <div>
@@ -194,11 +209,11 @@ export default function Pricing() {
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3">
-                      {item.isActive ? (
-                        <Badge variant="success">Active</Badge>
-                      ) : (
-                        <Badge variant="default">Inactive</Badge>
-                      )}
+                      <StatusToggle
+                        isActive={item.isActive}
+                        loading={togglingId === item._id}
+                        onToggle={() => toggleStatus(item)}
+                      />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">

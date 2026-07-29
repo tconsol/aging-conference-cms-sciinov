@@ -10,11 +10,13 @@ export function CongressProvider({ children }) {
   const [siteSettings, setSiteSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      congressAPI.getActive().catch(() => ({ data: { data: null } })),
-      contentAPI.getSiteSettings().catch(() => ({ data: { data: null } })),
-    ]).then(([editionRes, settingsRes]) => {
+  const fetchAll = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const [editionRes, settingsRes] = await Promise.all([
+        congressAPI.getActive().catch(() => ({ data: { data: null } })),
+        contentAPI.getSiteSettings().catch(() => ({ data: { data: null } })),
+      ]);
       setActiveEdition(editionRes.data?.data ?? editionRes.data ?? null);
       const settings = settingsRes.data?.data ?? settingsRes.data ?? null;
       setSiteSettings(settings);
@@ -22,7 +24,27 @@ export function CongressProvider({ children }) {
         const link = document.querySelector('link[rel="icon"]');
         if (link) link.href = settings.favicon;
       }
-    }).finally(() => setLoading(false));
+      const t = settings?.theme;
+      if (t) {
+        const root = document.documentElement;
+        if (t.primaryColor) root.style.setProperty('--brand', t.primaryColor);
+        if (t.primaryDark)  root.style.setProperty('--brand-dark', t.primaryDark);
+        if (t.primaryLight) root.style.setProperty('--brand-light', t.primaryLight);
+        if (t.accentColor)  root.style.setProperty('--brand-accent', t.accentColor);
+      }
+    } finally {
+      if (isInitial) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAll(true);
+
+    const handleVisibility = () => {
+      if (!document.hidden) fetchAll(false);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
   return (

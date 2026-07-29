@@ -10,6 +10,7 @@ router.get('/', ctrl.get);
 
 // Admin
 router.use(protect);
+router.patch('/', ctrl.patch);
 router.put('/', restrictTo('super_admin'), uploadImage.fields([{ name: 'logo', maxCount: 1 }, { name: 'favicon', maxCount: 1 }]), ctrl.update);
 
 module.exports = router;

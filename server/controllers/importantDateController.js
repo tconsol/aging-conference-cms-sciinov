@@ -1,4 +1,5 @@
 const ImportantDate = require('../models/ImportantDate');
+const nextDisplayOrder = require('../utils/autoOrder');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -20,7 +21,9 @@ exports.getOne = async (req, res, next) => {
 
 exports.create = async (req, res, next) => {
   try {
-    const date = await ImportantDate.create(req.body);
+    const data = { ...req.body };
+    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(ImportantDate);
+    const date = await ImportantDate.create(data);
     res.status(201).json({ success: true, data: date });
   } catch (err) { next(err); }
 };
