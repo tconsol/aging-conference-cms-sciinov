@@ -4,10 +4,12 @@ import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
 import OrganizerCarousel from '../components/ui/OrganizerCarousel';
 import { peopleAPI } from '../api/people';
+import { contentAPI } from '../api/content';
 
 export default function Organizers() {
   const [organizers, setOrganizers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [orgContent, setOrgContent] = useState('');
 
   useEffect(() => {
     peopleAPI.getOrganizers()
@@ -17,6 +19,13 @@ export default function Organizers() {
       })
       .catch(() => setOrganizers([]))
       .finally(() => setLoading(false));
+
+    contentAPI.getSiteSettings()
+      .then((res) => {
+        const s = res.data?.data ?? res.data ?? {};
+        setOrgContent(s.organizerPageContent || '');
+      })
+      .catch(() => {});
   }, []);
 
   const sorted = [...organizers].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
@@ -42,6 +51,21 @@ export default function Organizers() {
           )}
         </div>
       </section>
+
+      {orgContent && (
+        <section className="section-padding" style={{ background: '#f8fafc' }}>
+          <div className="container-custom max-w-4xl">
+            <div
+              className="w-12 h-1 rounded-full mb-6"
+              style={{ background: 'var(--brand-dark)' }}
+            />
+            <div
+              className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: orgContent }}
+            />
+          </div>
+        </section>
+      )}
     </div>
   );
 }

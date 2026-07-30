@@ -35,10 +35,12 @@ const abstractSchema = new mongoose.Schema(
     fileName: String,
     status: {
       type: String,
-      enum: ['pending', 'under_review', 'approved', 'rejected'],
+      enum: ['pending', 'received_accepted', 'under_review', 'decision_pending', 'accepted', 'rejected'],
       default: 'pending',
     },
     adminNotes: String,
+    loginId: { type: String, sparse: true },
+    loginPassword: { type: String },
     submittedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

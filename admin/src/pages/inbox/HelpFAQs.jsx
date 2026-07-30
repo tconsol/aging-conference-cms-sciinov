@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Edit2, Trash2, Plus, ChevronDown, ChevronUp, HelpCircle, Ticket } from 'lucide-react';
 import { helpAPI, faqTopicsAPI } from '../../api/inbox';
-import { truncate, getErrorMessage } from '../../utils/helpers';
+import { truncate, getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -82,6 +82,7 @@ export default function HelpFAQs() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [orderConflict, setOrderConflict] = useState(null);
 
   const {
     register,
@@ -122,7 +123,7 @@ export default function HelpFAQs() {
       topic: '',
       question: '',
       answer: '',
-      displayOrder: '',
+      displayOrder: getNextDisplayOrder(faqs),
       isActive: true,
     });
     setModalOpen(true);
@@ -145,7 +146,7 @@ export default function HelpFAQs() {
     setEditingItem(null);
   };
 
-  const onSubmit = async (data) => {
+  const executeSubmit = async (data) => {
     try {
       setSaving(true);
       const payload = {
@@ -169,6 +170,25 @@ export default function HelpFAQs() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const onSubmit = async (data) => {
+    if (!editingItem) {
+      const conflict = findDisplayOrderConflict(faqs, data.displayOrder);
+      if (conflict) { setOrderConflict({ pending: data, conflict }); return; }
+    }
+    await executeSubmit(data);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(faqs);
+    try {
+      await helpAPI.updateFAQ(conflict._id, { displayOrder: newLast });
+      setFaqs((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
   };
 
   const handleDelete = async () => {
@@ -252,6 +272,7 @@ export default function HelpFAQs() {
             error={errors.topic?.message}
             options={topics.map((t) => ({ value: t._id, label: t.name }))}
             placeholder="Select a topic..."
+            defaultValue={editingItem ? (editingItem.topic?._id || editingItem.topic || '') : ''}
           />
           <Textarea
             label="Question"
@@ -307,6 +328,14 @@ export default function HelpFAQs() {
         title="Delete FAQ"
         message={`Are you sure you want to delete this FAQ? This action cannot be undone.`}
         confirmLabel="Delete"
+      />
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.question || 'another item'}". Proceeding will move that item to the end.`}
+        confirmLabel="Replace"
       />
     </div>
   );

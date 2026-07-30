@@ -1,5 +1,6 @@
-﻿import { useEffect, useState } from 'react';
-import { FileText, Download, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { FileText, Download, ArrowRight } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
@@ -23,8 +24,8 @@ export default function Reports() {
   return (
     <div>
       <PageHero
-        title="congress Reports"
-        subtitle="Access proceedings, reports, and publications from past Aging congress editions."
+        title="Congress Reports"
+        subtitle="Access proceedings, reports, and publications from past Aging Congress editions."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Reports' }]}
       />
 
@@ -34,53 +35,72 @@ export default function Reports() {
             <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           ) : reports.length === 0 ? (
             <div className="text-center py-20">
-              <SectionHeader title="Reports Coming Soon" subtitle="congress reports and proceedings will be available here after the event." />
+              <SectionHeader title="Reports Coming Soon" subtitle="Congress reports and proceedings will be available here after the event." />
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {reports.map((report) => (
                 <div
                   key={report._id}
-                  className="bg-white rounded-lg border border-slate-100 shadow-sm p-6 hover:shadow-md hover:border-teal-100 transition-all flex flex-col"
+                  className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  {report.coverImage ? (
-                    <img
-                      src={report.coverImage}
-                      alt={report.title}
-                      className="w-full aspect-[16/9] object-cover rounded-lg mb-4"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center mb-4">
-                      <FileText size={22} className="text-teal-700" />
-                    </div>
-                  )}
-                  <h3 className="font-bold text-slate-900 mb-1">{report.title}</h3>
-                  {report.description && (
-                    <p className="text-sm text-slate-600 mb-4 leading-relaxed flex-1">{report.description}</p>
-                  )}
-                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
-                    {report.createdAt && (
-                      <span className="text-xs text-slate-400">{formatDateShort(report.createdAt)}</span>
+                  {/* Cover image — fixed height so all cards align */}
+                  <div className="relative w-full aspect-[16/9] overflow-hidden shrink-0" style={{ background: 'var(--brand-light)' }}>
+                    {report.coverImage ? (
+                      <img
+                        src={report.coverImage}
+                        alt={report.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FileText size={40} style={{ color: 'var(--brand)' }} className="opacity-40" />
+                      </div>
                     )}
-                    {report.fileUrl ? (
-                      <a
-                        href={report.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1.5 text-sm font-medium text-teal-700 hover:text-teal-900 transition-colors"
+                  </div>
+
+                  {/* Body — flex-1 keeps footer pinned to bottom */}
+                  <div className="p-6 flex flex-col flex-1">
+                    {report.createdAt && (
+                      <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--brand)' }}>
+                        {formatDateShort(report.createdAt)}
+                      </p>
+                    )}
+
+                    <h3 className="font-black text-slate-900 leading-snug mb-2 line-clamp-2">
+                      {report.title}
+                    </h3>
+
+                    {report.description && (
+                      <p className="text-sm text-slate-500 leading-relaxed line-clamp-3 flex-1">
+                        {report.description}
+                      </p>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-slate-100 gap-2 flex-wrap">
+                      {/* Read More → detail page */}
+                      <Link
+                        to={`/reports/${report._id}`}
+                        className="flex items-center gap-1.5 text-sm font-bold transition-opacity hover:opacity-70"
+                        style={{ color: 'var(--brand-dark)' }}
                       >
-                        <Download size={14} /> Download
-                      </a>
-                    ) : report.url ? (
-                      <a
-                        href={report.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1.5 text-sm font-medium text-teal-700 hover:text-teal-900 transition-colors"
-                      >
-                        <ExternalLink size={14} /> View
-                      </a>
-                    ) : null}
+                        Read More <ArrowRight size={13} />
+                      </Link>
+
+                      {/* Download / external */}
+                      {report.fileUrl ? (
+                        <a
+                          href={report.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition-all hover:opacity-80"
+                          style={{ background: 'var(--brand-light)', color: 'var(--brand-dark)' }}
+                        >
+                          <Download size={12} /> Download
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               ))}

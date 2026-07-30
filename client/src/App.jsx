@@ -1,12 +1,14 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import SplashScreen from './components/ui/SplashScreen';
+import { SubmitterAuthProvider } from './context/submitterAuthContext';
 
 // Pages
 import Home from './pages/Home';
 import About from './pages/About';
 import Editions from './pages/Editions';
 import Sessions from './pages/Sessions';
+import SessionDetail from './pages/SessionDetail';
 import Program from './pages/Program';
 import ImportantDates from './pages/ImportantDates';
 import Venue from './pages/Venue';
@@ -21,6 +23,7 @@ import Pricing from './pages/Pricing';
 import News from './pages/News';
 import NewsDetail from './pages/NewsDetail';
 import Reports from './pages/Reports';
+import ReportDetail from './pages/ReportDetail';
 import Downloads from './pages/Downloads';
 import Contact from './pages/Contact';
 import Help from './pages/Help';
@@ -33,45 +36,68 @@ import Newsletter from './pages/Newsletter';
 import BecomeASpeaker from './pages/BecomeASpeaker';
 import Brochure from './pages/Brochure';
 
+// Portal pages
+import PortalLogin from './pages/portal/PortalLogin';
+import PortalDashboard from './pages/portal/PortalDashboard';
+import AcceptanceLetter from './pages/portal/AcceptanceLetter';
+
+function PortalRoot() {
+  return (
+    <SubmitterAuthProvider>
+      <Outlet />
+    </SubmitterAuthProvider>
+  );
+}
+
 export default function App() {
   return (
     <>
       <SplashScreen />
       <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/editions" element={<Editions />} />
-        <Route path="/sessions" element={<Sessions />} />
-        <Route path="/program" element={<Program />} />
-        <Route path="/important-dates" element={<ImportantDates />} />
-        <Route path="/venue" element={<Venue />} />
-        <Route path="/speakers" element={<Speakers />} />
-        <Route path="/speakers/:slug" element={<SpeakerDetail />} />
-        <Route path="/committee" element={<Committee />} />
-        <Route path="/committee/:id" element={<CommitteeDetail />} />
-        <Route path="/organizers" element={<Organizers />} />
-        <Route path="/abstract-submission" element={<AbstractSubmission />} />
-        <Route path="/registration" element={<Registration />} />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/news" element={<News />} />
-        <Route path="/news/:slug" element={<NewsDetail />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/downloads" element={<Downloads />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/support-tickets" element={<SupportTickets />} />
-        <Route path="/sponsorship" element={<Sponsorship />} />
-        <Route path="/partners" element={<Partners />} />
-        <Route path="/testimonials" element={<Testimonials />} />
-        <Route path="/become-a-speaker" element={<BecomeASpeaker />} />
-        <Route path="/brochure" element={<Brochure />} />
-        <Route path="/guidelines" element={<StaticPage pageKey="guidelines" />} />
-        <Route path="/publication-policy" element={<StaticPage pageKey="publication" />} />
-        <Route path="/terms" element={<StaticPage pageKey="terms" />} />
-        <Route path="/newsletter" element={<Newsletter />} />
-      </Route>
-    </Routes>
+        {/* Public site */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/editions" element={<Editions />} />
+          <Route path="/sessions" element={<Sessions />} />
+          <Route path="/sessions/:id" element={<SessionDetail />} />
+          <Route path="/program" element={<Program />} />
+          <Route path="/important-dates" element={<ImportantDates />} />
+          <Route path="/venue" element={<Venue />} />
+          <Route path="/speakers" element={<Speakers />} />
+          <Route path="/speakers/:slug" element={<SpeakerDetail />} />
+          <Route path="/committee" element={<Committee />} />
+          <Route path="/committee/:id" element={<CommitteeDetail />} />
+          <Route path="/organizers" element={<Organizers />} />
+          <Route path="/abstract-submission" element={<AbstractSubmission />} />
+          <Route path="/registration" element={<Registration />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/news/:slug" element={<NewsDetail />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/:id" element={<ReportDetail />} />
+          <Route path="/downloads" element={<Downloads />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/help" element={<Help />} />
+          <Route path="/support-tickets" element={<SupportTickets />} />
+          <Route path="/sponsorship" element={<Sponsorship />} />
+          <Route path="/partners" element={<Partners />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/become-a-speaker" element={<BecomeASpeaker />} />
+          <Route path="/brochure" element={<Brochure />} />
+          <Route path="/guidelines" element={<StaticPage pageKey="guidelines" />} />
+          <Route path="/publication-policy" element={<StaticPage pageKey="publication" />} />
+          <Route path="/terms" element={<StaticPage pageKey="terms" />} />
+          <Route path="/newsletter" element={<Newsletter />} />
+        </Route>
+
+        {/* Submitter portal — own layout, own auth context */}
+        <Route element={<PortalRoot />}>
+          <Route path="/portal/login" element={<PortalLogin />} />
+          <Route path="/portal/dashboard" element={<PortalDashboard />} />
+          <Route path="/portal/acceptance-letter" element={<AcceptanceLetter />} />
+        </Route>
+      </Routes>
     </>
   );
 }

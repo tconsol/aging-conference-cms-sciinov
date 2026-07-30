@@ -5,6 +5,7 @@ export const abstractsAPI = {
   getAll: (params) => api.get('/abstracts', { params }),
   getOne: (id) => api.get(`/abstracts/${id}`),
   updateStatus: (id, data) => api.patch(`/abstracts/${id}/status`, data),
+  updateAbstract: (id, data) => api.patch(`/abstracts/${id}`, data),
   delete: (id) => api.delete(`/abstracts/${id}`),
 };
 

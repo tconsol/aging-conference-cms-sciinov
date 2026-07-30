@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
@@ -24,28 +24,20 @@ export default function Select({
   const triggerRef = useRef(null);
   const listRef    = useRef(null);
 
-  const [open, setOpen]    = useState(false);
-  const [pos, setPos]      = useState({ top: 0, left: 0, width: 0 });
-  // Internal display value — synced from hidden input for register mode,
-  // or from controlledValue for controlled mode.
-  const [val, setVal] = useState(controlledValue ?? defaultValue ?? '');
+  const [open, setOpen] = useState(false);
+  const [pos, setPos]   = useState({ top: 0, left: 0, width: 0 });
+  const [val, setVal]   = useState(controlledValue ?? defaultValue ?? '');
 
   const isControlled = controlledValue !== undefined;
+  const displayVal   = isControlled ? controlledValue : val;
+  const selected     = options.find((o) => String(o.value) === String(displayVal));
 
-  const displayVal = isControlled ? controlledValue : val;
-  const selected   = options.find((o) => String(o.value) === String(displayVal));
-
-  // ── Sync from react-hook-form reset() ─────────────────────────────────
-  // After reset(), react-hook-form sets hiddenRef.current.value via the ref.
-  // useLayoutEffect (no deps) runs after every render — catches the update.
-  const syncHidden = useCallback(() => {
-    if (!regProps || isControlled) return;
-    const hv = hiddenRef.current?.value ?? '';
-    if (hv !== val) setVal(hv);
-  }, [val, regProps, isControlled]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useLayoutEffect(syncHidden);
-  useEffect(syncHidden);
+  // React state is source of truth. When parent changes defaultValue (e.g. after
+  // reset() + setState), sync val. Never read from DOM — that caused the stale-display bug.
+  useEffect(() => {
+    if (isControlled) return;
+    setVal(defaultValue ?? '');
+  }, [defaultValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Position portal ────────────────────────────────────────────────────
   const calcPos = useCallback(() => {
@@ -88,20 +80,22 @@ export default function Select({
       controlledOnChange?.(optVal);
     } else {
       setVal(optVal);
-      // Update hidden input value and fire react-hook-form onChange
-      if (hiddenRef.current) hiddenRef.current.value = optVal;
       regProps?.onChange?.({ target: { value: optVal, name } });
     }
     setOpen(false);
   };
 
-  // Merge register ref with our own ref
-  const mergeRef = (node) => {
+  // Stable ref merger — empty deps [] keeps same function identity every render,
+  // preventing React from calling old ref(null) + new ref(node) which causes RHF
+  // to re-register and reset the input value, fighting our React state.
+  const rhfRefHolder = useRef(null);
+  rhfRefHolder.current = regProps?.ref;
+  const mergeRef = useCallback((node) => {
     hiddenRef.current = node;
-    const rref = regProps?.ref;
+    const rref = rhfRefHolder.current;
     if (typeof rref === 'function') rref(node);
     else if (rref) rref.current = node;
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
@@ -112,13 +106,14 @@ export default function Select({
         </label>
       )}
 
-      {/* Hidden native input — react-hook-form registers this */}
+      {/* Controlled hidden input — value always mirrors React state, never DOM */}
       {regProps && (
         <input
           type="hidden"
           name={name}
           ref={mergeRef}
-          defaultValue={defaultValue ?? ''}
+          value={val}
+          onChange={() => {}}
         />
       )}
 

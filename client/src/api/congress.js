@@ -5,6 +5,7 @@ export const congressAPI = {
   getActive: () => api.get('/editions/active'),
   getOne: (id) => api.get(`/editions/${id}`),
   getSessions: (params) => api.get('/sessions', { params }),
+  getSessionById: (id) => api.get(`/sessions/${id}`),
   getProgram: (params) => api.get('/program', { params }),
   getImportantDates: (params) => api.get('/important-dates', { params }),
   getVenues: (params) => api.get('/venues', { params }),

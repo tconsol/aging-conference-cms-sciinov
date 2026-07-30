@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { CheckCircle, Send } from 'lucide-react';
+import { CheckCircle, Send, Mic2 } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
-import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import { peopleAPI } from '../api/people';
@@ -12,27 +11,20 @@ import { usecongress } from '../context/congressContext';
 import { getErrorMessage } from '../utils/helpers';
 import { COUNTRY_OPTIONS } from '../utils/countries';
 
-const INPUT_CLS =
-  'w-full h-11 px-4 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white';
-const TEXTAREA_CLS =
-  'w-full px-4 py-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white';
+const INPUT_CLS = 'w-full h-11 px-4 border border-slate-200 rounded-xl text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors';
+const TEXTAREA_CLS = 'w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors resize-none';
 const LABEL_CLS = 'block text-sm font-semibold text-slate-700 mb-1.5';
 const ERROR_CLS = 'text-xs text-red-500 mt-1';
+const FOCUS = (e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent)'; };
+const BLUR  = (e) => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; };
 
 export default function BecomeASpeaker() {
   const { activeEdition } = usecongress();
-  const [editions, setEditions] = useState([]);
-  const [submitted, setSubmitted] = useState(false);
+  const [editions, setEditions]     = useState([]);
+  const [submitted, setSubmitted]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-    reset,
-    setValue,
-  } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, reset, setValue } = useForm();
 
   useEffect(() => {
     congressAPI.getAll()
@@ -74,29 +66,40 @@ export default function BecomeASpeaker() {
       <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="max-w-2xl mx-auto">
-            <SectionHeader
-              label="Speaker Nomination"
-              title="Apply to Speak"
-              subtitle="Tell us about yourself and your area of expertise. Our scientific committee reviews every application."
-            />
+            <div className="mb-10 text-center">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ background: 'var(--brand-light)' }}
+              >
+                <Mic2 size={24} style={{ color: 'var(--brand-dark)' }} />
+              </div>
+              <p className="text-xs font-black uppercase tracking-[0.25em] mb-2" style={{ color: 'var(--brand)' }}>
+                Speaker Nomination
+              </p>
+              <h2 className="text-3xl font-black text-slate-900 mb-2">Apply to Speak</h2>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-md mx-auto">
+                Tell us about yourself and your area of expertise. Our scientific committee reviews every application.
+              </p>
+            </div>
 
             {submitted ? (
-              <div className="flex flex-col items-start gap-4 bg-teal-50 border border-teal-200 rounded-lg p-8">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle size={24} className="text-teal-700" />
+              <div
+                className="rounded-3xl p-10 flex flex-col items-start gap-5 border"
+                style={{ background: 'var(--brand-light)', borderColor: 'color-mix(in srgb, var(--brand) 25%, transparent)' }}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'var(--brand-dark)' }}>
+                  <CheckCircle size={26} className="text-white" />
                 </div>
                 <div>
                   <h3 className="text-xl font-black text-slate-900 mb-1">Application Received!</h3>
-                  <p className="text-slate-600 text-sm">
-                    Thank you for your interest in speaking at the Aging congress. Our team will review your application and respond soon.
+                  <p className="text-slate-600 text-sm leading-relaxed max-w-md">
+                    Thank you for your interest in speaking at the Aging Congress. Our team will review your application and respond soon.
                   </p>
                 </div>
-                <Button variant="outline" onClick={() => setSubmitted(false)}>
-                  Submit Another Application
-                </Button>
+                <Button variant="outline" onClick={() => setSubmitted(false)}>Submit Another Application</Button>
               </div>
             ) : (
-              <div className="bg-white border border-stone-200 rounded-lg p-6 lg:p-8">
+              <div className="rounded-3xl border border-slate-100 p-8 shadow-sm">
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                   <div>
                     <Controller
@@ -120,24 +123,12 @@ export default function BecomeASpeaker() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className={LABEL_CLS}>Full Name *</label>
-                      <input
-                        {...register('name', { required: 'Name is required' })}
-                        placeholder="Your full name"
-                        className={INPUT_CLS}
-                      />
+                      <input {...register('name', { required: 'Name is required' })} placeholder="Your full name" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.name && <p className={ERROR_CLS}>{errors.name.message}</p>}
                     </div>
                     <div>
                       <label className={LABEL_CLS}>Email Address *</label>
-                      <input
-                        type="email"
-                        {...register('email', {
-                          required: 'Email is required',
-                          pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' },
-                        })}
-                        placeholder="you@example.com"
-                        className={INPUT_CLS}
-                      />
+                      <input type="email" {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' } })} placeholder="you@example.com" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.email && <p className={ERROR_CLS}>{errors.email.message}</p>}
                     </div>
                   </div>
@@ -145,12 +136,7 @@ export default function BecomeASpeaker() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className={LABEL_CLS}>Phone Number</label>
-                      <input
-                        type="tel"
-                        {...register('phone')}
-                        placeholder="+1 (555) 000-0000"
-                        className={INPUT_CLS}
-                      />
+                      <input type="tel" {...register('phone')} placeholder="+1 (555) 000-0000" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     </div>
                     <div>
                       <Controller
@@ -174,50 +160,33 @@ export default function BecomeASpeaker() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className={LABEL_CLS}>Organization / Institution</label>
-                      <input {...register('organization')} placeholder="Your organization" className={INPUT_CLS} />
+                      <input {...register('organization')} placeholder="Your organization" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     </div>
                     <div>
                       <label className={LABEL_CLS}>Designation</label>
-                      <input {...register('designation')} placeholder="e.g. Professor" className={INPUT_CLS} />
+                      <input {...register('designation')} placeholder="e.g. Professor" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     </div>
                   </div>
 
                   <div>
                     <label className={LABEL_CLS}>Area of Expertise / Proposed Topic *</label>
-                    <input
-                      {...register('expertise', { required: 'This field is required' })}
-                      placeholder="e.g. Cellular senescence, geroscience"
-                      className={INPUT_CLS}
-                    />
+                    <input {...register('expertise', { required: 'This field is required' })} placeholder="e.g. Cellular senescence, geroscience" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     {errors.expertise && <p className={ERROR_CLS}>{errors.expertise.message}</p>}
                   </div>
 
                   <div>
                     <label className={LABEL_CLS}>Short Bio</label>
-                    <textarea
-                      {...register('bio')}
-                      rows={4}
-                      placeholder="A brief professional biography..."
-                      className={TEXTAREA_CLS}
-                    />
+                    <textarea {...register('bio')} rows={4} placeholder="A brief professional biography..." className={TEXTAREA_CLS} onFocus={FOCUS} onBlur={BLUR} />
                   </div>
 
                   <div>
                     <label className={LABEL_CLS}>Additional Message</label>
-                    <textarea
-                      {...register('message')}
-                      rows={4}
-                      placeholder="Anything else you'd like the committee to know..."
-                      className={TEXTAREA_CLS}
-                    />
+                    <textarea {...register('message')} rows={3} placeholder="Anything else you'd like the committee to know..." className={TEXTAREA_CLS} onFocus={FOCUS} onBlur={BLUR} />
                   </div>
 
-                  <div>
-                    <Button type="submit" variant="primary" size="lg" loading={submitting}>
-                      <Send size={16} />
-                      Submit Application
-                    </Button>
-                  </div>
+                  <Button type="submit" size="lg" loading={submitting}>
+                    <Send size={16} /> Submit Application
+                  </Button>
                 </form>
               </div>
             )}

@@ -320,6 +320,7 @@ export default function AdminUsers() {
             error={errors.role?.message}
             options={ROLE_OPTIONS}
             placeholder="Select role..."
+            defaultValue={editingItem?.role || ''}
           />
           {!editingItem && (
             <Input

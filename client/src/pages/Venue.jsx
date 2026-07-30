@@ -1,5 +1,5 @@
-﻿import { useEffect, useState } from 'react';
-import { MapPin, Building } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MapPin, Building2, ChevronRight } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Spinner from '../components/ui/Spinner';
@@ -13,11 +13,9 @@ export default function Venue() {
 
   useEffect(() => {
     if (congressLoading) return;
-
     const fetch = activeEdition?._id
       ? congressAPI.getVenueByEdition(activeEdition._id)
       : congressAPI.getVenues({ limit: 1 });
-
     fetch
       .then((res) => {
         const data = res.data?.data ?? res.data;
@@ -27,11 +25,13 @@ export default function Venue() {
       .finally(() => setLoading(false));
   }, [activeEdition, congressLoading]);
 
+  const photos = venue?.photos ?? [];
+
   return (
     <div>
       <PageHero
-        title="congress Venue"
-        subtitle="Find details about the venue, location, and how to get there."
+        title="Congress Venue"
+        subtitle="Find everything you need to know about where we're gathering — location, access, and facilities."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Venue' }]}
       />
 
@@ -44,51 +44,125 @@ export default function Venue() {
               <SectionHeader title="Venue To Be Announced" subtitle="The venue details for this edition will be announced soon." />
             </div>
           ) : (
-            <div className="grid lg:grid-cols-2 gap-12 items-start">
-              <div>
-                <span className="inline-block text-xs font-bold tracking-widest uppercase mb-3 px-3 py-1 rounded-full bg-teal-50 text-teal-700">
-                  Venue
-                </span>
-                <h2 className="text-3xl font-bold text-slate-900 mb-2">{venue.name}</h2>
-                <p className="text-slate-600 mb-6">{venue.description}</p>
+            <div className="flex flex-col gap-16">
 
-                <div className="flex flex-col gap-3 mb-8">
+              {/* Hero: name + address + map stacked */}
+              <div className="grid lg:grid-cols-5 gap-8 items-start">
+                {/* Left: venue info */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.25em] mb-3" style={{ color: 'var(--brand)' }}>
+                      Venue
+                    </p>
+                    <h2 className="text-3xl lg:text-4xl font-black text-slate-900 leading-tight">
+                      {venue.name}
+                    </h2>
+                  </div>
+
+                  {venue.description && (
+                    <p className="text-slate-600 leading-relaxed">{venue.description}</p>
+                  )}
+
                   {(venue.address || venue.city) && (
-                    <div className="flex items-start gap-3">
-                      <MapPin size={18} className="text-teal-600 shrink-0 mt-0.5" />
-                      <p className="text-slate-700 font-medium">
-                        {[venue.address, venue.city, venue.country].filter(Boolean).join(', ')}
-                      </p>
+                    <div
+                      className="flex items-start gap-4 rounded-2xl p-5 border"
+                      style={{ background: 'var(--brand-light)', borderColor: 'color-mix(in srgb, var(--brand) 20%, transparent)' }}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: 'var(--brand-dark)' }}
+                      >
+                        <MapPin size={18} className="text-white" />
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900 text-sm mb-0.5">Address</p>
+                        <p className="text-sm text-slate-600 leading-relaxed">
+                          {[venue.address, venue.city, venue.country].filter(Boolean).join(', ')}
+                        </p>
+                        {venue.city && (
+                          <a
+                            href={`https://www.google.com/maps/search/${encodeURIComponent([venue.name, venue.city].filter(Boolean).join(', '))}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-bold mt-2 transition-opacity hover:opacity-70"
+                            style={{ color: 'var(--brand-dark)' }}
+                          >
+                            Open in Google Maps <ChevronRight size={12} />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {venue.mapEmbedCode && (
-                  <div
-                    className="rounded-lg overflow-hidden border border-slate-100 shadow-sm [&_iframe]:w-full [&_iframe]:aspect-[4/3]"
-                    dangerouslySetInnerHTML={{ __html: venue.mapEmbedCode }}
-                  />
-                )}
+                {/* Right: map embed */}
+                <div className="lg:col-span-3">
+                  {venue.mapEmbedCode ? (
+                    <div
+                      className="rounded-3xl overflow-hidden shadow-lg border border-slate-100 [&_iframe]:w-full [&_iframe]:aspect-[16/10]"
+                      dangerouslySetInnerHTML={{ __html: venue.mapEmbedCode }}
+                    />
+                  ) : (
+                    <div
+                      className="rounded-3xl aspect-[16/10] flex items-center justify-center"
+                      style={{ background: 'var(--brand-light)' }}
+                    >
+                      <div className="text-center">
+                        <Building2 size={48} style={{ color: 'var(--brand)' }} className="mx-auto mb-3 opacity-50" />
+                        <p className="text-sm text-slate-400">Map coming soon</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="flex flex-col gap-4">
-                {venue.photos?.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {venue.photos.map((photo, i) => (
-                      <img
-                        key={photo.publicId || i}
-                        src={photo.url}
-                        alt={`${venue.name} ${i + 1}`}
-                        className={`w-full rounded-lg object-cover shadow-md aspect-[4/3] ${i === 0 && venue.photos.length % 2 !== 0 ? 'col-span-2' : ''}`}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="w-full rounded-lg bg-teal-50 border border-teal-100 flex items-center justify-center aspect-[4/3]">
-                    <Building size={64} className="text-teal-200" />
-                  </div>
-                )}
-              </div>
+              {/* Photos */}
+              {photos.length > 0 && (
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.25em] mb-6" style={{ color: 'var(--brand)' }}>
+                    Venue Gallery
+                  </p>
+
+                  {photos.length === 1 ? (
+                    <img
+                      src={photos[0].url}
+                      alt={venue.name}
+                      className="w-full rounded-3xl object-cover max-h-[480px] shadow-lg"
+                    />
+                  ) : photos.length === 2 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {photos.map((p, i) => (
+                        <img key={p.publicId || i} src={p.url} alt={`${venue.name} ${i + 1}`}
+                          className="w-full rounded-2xl object-cover aspect-[4/3] shadow-md" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                      {photos.map((p, i) => (
+                        <img
+                          key={p.publicId || i}
+                          src={p.url}
+                          alt={`${venue.name} ${i + 1}`}
+                          className={`w-full rounded-2xl object-cover shadow-md ${
+                            i === 0 ? 'col-span-2 lg:col-span-1 row-span-2 aspect-square lg:aspect-auto max-h-80 lg:max-h-none' : 'aspect-[4/3]'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* No photos placeholder */}
+              {photos.length === 0 && (
+                <div
+                  className="rounded-3xl flex flex-col items-center justify-center py-20 border-2 border-dashed"
+                  style={{ borderColor: 'color-mix(in srgb, var(--brand) 20%, transparent)', background: 'var(--brand-light)' }}
+                >
+                  <Building2 size={52} className="mb-4 opacity-30" style={{ color: 'var(--brand-dark)' }} />
+                  <p className="text-slate-400 text-sm">Venue photos coming soon</p>
+                </div>
+              )}
             </div>
           )}
         </div>

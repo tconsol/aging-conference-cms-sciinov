@@ -29,7 +29,7 @@ export default function News() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, hasFile: false });
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -74,7 +74,7 @@ export default function News() {
     try {
       await newsAPI.delete(deleteDialog.id);
       toast.success('Article deleted.');
-      setDeleteDialog({ open: false, id: null });
+      setDeleteDialog({ open: false, id: null, hasFile: false });
       fetchItems();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -172,7 +172,7 @@ export default function News() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => setDeleteDialog({ open: true, id: item._id })}
+                          onClick={() => setDeleteDialog({ open: true, id: item._id, hasFile: !!item.featuredImage })}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
@@ -193,11 +193,12 @@ export default function News() {
 
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
+        onClose={() => setDeleteDialog({ open: false, id: null, hasFile: false })}
         onConfirm={handleDelete}
         title="Delete Article"
         message="Are you sure you want to delete this article? This action cannot be undone."
         loading={deleting}
+        storageWarning={deleteDialog.hasFile}
       />
     </div>
   );

@@ -25,6 +25,7 @@ const BASE_NAV_ITEMS = [
       { label: 'Scientific Sessions', to: '/sessions' },
       { label: 'Scientific Program', to: '/program' },
       { label: 'Submit Abstract', to: '/abstract-submission' },
+      { label: 'Track My Abstract', to: '/portal/login' },
       { label: 'Brochure Download', to: '/brochure' },
       { label: 'Partners', to: '/partners' },
     ],
@@ -149,9 +150,9 @@ function NavItem({ item, isActive }) {
   const linkStyle = {
     fontSize: '10.5px',
     fontWeight: 700,
-    letterSpacing: '0.14em',
+    letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    padding: '6px 12px',
+    padding: '6px 10px',
     position: 'relative',
     transition: 'color 0.15s ease',
     color: highlighted ? 'var(--brand-dark)' : '#475569',
@@ -462,9 +463,9 @@ export default function Navbar() {
                   gap: 6px;
                   font-size: 10.5px;
                   font-weight: 800;
-                  letter-spacing: 0.13em;
+                  letter-spacing: 0.08em;
                   text-transform: uppercase;
-                  padding: 9px 22px;
+                  padding: 8px 18px;
                   background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, color-mix(in srgb, var(--brand) 70%, white) 100%);
                   color: #ffffff;
                   border: none;
@@ -514,6 +515,36 @@ export default function Navbar() {
                   pointer-events: none;
                 }
               `}</style>
+
+              {/* Divider */}
+              <div className="hidden lg:block" style={{ width: 1, height: 24, background: '#e2e8f0', margin: '0 4px' }} />
+
+              {/* Track — icon+label on xl, icon-only on lg */}
+              <Link
+                to="/portal/login"
+                title="Track My Abstract Submission"
+                className="hidden lg:inline-flex items-center gap-1.5"
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  padding: '7px 12px',
+                  borderRadius: 6,
+                  border: '1.5px solid #cbd5e1',
+                  color: '#475569',
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.color = 'var(--brand-dark)'; e.currentTarget.style.background = 'var(--brand-light)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.color = '#475569'; e.currentTarget.style.background = 'transparent'; }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <span className="hidden xl:inline">Track</span>
+              </Link>
 
               <div style={{ position: 'relative', zIndex: 0 }} className="hidden sm:block">
                 <div className="nav-register-pulse" />
@@ -568,7 +599,22 @@ export default function Navbar() {
             {NAV_ITEMS.map((item) => (
               <MobileNavItem key={item.label} item={item} onClose={() => setMobileOpen(false)} />
             ))}
-            <div style={{ padding: 16, borderTop: '1px solid #f1f5f9' }}>
+            <div style={{ padding: 16, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Link
+                to="/portal/login"
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+                  padding: '12px', borderRadius: 6, textDecoration: 'none',
+                  border: '1.5px solid var(--brand)', color: 'var(--brand-dark)',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                Track My Abstract
+              </Link>
               <Link
                 to="/registration"
                 onClick={() => setMobileOpen(false)}

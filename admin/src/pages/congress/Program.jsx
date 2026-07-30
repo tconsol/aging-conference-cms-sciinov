@@ -291,6 +291,7 @@ export default function Program() {
               error={errors.edition?.message}
               options={editionOptions}
               required
+              defaultValue={modal.data?.edition?._id || modal.data?.edition || ''}
             />
             <Select
               label="Day"
@@ -299,6 +300,7 @@ export default function Program() {
               error={errors.day?.message}
               options={dayOptions}
               required
+              defaultValue={modal.data ? String(modal.data.day) : ''}
             />
             <Input
               label="Start Time"
@@ -331,6 +333,7 @@ export default function Program() {
               error={errors.type?.message}
               options={typeOptions}
               required
+              defaultValue={modal.data?.type || ''}
             />
             <Select
               label="Speaker"
@@ -338,6 +341,7 @@ export default function Program() {
               register={register}
               error={errors.speaker?.message}
               options={speakerOptions}
+              defaultValue={modal.data?.speaker?._id || modal.data?.speaker || ''}
             />
             <Input
               label="Room"

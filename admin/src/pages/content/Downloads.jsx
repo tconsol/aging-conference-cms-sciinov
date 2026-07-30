@@ -15,7 +15,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ImageUpload from '../../components/ui/ImageUpload';
 import FileUpload from '../../components/ui/FileUpload';
 import { downloadsAPI } from '../../api/content';
-import { getErrorMessage } from '../../utils/helpers';
+import { getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 
 const typeOptions = [
   { value: 'template', label: 'Template' },
@@ -41,6 +41,7 @@ export default function Downloads() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const [orderConflict, setOrderConflict] = useState(null);
 
   const toggleStatus = async (item) => {
     try {
@@ -86,12 +87,12 @@ export default function Downloads() {
         displayOrder: data.displayOrder ?? 0,
       });
     } else {
-      reset({ isActive: true, displayOrder: 0 });
+      reset({ isActive: true, displayOrder: getNextDisplayOrder(items) });
     }
     setModal({ open: true, data });
   };
 
-  const onSubmit = async (formData) => {
+  const executeSubmit = async (formData) => {
     setSubmitting(true);
     try {
       const fd = new FormData();
@@ -128,6 +129,25 @@ export default function Downloads() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onSubmit = async (formData) => {
+    if (!modal.data?._id) {
+      const conflict = findDisplayOrderConflict(items, formData.displayOrder);
+      if (conflict) { setOrderConflict({ pending: formData, conflict }); return; }
+    }
+    await executeSubmit(formData);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(items);
+    try {
+      await downloadsAPI.update(conflict._id, { displayOrder: newLast });
+      setItems((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
   };
 
   const handleDelete = async () => {
@@ -269,6 +289,7 @@ export default function Downloads() {
             register={register}
             options={typeOptions}
             placeholder="Select type"
+            defaultValue={modal.data?.type || ''}
           />
           <FileUpload
             label="File"
@@ -315,6 +336,15 @@ export default function Downloads() {
         title="Delete Download"
         message="Are you sure you want to delete this download? This action cannot be undone."
         loading={deleting}
+        storageWarning
+      />
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.title || 'another item'}". Proceeding will move that item to the end.`}
+        confirmLabel="Replace"
       />
     </div>
   );

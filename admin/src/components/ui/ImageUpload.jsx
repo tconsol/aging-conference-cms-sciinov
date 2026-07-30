@@ -1,28 +1,32 @@
 import { useEffect, useState } from 'react';
-import { Upload, X, Image } from 'lucide-react';
+import { Upload, Image, CloudOff } from 'lucide-react';
 
 export default function ImageUpload({ label, name, register, watch, error, currentImage, required }) {
   const [preview, setPreview] = useState(currentImage || null);
+  const [newFileSelected, setNewFileSelected] = useState(false);
   const watched = watch ? watch(name) : null;
 
   useEffect(() => {
     if (watched instanceof FileList && watched[0]) {
       const url = URL.createObjectURL(watched[0]);
       setPreview(url);
+      setNewFileSelected(true);
       return () => URL.revokeObjectURL(url);
     }
     if (watched instanceof File) {
       const url = URL.createObjectURL(watched);
       setPreview(url);
+      setNewFileSelected(true);
       return () => URL.revokeObjectURL(url);
     }
   }, [watched]);
 
   useEffect(() => {
-    if (currentImage) setPreview(currentImage);
+    if (currentImage) { setPreview(currentImage); setNewFileSelected(false); }
   }, [currentImage]);
 
   const inputProps = register ? register(name, { required }) : {};
+  const showReplaceWarning = newFileSelected && !!currentImage;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -56,6 +60,16 @@ export default function ImageUpload({ label, name, register, watch, error, curre
           </div>
         )}
       </label>
+
+      {showReplaceWarning && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+          <CloudOff size={13} className="text-amber-600 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-amber-700 leading-relaxed">
+            <strong>GCP Cloud Storage:</strong> Saving will permanently delete the existing image from cloud storage.
+          </p>
+        </div>
+      )}
+
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );

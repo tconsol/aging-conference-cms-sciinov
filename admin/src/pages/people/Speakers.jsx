@@ -47,7 +47,7 @@ export default function Speakers() {
   const [loading, setLoading] = useState(true);
   const [filterEdition, setFilterEdition] = useState('');
   const [search, setSearch] = useState('');
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, hasFile: false });
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
 
@@ -96,7 +96,7 @@ export default function Speakers() {
     try {
       await speakersAPI.delete(deleteDialog.id);
       toast.success('Speaker deleted.');
-      setDeleteDialog({ open: false, id: null });
+      setDeleteDialog({ open: false, id: null, hasFile: false });
       fetchItems();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -202,7 +202,7 @@ export default function Speakers() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => setDeleteDialog({ open: true, id: item._id })}
+                          onClick={() => setDeleteDialog({ open: true, id: item._id, hasFile: !!item.photo })}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
@@ -221,11 +221,12 @@ export default function Speakers() {
       {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
+        onClose={() => setDeleteDialog({ open: false, id: null, hasFile: false })}
         onConfirm={handleDelete}
         title="Delete Speaker"
         message="Are you sure you want to delete this speaker? This action cannot be undone."
         loading={deleting}
+        storageWarning={deleteDialog.hasFile}
       />
     </div>
   );

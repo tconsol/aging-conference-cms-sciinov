@@ -268,6 +268,7 @@ export default function Pricing() {
               options={editionOptions}
               placeholder="Select Edition"
               required
+              defaultValue={modal.data?.edition?._id || modal.data?.edition || ''}
             />
             <Select
               label="Tier Name"
@@ -277,6 +278,7 @@ export default function Pricing() {
               options={tierNameOptions}
               placeholder="Select Tier"
               required
+              defaultValue={modal.data?.name || ''}
             />
             <Input
               label="Label"

@@ -211,6 +211,7 @@ export default function Brochure() {
         title="Delete Brochure"
         message="Are you sure you want to delete this brochure? This action cannot be undone."
         loading={deleting}
+        storageWarning
       />
     </div>
   );

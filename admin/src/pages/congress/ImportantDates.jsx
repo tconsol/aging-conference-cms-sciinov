@@ -13,7 +13,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { datesAPI, editionsAPI } from '../../api/congress';
-import { formatDate, getErrorMessage } from '../../utils/helpers';
+import { formatDate, getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 
 const categoryOptions = [
   { value: 'abstracts', label: 'Abstracts' },
@@ -42,6 +42,7 @@ export default function ImportantDates() {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [orderConflict, setOrderConflict] = useState(null);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
@@ -83,12 +84,12 @@ export default function ImportantDates() {
         displayOrder: data.displayOrder,
       });
     } else {
-      reset({ isHighlighted: false });
+      reset({ isHighlighted: false, displayOrder: getNextDisplayOrder(items) });
     }
     setModal({ open: true, data });
   };
 
-  const onSubmit = async (formData) => {
+  const executeSubmit = async (formData) => {
     setSubmitting(true);
     try {
       if (modal.data?._id) {
@@ -105,6 +106,25 @@ export default function ImportantDates() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const onSubmit = async (formData) => {
+    if (!modal.data?._id) {
+      const conflict = findDisplayOrderConflict(items, formData.displayOrder);
+      if (conflict) { setOrderConflict({ pending: formData, conflict }); return; }
+    }
+    await executeSubmit(formData);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(items);
+    try {
+      await datesAPI.update(conflict._id, { displayOrder: newLast });
+      setItems((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
   };
 
   const handleDelete = async () => {
@@ -229,6 +249,7 @@ export default function ImportantDates() {
             error={errors.edition?.message}
             options={editionOptions}
             required
+            defaultValue={modal.data?.edition?._id || modal.data?.edition || ''}
           />
           <Input
             label="Label"
@@ -252,6 +273,7 @@ export default function ImportantDates() {
             register={register}
             error={errors.category?.message}
             options={categoryOptions}
+            defaultValue={modal.data?.category || ''}
           />
           <Input
             label="Display Order"
@@ -279,6 +301,14 @@ export default function ImportantDates() {
         title="Delete Date"
         message="Are you sure you want to delete this important date?"
         loading={deleting}
+      />
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.label || 'another item'}". Proceeding will move that item to the end.`}
+        confirmLabel="Replace"
       />
     </div>
   );

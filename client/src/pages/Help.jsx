@@ -18,9 +18,11 @@ function TopicIcon({ icon, size = 20, className = '' }) {
 function FAQItem({ faq, open, onToggle }) {
   return (
     <div
-      className={`rounded-xl border transition-colors break-inside-avoid mb-3 ${
-        open ? 'border-teal-200 bg-teal-50/40' : 'border-slate-200 bg-white hover:border-teal-200'
-      }`}
+      className="rounded-xl border transition-all break-inside-avoid mb-3"
+      style={{
+        borderColor: open ? 'color-mix(in srgb, var(--brand) 30%, transparent)' : '#e2e8f0',
+        background: open ? 'color-mix(in srgb, var(--brand) 5%, white)' : 'white',
+      }}
     >
       <button
         onClick={onToggle}
@@ -28,9 +30,11 @@ function FAQItem({ faq, open, onToggle }) {
       >
         <span className="font-semibold text-slate-900 text-sm leading-snug">{faq.question}</span>
         <span
-          className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${
-            open ? 'bg-teal-600 rotate-45' : 'bg-slate-100'
-          }`}
+          className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200"
+          style={{
+            background: open ? 'var(--brand-dark)' : '#f1f5f9',
+            transform: open ? 'rotate(45deg)' : 'none',
+          }}
         >
           <Plus size={13} className={open ? 'text-white' : 'text-slate-500'} />
         </span>
@@ -119,7 +123,9 @@ export default function Help() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search for a question (e.g. registration, abstract)"
-                  className="w-full py-3.5 pl-12 pr-4 border border-slate-200 rounded-full text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white"
+                  className="w-full py-3.5 pl-12 pr-4 border border-slate-200 rounded-full text-sm shadow-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors"
+                  onFocus={(e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; }}
                 />
               </div>
               <p className="text-xs text-slate-400 mt-3">{totalCount} questions across {topicGroups.length} topics</p>
@@ -157,7 +163,7 @@ export default function Help() {
               </div>
             ) : faqs.length === 0 ? (
               <div className="text-center py-16 bg-stone-50 border border-stone-200 rounded-2xl">
-                <LifeBuoy size={36} className="text-teal-600 mx-auto mb-4" />
+                <LifeBuoy size={36} className="mx-auto mb-4" style={{ color: 'var(--brand-dark)' }} />
                 <h3 className="text-lg font-black text-slate-900 mb-2">FAQs Coming Soon</h3>
                 <p className="text-slate-600 text-sm mb-6">
                   Frequently asked questions will be published here shortly.
@@ -171,7 +177,8 @@ export default function Help() {
                 <p className="text-slate-600 text-sm">No questions match your search. Try different keywords.</p>
                 <button
                   onClick={() => setSearch('')}
-                  className="mt-3 text-teal-700 text-sm font-semibold hover:underline"
+                  className="mt-3 text-sm font-semibold hover:underline"
+                  style={{ color: 'var(--brand-dark)' }}
                 >
                   Clear search
                 </button>

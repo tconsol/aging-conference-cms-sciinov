@@ -22,7 +22,10 @@ export function statusBadge(status) {
   const map = {
     // Abstract statuses
     pending: { label: 'Pending', variant: 'warning' },
-    under_review: { label: 'Under Review', variant: 'info' },
+    received_accepted: { label: 'Received & Accepted', variant: 'info' },
+    under_review: { label: 'Under Peer Review', variant: 'purple' },
+    decision_pending: { label: 'Decision Pending', variant: 'warning' },
+    accepted: { label: 'Accepted', variant: 'success' },
     approved: { label: 'Approved', variant: 'success' },
     rejected: { label: 'Rejected', variant: 'danger' },
     // Payment statuses

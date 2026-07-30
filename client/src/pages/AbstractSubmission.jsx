@@ -1,7 +1,8 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Send, FileText, AlertCircle } from 'lucide-react';
+import { Send, FileText, AlertCircle, CheckCircle, Key, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
 import Button from '../components/ui/Button';
@@ -14,17 +15,30 @@ import { getErrorMessage } from '../utils/helpers';
 
 const PRESENTATION_TYPES = [
   { value: 'oral_inperson', label: 'Oral Presentation (In-Person)' },
-  { value: 'oral_virtual', label: 'Oral Presentation (Virtual)' },
+  { value: 'oral_virtual',  label: 'Oral Presentation (Virtual)' },
   { value: 'poster_inperson', label: 'Poster (In-Person)' },
-  { value: 'poster_virtual', label: 'Poster (Virtual)' },
+  { value: 'poster_virtual',  label: 'Poster (Virtual)' },
 ];
+
+const GUIDELINES = [
+  'Abstract must be 250–400 words',
+  'Written in English',
+  'Include background, methods, results, and conclusion',
+  'No tables or figures in the abstract text',
+  'Each author may submit up to 2 abstracts',
+];
+
+const INPUT_CLS = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors';
+const FOCUS = (e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent)'; };
+const BLUR  = (e) => { e.target.style.borderColor = ''; e.target.style.boxShadow = ''; };
 
 export default function AbstractSubmission() {
   const { activeEdition } = usecongress();
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [dates, setDates] = useState([]);
-  const [topics, setTopics] = useState([]);
+  const [submitted, setSubmitted]       = useState(false);
+  const [submittedData, setSubmittedData] = useState(null);
+  const [loading, setLoading]           = useState(false);
+  const [dates, setDates]         = useState([]);
+  const [topics, setTopics]       = useState([]);
 
   const { register, handleSubmit, control, formState: { errors }, reset } = useForm();
 
@@ -53,10 +67,9 @@ export default function AbstractSubmission() {
         if (value !== undefined && value !== null && value !== '') fd.append(key, value);
       });
       fd.append('edition', activeEdition?._id || '');
-      if (file instanceof FileList && file.length > 0) {
-        fd.append('file', file[0]);
-      }
-      await submissionsAPI.submitAbstract(fd);
+      if (file instanceof FileList && file.length > 0) fd.append('file', file[0]);
+      const res = await submissionsAPI.submitAbstract(fd);
+      setSubmittedData(res.data?.data || null);
       setSubmitted(true);
       reset();
       toast.success('Abstract submitted successfully!');
@@ -71,38 +84,49 @@ export default function AbstractSubmission() {
     <div>
       <PageHero
         title="Submit Abstract"
-        subtitle="Submit your research abstract for consideration at the Aging congress."
+        subtitle="Submit your research abstract for consideration at the Aging Congress."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Submit Abstract' }]}
       />
 
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <div className="grid lg:grid-cols-3 gap-12">
-            {/* Sidebar info */}
-            <div className="flex flex-col gap-5">
-              <div className="bg-teal-50 rounded-lg border border-teal-100 p-6">
-                <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                  <FileText size={18} className="text-teal-700" /> Submission Guidelines
+          <div className="grid lg:grid-cols-3 gap-10">
+
+            {/* Sidebar */}
+            <div className="flex flex-col gap-4">
+              {/* Guidelines */}
+              <div
+                className="rounded-2xl p-6 border"
+                style={{ background: 'var(--brand-light)', borderColor: 'color-mix(in srgb, var(--brand) 20%, transparent)' }}
+              >
+                <h3 className="font-black text-slate-900 mb-4 flex items-center gap-2">
+                  <FileText size={17} style={{ color: 'var(--brand-dark)' }} />
+                  Submission Guidelines
                 </h3>
-                <ul className="text-sm text-slate-600 flex flex-col gap-2">
-                  <li className="flex items-start gap-2"><span className="text-teal-500 font-bold mt-0.5">•</span> Abstract must be 250â€“400 words</li>
-                  <li className="flex items-start gap-2"><span className="text-teal-500 font-bold mt-0.5">•</span> Written in English</li>
-                  <li className="flex items-start gap-2"><span className="text-teal-500 font-bold mt-0.5">•</span> Include background, methods, results, and conclusion</li>
-                  <li className="flex items-start gap-2"><span className="text-teal-500 font-bold mt-0.5">•</span> No tables or figures in the abstract text</li>
-                  <li className="flex items-start gap-2"><span className="text-teal-500 font-bold mt-0.5">•</span> Each author may submit up to 2 abstracts</li>
+                <ul className="flex flex-col gap-2.5">
+                  {GUIDELINES.map((g) => (
+                    <li key={g} className="flex items-start gap-3">
+                      <CheckCircle size={13} className="shrink-0 mt-0.5" style={{ color: 'var(--brand-dark)' }} />
+                      <span className="text-sm text-slate-600 leading-snug">{g}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
+              {/* Deadlines */}
               {dates.length > 0 && (
-                <div className="bg-amber-50 rounded-lg border border-amber-100 p-6">
-                  <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <AlertCircle size={18} className="text-amber-600" /> Key Deadlines
+                <div className="rounded-2xl p-6 border border-amber-200 bg-amber-50">
+                  <h3 className="font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <AlertCircle size={17} className="text-amber-600" />
+                    Key Deadlines
                   </h3>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     {dates.map((d) => (
-                      <div key={d._id} className="text-sm">
-                        <p className="font-semibold text-slate-700">{d.label}</p>
-                        <p className="text-amber-700">{new Date(d.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                      <div key={d._id} className="flex flex-col">
+                        <p className="text-sm font-semibold text-slate-700">{d.label}</p>
+                        <p className="text-sm font-bold text-amber-700">
+                          {new Date(d.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -113,53 +137,98 @@ export default function AbstractSubmission() {
             {/* Form */}
             <div className="lg:col-span-2">
               {submitted ? (
-                <div className="text-center py-16 bg-green-50 rounded-lg border border-green-100">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Send size={28} className="text-green-600" />
+                <div className="flex flex-col gap-5">
+                  {/* Success header */}
+                  <div
+                    className="rounded-2xl p-6 flex items-start gap-4 border"
+                    style={{ background: 'var(--brand-light)', borderColor: 'color-mix(in srgb, var(--brand) 25%, transparent)' }}
+                  >
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-dark)' }}>
+                      <CheckCircle size={22} className="text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-slate-900 mb-1">Abstract Submitted Successfully!</h3>
+                      <p className="text-slate-600 text-sm leading-relaxed">
+                        Your abstract has been received. Login credentials have been sent to your email. Use them below to track your submission status.
+                      </p>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Abstract Submitted!</h3>
-                  <p className="text-slate-600 mb-6">Your abstract has been received. We'll review it and get back to you soon.</p>
-                  <Button onClick={() => setSubmitted(false)} variant="outline">Submit Another</Button>
+
+                  {/* Credentials box */}
+                  {submittedData?.loginId && (
+                    <div className="rounded-2xl border border-slate-200 overflow-hidden">
+                      <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100" style={{ background: '#f8fafc' }}>
+                        <Key size={14} style={{ color: 'var(--brand-dark)' }} />
+                        <span className="text-sm font-bold text-slate-700">Your Login Credentials</span>
+                        <span className="text-xs text-slate-400 ml-1">— also sent to your email</span>
+                      </div>
+                      <div className="p-5 bg-white">
+                        <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Login ID</p>
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                              <span className="font-mono font-bold text-sm text-slate-800 flex-1 select-all">{submittedData.loginId}</span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Password</p>
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                              <span className="font-mono font-bold text-sm text-slate-800 flex-1 select-all">{submittedData.loginPassword}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                          Save these credentials. You will need them to log in and track your abstract status.
+                        </p>
+                        <Link
+                          to="/portal/login"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-opacity hover:opacity-90"
+                          style={{ background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))' }}
+                        >
+                          <ExternalLink size={15} />
+                          Track My Submission →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button onClick={() => { setSubmitted(false); setSubmittedData(null); }} variant="outline" className="self-start">
+                    Submit Another Abstract
+                  </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
                   <SectionHeader title="Abstract Submission Form" subtitle="Fill in all required fields marked with *" centered={false} />
 
-                  {/* Author info */}
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">First Name *</label>
-                      <input {...register('firstName', { required: 'Required' })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">First Name *</label>
+                      <input {...register('firstName', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Last Name *</label>
-                      <input {...register('lastName', { required: 'Required' })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Last Name *</label>
+                      <input {...register('lastName', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Email *</label>
-                      <input type="email" {...register('email', { required: 'Required' })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email *</label>
+                      <input type="email" {...register('email', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Institution / Affiliation *</label>
-                      <input {...register('organization', { required: 'Required' })}
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Institution / Affiliation *</label>
+                      <input {...register('organization', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.organization && <p className="text-red-500 text-xs mt-1">{errors.organization.message}</p>}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Country *</label>
-                    <input {...register('country', { required: 'Required' })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Country *</label>
+                    <input {...register('country', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
                   </div>
 
@@ -201,14 +270,17 @@ export default function AbstractSubmission() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Title *</label>
-                    <input {...register('abstractTitle', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Title *</label>
+                    <input
+                      {...register('abstractTitle', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
+                      className={INPUT_CLS}
+                      onFocus={FOCUS} onBlur={BLUR}
+                    />
                     {errors.abstractTitle && <p className="text-red-500 text-xs mt-1">{errors.abstractTitle.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Text * (250â€“400 words)</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Text * (250–400 words)</label>
                     <textarea
                       {...register('abstractText', {
                         required: 'Required',
@@ -216,32 +288,40 @@ export default function AbstractSubmission() {
                         maxLength: { value: 3000, message: 'Max 3000 characters' },
                       })}
                       rows={8}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors resize-y"
+                      onFocus={FOCUS} onBlur={BLUR}
                     />
                     {errors.abstractText && <p className="text-red-500 text-xs mt-1">{errors.abstractText.message}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Keywords (comma-separated)</label>
-                    <input {...register('keywords')}
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Keywords (comma-separated)</label>
+                    <input
+                      {...register('keywords')}
                       placeholder="e.g., senescence, longevity, inflammation"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      className={INPUT_CLS}
+                      onFocus={FOCUS} onBlur={BLUR}
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Co-Authors (if any)</label>
-                    <input {...register('coAuthors')}
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Co-Authors (if any)</label>
+                    <input
+                      {...register('coAuthors')}
                       placeholder="e.g., Jane Smith (Harvard), John Doe (MIT)"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      className={INPUT_CLS}
+                      onFocus={FOCUS} onBlur={BLUR}
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Abstract Document (PDF, DOC, DOCX)</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Document (PDF, DOC, DOCX)</label>
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                       {...register('file')}
-                      className="block w-full text-sm text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:text-sm hover:file:bg-teal-100"
+                      className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:text-white hover:file:opacity-80 file:transition-opacity"
+                      style={{ '--file-bg': 'var(--brand-dark)' }}
                     />
                   </div>
 

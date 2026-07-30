@@ -153,6 +153,7 @@ export default function RegistrationDetail() {
                 error={errors.paymentStatus?.message}
                 options={paymentStatusOptions}
                 required
+                defaultValue={registration?.paymentStatus || 'pending'}
               />
               <Input
                 label="Transaction ID"

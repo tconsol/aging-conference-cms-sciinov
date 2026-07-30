@@ -271,6 +271,7 @@ export default function Editions() {
               error={errors.status?.message}
               options={statusOptions}
               required
+              defaultValue={modal.data?.status || ''}
             />
             <Input
               label="City"

@@ -148,6 +148,7 @@ export default function SponsorshipDetail() {
                 error={errors.status?.message}
                 options={statusOptions}
                 required
+                defaultValue={inquiry?.status || 'new'}
               />
               <Button type="submit" loading={saving} className="w-full">
                 Save Status

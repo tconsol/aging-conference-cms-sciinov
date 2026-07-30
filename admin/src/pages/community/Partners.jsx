@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Edit2, Trash2, Plus, Globe } from 'lucide-react';
 import { partnersAPI } from '../../api/community';
-import { buildFormData, getErrorMessage } from '../../utils/helpers';
+import { buildFormData, getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 import PageHeader from '../../components/ui/PageHeader';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -43,6 +43,7 @@ export default function Partners() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const [orderConflict, setOrderConflict] = useState(null);
 
   const {
     register,
@@ -87,7 +88,7 @@ export default function Partners() {
       name: '',
       website: '',
       type: '',
-      displayOrder: '',
+      displayOrder: getNextDisplayOrder(partners),
       isActive: true,
     });
     setModalOpen(true);
@@ -110,7 +111,7 @@ export default function Partners() {
     setEditingItem(null);
   };
 
-  const onSubmit = async (data) => {
+  const executeSubmit = async (data) => {
     try {
       setSaving(true);
       const logoFiles = data.logo;
@@ -141,6 +142,25 @@ export default function Partners() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const onSubmit = async (data) => {
+    if (!editingItem) {
+      const conflict = findDisplayOrderConflict(partners, data.displayOrder);
+      if (conflict) { setOrderConflict({ pending: data, conflict }); return; }
+    }
+    await executeSubmit(data);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(partners);
+    try {
+      await partnersAPI.update(conflict._id, { displayOrder: newLast });
+      setPartners((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
   };
 
   const handleDelete = async () => {
@@ -311,6 +331,7 @@ export default function Partners() {
             error={errors.type?.message}
             options={TYPE_OPTIONS}
             placeholder="Select type..."
+            defaultValue={editingItem?.type || ''}
           />
           <Input
             label="Display Order"
@@ -343,6 +364,15 @@ export default function Partners() {
         title="Delete Partner"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
+        storageWarning={!!deleteTarget?.logo}
+      />
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.name || 'another item'}". Proceeding will move that item to the end.`}
+        confirmLabel="Replace"
       />
     </div>
   );

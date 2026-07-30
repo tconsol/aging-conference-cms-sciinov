@@ -14,7 +14,9 @@ import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { organizersAPI } from '../../api/people';
-import { buildFormData, getErrorMessage } from '../../utils/helpers';
+import { siteSettingsAPI } from '../../api/settings';
+import RichTextEditor from '../../components/ui/RichTextEditor';
+import { buildFormData, getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 
 const avatarColors = [
   'bg-blue-100 text-blue-700',
@@ -45,11 +47,14 @@ export default function Organizers() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ open: false, data: null });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, hasFile: false });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [orderConflict, setOrderConflict] = useState(null);
+  const [orgContent, setOrgContent] = useState('');
+  const [savingContent, setSavingContent] = useState(false);
 
   const toggleStatus = async (item) => {
     try {
@@ -78,7 +83,12 @@ export default function Organizers() {
     }
   };
 
-  useEffect(() => { fetchItems(); }, []);
+  useEffect(() => {
+    fetchItems();
+    siteSettingsAPI.get().then((res) => {
+      setOrgContent(res.data?.data?.organizerPageContent || res.data?.organizerPageContent || '');
+    }).catch(() => {});
+  }, []);
 
   const openModal = (data = null) => {
     if (data) {
@@ -91,13 +101,13 @@ export default function Organizers() {
       });
       setCurrentPhoto(data.photo || null);
     } else {
-      reset({ isActive: true });
+      reset({ isActive: true, displayOrder: getNextDisplayOrder(items) });
       setCurrentPhoto(null);
     }
     setModal({ open: true, data });
   };
 
-  const onSubmit = async (formData) => {
+  const executeSubmit = async (formData) => {
     setSubmitting(true);
     try {
       const fd = buildFormData(formData);
@@ -117,12 +127,43 @@ export default function Organizers() {
     }
   };
 
+  const onSubmit = async (formData) => {
+    if (!modal.data?._id) {
+      const conflict = findDisplayOrderConflict(items, formData.displayOrder);
+      if (conflict) { setOrderConflict({ pending: formData, conflict }); return; }
+    }
+    await executeSubmit(formData);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(items);
+    try {
+      await organizersAPI.update(conflict._id, { displayOrder: newLast });
+      setItems((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
+  };
+
+  const handleSaveContent = async () => {
+    setSavingContent(true);
+    try {
+      await siteSettingsAPI.update({ organizerPageContent: orgContent });
+      toast.success('Organizer page content saved.');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSavingContent(false);
+    }
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
       await organizersAPI.delete(deleteDialog.id);
       toast.success('Organizer deleted.');
-      setDeleteDialog({ open: false, id: null });
+      setDeleteDialog({ open: false, id: null, hasFile: false });
       fetchItems();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -203,7 +244,7 @@ export default function Organizers() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => setDeleteDialog({ open: true, id: item._id })}
+                          onClick={() => setDeleteDialog({ open: true, id: item._id, hasFile: !!item.photo })}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
@@ -286,14 +327,43 @@ export default function Organizers() {
         </form>
       </Modal>
 
+      {/* Organizer Page Content */}
+      <div className="mt-8 bg-white rounded-xl border border-slate-100 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Organizer Page Content</h2>
+            <p className="text-xs text-slate-500 mt-0.5">This content appears below the organizer profiles on the public website.</p>
+          </div>
+          <Button onClick={handleSaveContent} loading={savingContent} size="sm">
+            Save Content
+          </Button>
+        </div>
+        <RichTextEditor
+          value={orgContent}
+          onChange={setOrgContent}
+          placeholder="Add information about your organization — mission, history, global presence, etc."
+        />
+      </div>
+
       {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
+        onClose={() => setDeleteDialog({ open: false, id: null, hasFile: false })}
         onConfirm={handleDelete}
         title="Delete Organizer"
-        message="Are you sure you want to delete this organizer?"
+        message="Are you sure you want to delete this organizer? This action cannot be undone."
         loading={deleting}
+        storageWarning={deleteDialog.hasFile}
+      />
+
+      {/* Duplicate order warning */}
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.name || 'another item'}". Proceeding will move that item to the end and assign this order to the new entry.`}
+        confirmLabel="Replace"
       />
     </div>
   );

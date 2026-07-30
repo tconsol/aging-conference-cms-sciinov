@@ -14,8 +14,8 @@ const TYPE_LABELS = {
 };
 
 function FileIcon({ type }) {
-  if (type === 'flyer') return <ImageIcon size={20} className="text-teal-600" />;
-  return <FileText size={20} className="text-teal-600" />;
+  if (type === 'flyer') return <ImageIcon size={20} style={{ color: 'var(--brand-dark)' }} />;
+  return <FileText size={20} style={{ color: 'var(--brand-dark)' }} />;
 }
 
 export default function Downloads() {
@@ -68,21 +68,21 @@ export default function Downloads() {
                         href={item.fileUrl || '#'}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-lg shadow-sm hover:shadow-md hover:border-teal-100 transition-all group"
+                        className="flex items-center gap-4 p-4 bg-white border border-slate-100 rounded-2xl hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
                       >
                         {item.thumbnail ? (
                           <img src={item.thumbnail} alt={item.title} className="w-10 h-10 rounded-xl object-cover shrink-0" />
                         ) : (
-                          <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'var(--brand-light)' }}>
                             <FileIcon type={item.type} />
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm text-slate-900 truncate group-hover:text-teal-700 transition-colors">
+                          <p className="font-semibold text-sm text-slate-900 truncate group-hover:text-slate-600 transition-colors">
                             {item.title}
                           </p>
                         </div>
-                        <Download size={16} className="text-slate-300 group-hover:text-teal-600 transition-colors shrink-0" />
+                        <Download size={16} className="text-slate-300 group-hover:text-slate-600 transition-colors shrink-0" />
                       </a>
                     ))}
                   </div>

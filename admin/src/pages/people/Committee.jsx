@@ -14,7 +14,7 @@ import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ImageUpload from '../../components/ui/ImageUpload';
 import { committeeAPI } from '../../api/people';
-import { buildFormData, getErrorMessage } from '../../utils/helpers';
+import { buildFormData, getErrorMessage, getNextDisplayOrder, findDisplayOrderConflict } from '../../utils/helpers';
 
 const avatarColors = [
   'bg-blue-100 text-blue-700',
@@ -45,11 +45,12 @@ export default function Committee() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ open: false, data: null });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, hasFile: false });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [currentPhoto, setCurrentPhoto] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
+  const [orderConflict, setOrderConflict] = useState(null);
 
   const toggleStatus = async (item) => {
     try {
@@ -93,13 +94,13 @@ export default function Committee() {
       });
       setCurrentPhoto(data.photo || null);
     } else {
-      reset({ isActive: true });
+      reset({ isActive: true, displayOrder: getNextDisplayOrder(items) });
       setCurrentPhoto(null);
     }
     setModal({ open: true, data });
   };
 
-  const onSubmit = async (formData) => {
+  const executeSubmit = async (formData) => {
     setSubmitting(true);
     try {
       const fd = buildFormData(formData);
@@ -119,12 +120,31 @@ export default function Committee() {
     }
   };
 
+  const onSubmit = async (formData) => {
+    if (!modal.data?._id) {
+      const conflict = findDisplayOrderConflict(items, formData.displayOrder);
+      if (conflict) { setOrderConflict({ pending: formData, conflict }); return; }
+    }
+    await executeSubmit(formData);
+  };
+
+  const handleReplaceOrder = async () => {
+    const { pending, conflict } = orderConflict;
+    setOrderConflict(null);
+    const newLast = getNextDisplayOrder(items);
+    try {
+      await committeeAPI.update(conflict._id, { displayOrder: newLast });
+      setItems((prev) => prev.map((i) => i._id === conflict._id ? { ...i, displayOrder: newLast } : i));
+    } catch {}
+    await executeSubmit(pending);
+  };
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
       await committeeAPI.delete(deleteDialog.id);
       toast.success('Member deleted.');
-      setDeleteDialog({ open: false, id: null });
+      setDeleteDialog({ open: false, id: null, hasFile: false });
       fetchItems();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -209,7 +229,7 @@ export default function Committee() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => setDeleteDialog({ open: true, id: item._id })}
+                          onClick={() => setDeleteDialog({ open: true, id: item._id, hasFile: !!item.photo })}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
@@ -319,11 +339,20 @@ export default function Committee() {
       {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
+        onClose={() => setDeleteDialog({ open: false, id: null, hasFile: false })}
         onConfirm={handleDelete}
         title="Delete Committee Member"
-        message="Are you sure you want to delete this committee member?"
+        message="Are you sure you want to delete this committee member? This action cannot be undone."
         loading={deleting}
+        storageWarning={deleteDialog.hasFile}
+      />
+      <ConfirmDialog
+        open={!!orderConflict}
+        onClose={() => setOrderConflict(null)}
+        onConfirm={handleReplaceOrder}
+        title="Duplicate Display Order"
+        message={`Display order ${orderConflict?.conflict?.displayOrder} is already used by "${orderConflict?.conflict?.fullName || 'another item'}". Proceeding will move that item to the end.`}
+        confirmLabel="Replace"
       />
     </div>
   );

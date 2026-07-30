@@ -20,7 +20,7 @@ export default function Venue() {
   const [editions, setEditions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState({ open: false, data: null });
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null, hasFile: false });
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -114,7 +114,7 @@ export default function Venue() {
     try {
       await venuesAPI.delete(deleteDialog.id);
       toast.success('Venue deleted.');
-      setDeleteDialog({ open: false, id: null });
+      setDeleteDialog({ open: false, id: null, hasFile: false });
       fetchItems();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -186,7 +186,7 @@ export default function Venue() {
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => setDeleteDialog({ open: true, id: item._id })}
+                          onClick={() => setDeleteDialog({ open: true, id: item._id, hasFile: !!(item.photos?.length) })}
                           className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
                           title="Delete"
                         >
@@ -239,6 +239,7 @@ export default function Venue() {
               error={errors.edition?.message}
               options={editionOptions}
               required
+              defaultValue={modal.data?.edition?._id || modal.data?.edition || ''}
             />
             <Input
               label="City"
@@ -316,11 +317,12 @@ export default function Venue() {
       {/* Delete Confirm */}
       <ConfirmDialog
         open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, id: null })}
+        onClose={() => setDeleteDialog({ open: false, id: null, hasFile: false })}
         onConfirm={handleDelete}
         title="Delete Venue"
         message="Are you sure you want to delete this venue? This action cannot be undone."
         loading={deleting}
+        storageWarning={deleteDialog.hasFile}
       />
     </div>
   );

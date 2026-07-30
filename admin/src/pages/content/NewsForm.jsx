@@ -27,6 +27,7 @@ export default function NewsForm() {
   const [saving, setSaving] = useState(false);
   const [content, setContent] = useState('');
   const [currentImage, setCurrentImage] = useState('');
+  const [article, setArticle] = useState(null);
 
   const {
     register,
@@ -45,12 +46,14 @@ export default function NewsForm() {
       try {
         const res = await newsAPI.getOne(id);
         const data = res.data.data || res.data;
+        setArticle(data);
         reset({
           title: data.title || '',
           excerpt: data.excerpt || '',
           author: data.author || '',
           tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
           status: data.status || 'draft',
+          publicationDate: data.publishedAt ? new Date(data.publishedAt).toISOString().split('T')[0] : '',
         });
         setContent(data.content || '');
         setCurrentImage(data.featuredImage || '');
@@ -73,6 +76,7 @@ export default function NewsForm() {
       fd.append('tags', formData.tags || '');
       fd.append('status', overrideStatus || formData.status);
       fd.append('content', content);
+      if (formData.publicationDate) fd.append('publishedAt', formData.publicationDate);
 
       const featuredImageFiles = formData.featuredImage;
       if (featuredImageFiles instanceof FileList && featuredImageFiles[0]) {
@@ -170,6 +174,7 @@ export default function NewsForm() {
               name="status"
               register={register}
               options={statusOptions}
+              defaultValue={isEdit ? (article?.status || '') : 'draft'}
             />
             <Input
               label="Author"
@@ -183,6 +188,13 @@ export default function NewsForm() {
               register={register}
               placeholder="tag1, tag2, tag3"
               hint="Comma-separated"
+            />
+            <Input
+              label="Publication Date"
+              name="publicationDate"
+              type="date"
+              register={register}
+              hint="Leave blank to use current date on publish"
             />
           </div>
 

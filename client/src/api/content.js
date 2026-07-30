@@ -5,6 +5,7 @@ export const contentAPI = {
   getNews: (params) => api.get('/news', { params }),
   getNewsBySlug: (slug) => api.get(`/news/slug/${slug}`),
   getReports: () => api.get('/reports', { params: { published: true } }),
+  getReportById: (id) => api.get(`/reports/${id}`),
   getDownloads: () => api.get('/downloads', { params: { active: true } }),
   getBrochure: () => api.get('/brochure/latest'),
   getPage: (key) => api.get(`/pages/${key}`),

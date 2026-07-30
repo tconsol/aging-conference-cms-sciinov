@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { Trash2, Pencil, X, Loader2, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Trash2, Pencil, X, Loader2, CloudOff } from 'lucide-react';
 
 export default function ConfirmDialog({
   open,
@@ -10,9 +10,12 @@ export default function ConfirmDialog({
   confirmLabel = 'Confirm',
   confirmVariant = 'danger',
   loading = false,
+  storageWarning = false,
 }) {
+  const [storageConfirmed, setStorageConfirmed] = useState(false);
+
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
+    if (open) { document.body.style.overflow = 'hidden'; setStorageConfirmed(false); }
     else document.body.style.overflow = '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
@@ -97,9 +100,36 @@ export default function ConfirmDialog({
           </h3>
 
           {/* Message */}
-          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+          <p className="text-sm text-slate-500 leading-relaxed mb-4">
             {message}
           </p>
+
+          {/* GCP storage warning */}
+          {storageWarning && (
+            <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-start gap-2.5 mb-3">
+                <CloudOff size={15} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-800 mb-0.5">Cloud Storage Warning</p>
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    This will permanently delete the associated file(s) from <strong>GCP Cloud Storage</strong>.
+                    Deleted files cannot be recovered.
+                  </p>
+                </div>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={storageConfirmed}
+                  onChange={(e) => setStorageConfirmed(e.target.checked)}
+                  className="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500 flex-shrink-0"
+                />
+                <span className="text-xs font-medium text-amber-800">
+                  I understand — permanently delete from cloud storage
+                </span>
+              </label>
+            </div>
+          )}
 
           {/* Divider with dots */}
           <div className="flex items-center gap-2 mb-5">
@@ -132,8 +162,8 @@ export default function ConfirmDialog({
             <button
               type="button"
               onClick={onConfirm}
-              disabled={loading}
-              className="h-9 px-4 text-sm font-semibold text-white flex items-center gap-2 transition-opacity disabled:opacity-60"
+              disabled={loading || (storageWarning && !storageConfirmed)}
+              className="h-9 px-4 text-sm font-semibold text-white flex items-center gap-2 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
               style={{
                 background: btnBg,
                 clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 0 100%)',

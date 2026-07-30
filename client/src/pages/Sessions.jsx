@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { BookOpen, Search, ArrowRight, Layers } from 'lucide-react';
 import PageHero from '../components/ui/PageHero';
@@ -104,9 +105,10 @@ export default function Sessions() {
                   {filtered.map((session, i) => {
                     const a = ACCENTS[i % ACCENTS.length];
                     return (
-                      <div
+                      <Link
                         key={session._id}
-                        className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 overflow-hidden"
+                        to={`/sessions/${session._id}`}
+                        className="group relative bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 overflow-hidden flex flex-col"
                       >
                         {/* Top accent line */}
                         <div
@@ -129,14 +131,14 @@ export default function Sessions() {
 
                         <h3 className="font-black text-slate-900 text-base leading-snug mb-2">{session.title}</h3>
                         {session.description && (
-                          <p className="text-slate-500 text-sm leading-relaxed line-clamp-3">{session.description}</p>
+                          <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 flex-1">{session.description}</p>
                         )}
 
                         {/* Hover CTA */}
                         <div className="mt-5 flex items-center gap-1 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: a.dark }}>
                           Learn more <ArrowRight size={12} />
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>

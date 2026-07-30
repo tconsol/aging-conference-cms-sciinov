@@ -158,6 +158,7 @@ export default function SpeakerApplicationDetail() {
                 error={errors.status?.message}
                 options={statusOptions}
                 required
+                defaultValue={application?.status || 'pending'}
               />
               <Button type="submit" loading={saving} className="w-full">
                 Save Status

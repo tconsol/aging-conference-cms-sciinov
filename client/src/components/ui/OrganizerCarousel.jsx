@@ -90,21 +90,25 @@ export default function OrganizerCarousel({ organizers }) {
         className="relative w-full max-w-5xl flex justify-center items-center"
         style={{ height: CARD_HEIGHT + 60, perspective: '1200px' }}
       >
-        {/* Arrows */}
-        <motion.button
-          onClick={() => paginate(-1)}
-          whileTap={{ scale: 0.9 }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:bg-teal-50 hover:border-teal-200 transition-colors"
-        >
-          <ChevronLeft size={20} className="text-slate-600" />
-        </motion.button>
-        <motion.button
-          onClick={() => paginate(1)}
-          whileTap={{ scale: 0.9 }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:bg-teal-50 hover:border-teal-200 transition-colors"
-        >
-          <ChevronRight size={20} className="text-slate-600" />
-        </motion.button>
+        {/* Arrows — wrapper div owns position so Framer inline transform doesn't fight -translate-y-1/2 */}
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-30">
+          <motion.button
+            onClick={() => paginate(-1)}
+            whileTap={{ scale: 0.9 }}
+            className="w-11 h-11 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:bg-teal-50 hover:border-teal-200 transition-colors"
+          >
+            <ChevronLeft size={20} className="text-slate-600" />
+          </motion.button>
+        </div>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 z-30">
+          <motion.button
+            onClick={() => paginate(1)}
+            whileTap={{ scale: 0.9 }}
+            className="w-11 h-11 rounded-full bg-white shadow-lg border border-slate-100 flex items-center justify-center hover:bg-teal-50 hover:border-teal-200 transition-colors"
+          >
+            <ChevronRight size={20} className="text-slate-600" />
+          </motion.button>
+        </div>
 
         {/* Cards */}
         <div className="relative w-full h-full flex justify-center items-center">

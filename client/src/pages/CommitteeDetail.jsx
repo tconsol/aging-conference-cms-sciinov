@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Globe, Building } from 'lucide-react';
-import PageHero from '../components/ui/PageHero';
+import { ArrowLeft, Building, MapPin } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
@@ -12,43 +11,33 @@ function OtherMemberCard({ member }) {
     : 'M';
 
   return (
-    <div className="bg-white rounded-lg border border-slate-100 shadow-sm hover:shadow-md hover:border-teal-100 transition-all overflow-hidden flex flex-col">
+    <Link
+      to={`/committee/${member._id}`}
+      className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col"
+    >
       {member.photo ? (
-        <img
-          src={member.photo}
-          alt={member.fullName}
-          className="w-full h-44 object-cover"
-        />
+        <img src={member.photo} alt={member.fullName} className="w-full h-40 object-cover object-top group-hover:scale-105 transition-transform duration-500" />
       ) : (
-        <div className="w-full h-44 bg-teal-50 flex items-center justify-center">
-          <span className="text-3xl font-bold text-teal-700">{initials}</span>
+        <div className="w-full h-40 flex items-center justify-center" style={{ background: 'var(--brand-light)' }}>
+          <span className="text-3xl font-black" style={{ color: 'var(--brand-dark)' }}>{initials}</span>
         </div>
       )}
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-slate-900 text-sm leading-snug">
+        <h3 className="font-black text-slate-900 text-sm leading-snug line-clamp-1">
           {member.fullName || 'Committee Member'}
         </h3>
-        {member.designation && (
-          <p className="text-xs text-slate-500 mt-0.5">{member.designation}</p>
-        )}
-        {member.organization && (
-          <p className="text-xs text-teal-600 font-medium mt-0.5">{member.organization}</p>
-        )}
-        <div className="mt-auto pt-3">
-          <Button to={`/committee/${member._id}`} variant="secondary" size="sm" className="w-full justify-center">
-            View Profile
-          </Button>
-        </div>
+        {member.designation && <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{member.designation}</p>}
+        {member.organization && <p className="text-xs font-bold mt-0.5 line-clamp-1" style={{ color: 'var(--brand-dark)' }}>{member.organization}</p>}
       </div>
-    </div>
+    </Link>
   );
 }
 
 export default function CommitteeDetail() {
   const { id } = useParams();
-  const [member, setMember] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [member, setMember]           = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(false);
   const [otherMembers, setOtherMembers] = useState([]);
 
   useEffect(() => {
@@ -72,110 +61,108 @@ export default function CommitteeDetail() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <div className="flex justify-center items-center min-h-[60vh]"><Spinner size="lg" /></div>;
   }
 
   if (error || !member) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center gap-4">
-        <p className="text-slate-600 text-lg">Committee member not found.</p>
-        <Link to="/committee" className="text-teal-700 hover:underline flex items-center gap-2">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <p className="text-slate-600 text-lg font-semibold">Committee member not found.</p>
+        <Link to="/committee" className="flex items-center gap-2 text-sm font-bold transition-opacity hover:opacity-70" style={{ color: 'var(--brand-dark)' }}>
           <ArrowLeft size={16} /> Back to Committee
         </Link>
       </div>
     );
   }
 
-  return (
-    <div>
-      <PageHero
-        title={member.fullName}
-        subtitle={[member.designation, member.organization].filter(Boolean).join(' · ')}
-        breadcrumb={[
-          { label: 'Home', href: '/' },
-          { label: 'Committee', href: '/committee' },
-          { label: member.fullName },
-        ]}
-      />
+  const initials = member.fullName
+    ? member.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')
+    : 'M';
 
-      <section className="section-padding bg-white">
+  return (
+    <div className="bg-white min-h-screen">
+      {/* Breadcrumb */}
+      <div className="border-b border-slate-100">
+        <div className="container-custom py-4">
+          <Link to="/committee" className="inline-flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-70" style={{ color: 'var(--brand-dark)' }}>
+            <ArrowLeft size={15} /> Scientific Committee
+          </Link>
+        </div>
+      </div>
+
+      {/* Hero strip */}
+      <div
+        className="py-14"
+        style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 70%, black) 100%)' }}
+      >
         <div className="container-custom">
-          <div className="grid lg:grid-cols-3 gap-10">
-            {/* Sidebar */}
-            <div className="flex flex-col gap-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-8">
+            <div
+              className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl overflow-hidden shrink-0 shadow-2xl"
+              style={{ border: '4px solid rgba(255,255,255,0.15)' }}
+            >
               {member.photo ? (
-                <img
-                  src={member.photo}
-                  alt={member.fullName}
-                  className="w-full rounded-lg object-cover shadow-md aspect-[3/4]"
-                />
+                <img src={member.photo} alt={member.fullName} className="w-full h-full object-cover object-top" />
               ) : (
-                <div className="w-full rounded-lg bg-teal-100 flex items-center justify-center aspect-[3/4]">
-                  <span className="text-6xl font-bold text-teal-300">{member.fullName?.[0] ?? 'M'}</span>
+                <div className="w-full h-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                  <span className="text-5xl font-black text-white/70 select-none">{initials}</span>
                 </div>
               )}
-
-              {/* Info card */}
-              <div className="bg-slate-50 rounded-lg border border-slate-100 p-5 flex flex-col gap-3">
+            </div>
+            <div className="pb-1">
+              <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight">{member.fullName}</h1>
+              {member.designation && <p className="text-white/70 mt-1.5 text-lg font-medium">{member.designation}</p>}
+              <div className="flex flex-wrap gap-4 mt-3">
                 {member.organization && (
-                  <div className="flex items-start gap-2">
-                    <Building size={16} className="text-teal-600 shrink-0 mt-0.5" />
-                    <span className="text-sm text-slate-700">{member.organization}</span>
-                  </div>
+                  <span className="flex items-center gap-2 text-white/60 text-sm">
+                    <Building size={13} /> {member.organization}
+                  </span>
                 )}
                 {member.country && (
-                  <div className="flex items-center gap-2">
-                    <Globe size={16} className="text-teal-600 shrink-0" />
-                    <span className="text-sm text-slate-700">{member.country}</span>
-                  </div>
+                  <span className="flex items-center gap-2 text-white/60 text-sm">
+                    <MapPin size={13} /> {member.country}
+                  </span>
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Main content */}
-            <div className="lg:col-span-2">
-              {member.biography && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4">Biography</h2>
-                  <div className="prose prose-slate max-w-none text-slate-600">
-                    {typeof member.biography === 'string' && member.biography.startsWith('<') ? (
-                      <div dangerouslySetInnerHTML={{ __html: member.biography }} />
-                    ) : (
-                      <p className="leading-relaxed">{member.biography}</p>
-                    )}
-                  </div>
+      {/* Content */}
+      <section className="section-padding">
+        <div className="container-custom">
+          <div className="max-w-3xl">
+            {member.biography ? (
+              <>
+                <p className="text-xs font-black uppercase tracking-[0.25em] mb-4" style={{ color: 'var(--brand)' }}>Biography</p>
+                <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-[15px]">
+                  {typeof member.biography === 'string' && member.biography.startsWith('<') ? (
+                    <div dangerouslySetInnerHTML={{ __html: member.biography }} />
+                  ) : (
+                    <p>{member.biography}</p>
+                  )}
                 </div>
-              )}
-
-              <Link
-                to="/committee"
-                className="inline-flex items-center gap-2 text-teal-700 hover:text-teal-900 font-medium text-sm transition-colors"
-              >
-                <ArrowLeft size={16} /> Back to All Committee Members
-              </Link>
-            </div>
+              </>
+            ) : (
+              <p className="text-slate-400 italic">No biography available.</p>
+            )}
           </div>
         </div>
       </section>
 
-      {/* More Committee Members */}
+      {/* Other members */}
       {otherMembers.length > 0 && (
-        <section className="section-padding bg-slate-50">
+        <section className="section-padding" style={{ background: '#f8fafc' }}>
           <div className="container-custom">
-            <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center justify-between gap-4 mb-8">
               <div>
-                <span className="section-label">Scientific Committee</span>
-                <h2 className="text-2xl font-black text-slate-900">More Committee Members</h2>
+                <p className="text-xs font-black uppercase tracking-[0.25em] mb-1" style={{ color: 'var(--brand)' }}>Scientific Committee</p>
+                <h2 className="text-2xl font-black text-slate-900">More Members</h2>
               </div>
-              <Button to="/committee" variant="secondary" size="sm" className="shrink-0">
-                View All
-              </Button>
+              <Button to="/committee" variant="outline" size="sm">View All</Button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {otherMembers.map((m) => (
                 <OtherMemberCard key={m._id} member={m} />
               ))}

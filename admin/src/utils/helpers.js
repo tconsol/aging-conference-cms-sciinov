@@ -70,6 +70,18 @@ export const CATEGORY_LABELS = {
   student: 'Student',
 };
 
+export const getNextDisplayOrder = (items, field = 'displayOrder') => {
+  if (!items.length) return 1;
+  const max = Math.max(...items.map((i) => Number(i[field] ?? 0)));
+  return isFinite(max) ? max + 1 : 1;
+};
+
+export const findDisplayOrderConflict = (items, order, field = 'displayOrder', excludeId = null) => {
+  const num = Number(order);
+  if (!isFinite(num)) return null;
+  return items.find((i) => Number(i[field]) === num && i._id !== excludeId) ?? null;
+};
+
 export const SLOT_TYPE_LABELS = {
   keynote: 'Keynote',
   plenary: 'Plenary',
