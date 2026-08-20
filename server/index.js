@@ -17,6 +17,14 @@ app.use(cors({
   credentials: true,
 }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// PayPal webhook needs raw body for signature verification — must come before express.json()
+app.post(
+  '/api/registrations/paypal/webhook',
+  express.raw({ type: 'application/json' }),
+  require('./controllers/registrationController').handlePaypalWebhook
+);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

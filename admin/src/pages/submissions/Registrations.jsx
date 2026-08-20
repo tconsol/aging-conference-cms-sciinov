@@ -149,37 +149,37 @@ export default function Registrations() {
             icon={Users}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div>
+            <table className="w-full text-xs">
               <thead>
                 <tr className="bg-slate-50">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Country</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Category</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Mode</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Amount</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Payment</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Registered</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Name</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Email</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Country</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Category</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Amount</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Payment</th>
+                  <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Registered</th>
+                  <th className="px-3 py-2.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {items.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">
-                      {item.firstName} {item.lastName}
+                    <td className="px-3 py-2.5 font-medium text-slate-800">
+                      {item.title ? `${item.title} ` : ''}{item.firstName} {item.lastName}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{item.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{item.country}</td>
-                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                    <td className="px-3 py-2.5 text-slate-600 max-w-[160px]">
+                      <span className="block truncate" title={item.email}>{item.email}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-slate-600">{item.country}</td>
+                    <td className="px-3 py-2.5 text-slate-600">
                       {CATEGORY_LABELS[item.category] || item.category}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 capitalize">{item.attendanceMode}</td>
-                    <td className="px-4 py-3 text-slate-700 font-medium">{formatCurrency(item.amount)}</td>
-                    <td className="px-4 py-3">{statusBadge(item.paymentStatus)}</td>
-                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap text-xs">{formatDateTime(item.createdAt)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5 text-slate-700 font-medium whitespace-nowrap">{formatCurrency(item.amount)}</td>
+                    <td className="px-3 py-2.5">{statusBadge(item.paymentStatus)}</td>
+                    <td className="px-3 py-2.5 text-slate-500 whitespace-nowrap">{formatDateTime(item.createdAt)}</td>
+                    <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => navigate(`/registrations/${item._id}`)}

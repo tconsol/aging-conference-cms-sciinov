@@ -7,6 +7,10 @@ const router = express.Router();
 // Public submission
 router.post('/submit', ctrl.submit);
 
+// PayPal payment (public — user initiates)
+router.post('/paypal/create-order', ctrl.createPaypalOrder);
+router.post('/paypal/capture-order', ctrl.capturePaypalOrder);
+
 // Admin
 router.use(protect);
 router.get('/', ctrl.getAll);

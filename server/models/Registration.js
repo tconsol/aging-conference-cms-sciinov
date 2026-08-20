@@ -7,6 +7,7 @@ const registrationSchema = new mongoose.Schema(
       ref: 'Edition',
       required: [true, 'Edition is required'],
     },
+    title: { type: String, trim: true, default: 'Dr.' },
     firstName: { type: String, required: [true, 'First name is required'], trim: true },
     lastName: { type: String, required: [true, 'Last name is required'], trim: true },
     email: {
@@ -16,6 +17,8 @@ const registrationSchema = new mongoose.Schema(
       match: [/^\S+@\S+\.\S+$/, 'Valid email required'],
     },
     phone: { type: String, trim: true },
+    alternateEmail: { type: String, lowercase: true, trim: true },
+    whatsapp: { type: String, trim: true },
     country: { type: String, required: [true, 'Country is required'], trim: true },
     organization: { type: String, trim: true },
     category: {

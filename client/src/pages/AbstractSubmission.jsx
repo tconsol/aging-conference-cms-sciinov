@@ -12,6 +12,7 @@ import { submissionsAPI } from '../api/submissions';
 import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 import { getErrorMessage } from '../utils/helpers';
+import { COUNTRY_OPTIONS } from '../utils/countries';
 
 const PRESENTATION_TYPES = [
   { value: 'oral_inperson', label: 'Oral Presentation (In-Person)' },
@@ -202,12 +203,12 @@ export default function AbstractSubmission() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">First Name *</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">First Name <span className="text-red-500">*</span></label>
                       <input {...register('firstName', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Last Name *</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Last Name <span className="text-red-500">*</span></label>
                       <input {...register('lastName', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
                     </div>
@@ -215,22 +216,34 @@ export default function AbstractSubmission() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email *</label>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email <span className="text-red-500">*</span></label>
                       <input type="email" {...register('email', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Institution / Affiliation *</label>
-                      <input {...register('organization', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
-                      {errors.organization && <p className="text-red-500 text-xs mt-1">{errors.organization.message}</p>}
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Institution / Affiliation</label>
+                      <input {...register('organization')} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Country *</label>
-                    <input {...register('country', { required: 'Required' })} className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
-                    {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country.message}</p>}
-                  </div>
+                  <Controller
+                    name="country"
+                    control={control}
+                    rules={{ required: 'Required' }}
+                    render={({ field }) => (
+                      <Select
+                        label="Country"
+                        required
+                        placeholder="Select country..."
+                        searchable
+                        searchPlaceholder="Search countries..."
+                        options={COUNTRY_OPTIONS}
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.country?.message}
+                      />
+                    )}
+                  />
 
                   <div>
                     <Controller
@@ -270,7 +283,7 @@ export default function AbstractSubmission() {
                   )}
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Title *</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Title <span className="text-red-500">*</span></label>
                     <input
                       {...register('abstractTitle', { required: 'Required', maxLength: { value: 200, message: 'Max 200 characters' } })}
                       className={INPUT_CLS}
@@ -280,7 +293,7 @@ export default function AbstractSubmission() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Text * (250–400 words)</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Text <span className="text-red-500">*</span> (250–400 words)</label>
                     <textarea
                       {...register('abstractText', {
                         required: 'Required',

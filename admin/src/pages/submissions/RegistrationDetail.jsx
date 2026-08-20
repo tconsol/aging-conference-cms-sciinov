@@ -103,7 +103,7 @@ export default function RegistrationDetail() {
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-slate-800">
-            {registration.firstName} {registration.lastName}
+            {registration.title ? `${registration.title} ` : ''}{registration.firstName} {registration.lastName}
           </h1>
           <p className="text-sm text-slate-500 mt-1">{registration.email}</p>
         </div>
@@ -117,9 +117,12 @@ export default function RegistrationDetail() {
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
             <h2 className="text-base font-semibold text-slate-700 mb-4">Personal Information</h2>
             <dl>
-              <DetailRow label="Full Name" value={`${registration.firstName} ${registration.lastName}`} />
+              <DetailRow label="Title" value={registration.title} />
+              <DetailRow label="Full Name" value={`${registration.title ? registration.title + ' ' : ''}${registration.firstName} ${registration.lastName}`} />
               <DetailRow label="Email" value={registration.email} />
+              <DetailRow label="Alternate Email" value={registration.alternateEmail} />
               <DetailRow label="Phone" value={registration.phone} />
+              <DetailRow label="WhatsApp" value={registration.whatsapp} />
               <DetailRow label="Country" value={registration.country} />
               <DetailRow label="Institution / Organization" value={registration.organization} />
             </dl>

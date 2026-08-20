@@ -10,6 +10,7 @@ import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 import { getErrorMessage } from '../utils/helpers';
 import { COUNTRY_OPTIONS } from '../utils/countries';
+import PhoneInput from '../components/ui/PhoneInput';
 
 const INPUT_CLS = 'w-full h-11 px-4 border border-slate-200 rounded-xl text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors';
 const TEXTAREA_CLS = 'w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors resize-none';
@@ -24,7 +25,8 @@ export default function BecomeASpeaker() {
   const [submitted, setSubmitted]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, control, formState: { errors }, reset, setValue } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, reset, setValue, watch } = useForm();
+  const selectedCountry = watch('country');
 
   useEffect(() => {
     congressAPI.getAll()
@@ -122,39 +124,40 @@ export default function BecomeASpeaker() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className={LABEL_CLS}>Full Name *</label>
+                      <label className={LABEL_CLS}>Full Name <span className="text-red-500">*</span></label>
                       <input {...register('name', { required: 'Name is required' })} placeholder="Your full name" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.name && <p className={ERROR_CLS}>{errors.name.message}</p>}
                     </div>
                     <div>
-                      <label className={LABEL_CLS}>Email Address *</label>
+                      <label className={LABEL_CLS}>Email Address <span className="text-red-500">*</span></label>
                       <input type="email" {...register('email', { required: 'Email is required', pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter a valid email' } })} placeholder="you@example.com" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                       {errors.email && <p className={ERROR_CLS}>{errors.email.message}</p>}
                     </div>
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className={LABEL_CLS}>Phone Number</label>
-                      <input type="tel" {...register('phone')} placeholder="+1 (555) 000-0000" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
-                    </div>
-                    <div>
-                      <Controller
-                        name="country"
-                        control={control}
-                        render={({ field }) => (
-                          <Select
-                            label="Country"
-                            placeholder="Select country..."
-                            searchable
-                            searchPlaceholder="Search countries..."
-                            options={COUNTRY_OPTIONS}
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        )}
-                      />
-                    </div>
+                    <Controller
+                      name="country"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          label="Country"
+                          placeholder="Select country..."
+                          searchable
+                          searchPlaceholder="Search countries..."
+                          options={COUNTRY_OPTIONS}
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    <PhoneInput
+                      register={register}
+                      name="phone"
+                      countryValue={selectedCountry}
+                      label="Phone Number"
+                      placeholder="Phone number"
+                    />
                   </div>
 
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -169,7 +172,7 @@ export default function BecomeASpeaker() {
                   </div>
 
                   <div>
-                    <label className={LABEL_CLS}>Area of Expertise / Proposed Topic *</label>
+                    <label className={LABEL_CLS}>Area of Expertise / Proposed Topic <span className="text-red-500">*</span></label>
                     <input {...register('expertise', { required: 'This field is required' })} placeholder="e.g. Cellular senescence, geroscience" className={INPUT_CLS} onFocus={FOCUS} onBlur={BLUR} />
                     {errors.expertise && <p className={ERROR_CLS}>{errors.expertise.message}</p>}
                   </div>
