@@ -5,7 +5,7 @@ import Topbar from './Topbar';
 import useAdminTheme from '../../hooks/useAdminTheme';
 
 export default function Layout() {
-  useAdminTheme();
+  const { logo } = useAdminTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('admin_sidebar_collapsed') === 'true');
 
@@ -32,6 +32,7 @@ export default function Layout() {
         onClose={() => setSidebarOpen(false)}
         collapsed={collapsed}
         onToggleCollapsed={toggleCollapsed}
+        logo={logo}
       />
 
       {/* Main content */}

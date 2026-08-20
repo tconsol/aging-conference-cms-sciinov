@@ -66,7 +66,7 @@ function CollapsedLink({ item }) {
   );
 }
 
-export default function Sidebar({ open, onClose, collapsed = false, onToggleCollapsed }) {
+export default function Sidebar({ open, onClose, collapsed = false, onToggleCollapsed, logo }) {
   return (
     <>
       {/* Desktop */}
@@ -75,7 +75,7 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
           collapsed ? 'w-16' : 'w-60'
         }`}
       >
-        <SidebarContent collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} showCollapseToggle />
+        <SidebarContent collapsed={collapsed} onToggleCollapsed={onToggleCollapsed} showCollapseToggle logo={logo} />
       </aside>
 
       {/* Mobile drawer */}
@@ -85,30 +85,44 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
         }`}
       >
         <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200 flex-shrink-0">
-          <span className="text-sm font-bold text-slate-800">Aging Congress</span>
+          {logo
+            ? <img src={logo} alt="Logo" className="h-8 max-w-[120px] object-contain" />
+            : <span className="text-sm font-bold text-slate-800">Aging Congress</span>
+          }
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100 transition-colors">
             <X size={16} />
           </button>
         </div>
-        <SidebarContent collapsed={false} />
+        <SidebarContent collapsed={false} logo={logo} />
       </aside>
     </>
   );
 }
 
-function SidebarContent({ collapsed, onToggleCollapsed, showCollapseToggle }) {
+function SidebarContent({ collapsed, onToggleCollapsed, showCollapseToggle, logo }) {
   return (
     <>
       {/* Logo */}
       <div className={`hidden lg:flex items-center h-16 border-b border-slate-200 flex-shrink-0 ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'}`}>
-        <div className="w-8 h-8 bg-teal-700 flex items-center justify-center rounded-md flex-shrink-0">
-          <Activity size={15} className="text-white" />
-        </div>
-        {!collapsed && (
+        {logo ? (
+          <img
+            src={logo}
+            alt="Logo"
+            className={collapsed ? 'h-8 w-8 object-contain' : 'h-8 max-w-[120px] object-contain'}
+          />
+        ) : (
+          <div className="w-8 h-8 bg-teal-700 flex items-center justify-center rounded-md flex-shrink-0">
+            <Activity size={15} className="text-white" />
+          </div>
+        )}
+        {!collapsed && !logo && (
           <div className="min-w-0">
             <p className="text-sm font-bold text-slate-900 leading-tight truncate">Aging Congress</p>
             <p className="text-xs text-teal-600 font-medium">Admin Panel</p>
           </div>
+        )}
+        {!collapsed && logo && (
+          <p className="text-xs text-slate-400 font-medium">Admin Panel</p>
         )}
       </div>
 

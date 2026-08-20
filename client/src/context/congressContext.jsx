@@ -21,8 +21,14 @@ export function CongressProvider({ children }) {
       const settings = settingsRes.data?.data ?? settingsRes.data ?? null;
       setSiteSettings(settings);
       if (settings?.favicon) {
-        const link = document.querySelector('link[rel="icon"]');
-        if (link) link.href = settings.favicon;
+        let link = document.querySelector('link[rel="icon"]');
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
+        }
+        // Cache-bust so Chrome actually re-fetches the new favicon
+        link.href = `${settings.favicon}?v=${Date.now()}`;
       }
       const t = settings?.theme;
       if (t) {

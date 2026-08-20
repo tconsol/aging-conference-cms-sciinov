@@ -179,6 +179,31 @@
   100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
 }
 
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--brand) 45%, transparent);
+  border-radius: 100px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--brand) 75%, transparent);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--brand) 40%, transparent) transparent;
+}
+
 /* ── Brand CSS Variables (overridden at runtime from siteSettings.theme) ── */
 :root {
   --brand:        #0d9488;

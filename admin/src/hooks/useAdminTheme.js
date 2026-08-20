@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { siteSettingsAPI } from '../api/settings';
 
 const LS_KEY = 'admin_theme_apply';
@@ -27,21 +27,37 @@ function removeVars() {
   root.style.removeProperty('--brand-accent');
 }
 
+function applyFavicon(url) {
+  if (!url) return;
+  let link = document.querySelector('link[rel="icon"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  link.href = `${url}?v=${Date.now()}`;
+}
+
 export default function useAdminTheme() {
+  const [logo, setLogo] = useState(null);
+
   useEffect(() => {
-    if (!isAdminThemeEnabled()) return;
-
-    document.body.classList.add('admin-themed');
-
     siteSettingsAPI.get()
       .then(res => {
-        const theme = (res.data?.data ?? res.data)?.theme;
-        if (theme) applyVars(theme);
+        const settings = res.data?.data ?? res.data;
+        // Always apply favicon regardless of theme toggle
+        if (settings?.favicon) applyFavicon(settings.favicon);
+        if (settings?.logo) setLogo(settings.logo);
+        // Apply theme colors only if opted in
+        if (isAdminThemeEnabled() && settings?.theme) {
+          document.body.classList.add('admin-themed');
+          applyVars(settings.theme);
+        }
       })
       .catch(() => {});
-
-    return () => {};
   }, []);
+
+  return { logo };
 }
 
 // Called by ThemeSwitcher and Theme page when admin saves/changes theme
