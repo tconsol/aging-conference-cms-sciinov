@@ -31,8 +31,15 @@ const app = express();
 connectDB();
 
 app.use(helmet());
+const _allowedOrigins = [
+  ...(process.env.CLIENT_URL || '').split(','),
+  ...(process.env.ADMIN_URL || '').split(','),
+].map(o => o.trim()).filter(Boolean);
 app.use(cors({
-  origin: [process.env.CLIENT_URL, process.env.ADMIN_URL],
+  origin: (origin, cb) => {
+    if (!origin || _allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
