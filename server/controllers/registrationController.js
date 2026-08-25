@@ -3,6 +3,109 @@ const PricingTier = require('../models/PricingTier');
 const { sendEmail } = require('../utils/email');
 const paypal = require('../utils/paypal');
 
+const CATEGORY_LABELS = {
+  oral_inperson:    'Oral Presentation (In-Person)',
+  oral_virtual:     'Oral Presentation (Virtual)',
+  poster_inperson:  'Poster Presentation (In-Person)',
+  poster_virtual:   'Poster Presentation (Virtual)',
+  listener_inperson:'Listener (In-Person)',
+  listener_virtual: 'Listener (Virtual)',
+  student:          'Student',
+};
+
+const ATTENDANCE_LABELS = {
+  in_person: 'In-Person',
+  virtual:   'Virtual',
+};
+
+function buildConfirmationEmail(reg, captureId) {
+  const fullName = `${reg.title ? reg.title + ' ' : ''}${reg.firstName} ${reg.lastName}`;
+  const editionLine = reg.edition ? `${reg.edition.title}${reg.edition.year ? ' (' + reg.edition.year + ')' : ''}` : '—';
+  const categoryLine = CATEGORY_LABELS[reg.category] || reg.category || '—';
+  const attendanceLine = ATTENDANCE_LABELS[reg.attendanceMode] || reg.attendanceMode || '—';
+  const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const refId = String(reg._id).toUpperCase().slice(-8);
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:10px 16px;font-size:13px;color:#6b7280;border-bottom:1px solid #f1f5f9;width:40%">${label}</td>
+      <td style="padding:10px 16px;font-size:13px;color:#1e293b;font-weight:500;border-bottom:1px solid #f1f5f9">${value}</td>
+    </tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.08)">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:36px 40px">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.6);text-transform:uppercase">Aging Congress</p>
+      <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;line-height:1.2">Registration Confirmed</h1>
+      <p style="margin:8px 0 0;font-size:14px;color:rgba(255,255,255,0.75)">Your payment was received. Welcome to the congress!</p>
+    </div>
+
+    <!-- Greeting -->
+    <div style="padding:28px 40px 0">
+      <p style="margin:0;font-size:15px;color:#334155">Dear <strong>${fullName}</strong>,</p>
+      <p style="margin:12px 0 0;font-size:14px;color:#64748b;line-height:1.6">
+        Thank you for registering for the Aging Congress. Your registration is now confirmed and your spot is secured.
+        Please keep this email as your official registration receipt.
+      </p>
+    </div>
+
+    <!-- Registration Details -->
+    <div style="padding:24px 40px 0">
+      <p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#0d9488;text-transform:uppercase">Registration Details</p>
+      <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+        ${row('Name', fullName)}
+        ${row('Email', reg.email)}
+        ${reg.phone ? row('Phone', reg.phone) : ''}
+        ${reg.country ? row('Country', reg.country) : ''}
+        ${reg.organization ? row('Institution / Organization', reg.organization) : ''}
+        ${row('Congress Edition', editionLine)}
+        ${row('Registration Category', categoryLine)}
+        ${row('Attendance Mode', attendanceLine)}
+      </table>
+    </div>
+
+    <!-- Invoice -->
+    <div style="padding:24px 40px 0">
+      <p style="margin:0 0 12px;font-size:11px;font-weight:700;letter-spacing:0.12em;color:#0d9488;text-transform:uppercase">Payment Invoice</p>
+      <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
+        ${row('Invoice Date', invoiceDate)}
+        ${row('Invoice Ref', '#INV-' + refId)}
+        ${row('Transaction ID', captureId || '—')}
+        ${row('Payment Method', 'PayPal')}
+        ${row('Currency', reg.currency || 'USD')}
+        <tr>
+          <td style="padding:14px 16px;font-size:14px;font-weight:700;color:#0f766e;background:#f0fdfa">Total Paid</td>
+          <td style="padding:14px 16px;font-size:18px;font-weight:700;color:#0f766e;background:#f0fdfa">USD ${Number(reg.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Footer note -->
+    <div style="padding:24px 40px 32px">
+      <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6">
+        If you have any questions about your registration, please reply to this email or contact our support team.
+        Please retain this email as proof of registration.
+      </p>
+      <p style="margin:16px 0 0;font-size:11px;color:#cbd5e1">
+        Reference ID: ${reg._id}
+      </p>
+    </div>
+
+    <!-- Bottom bar -->
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:16px 40px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#94a3b8">© ${new Date().getFullYear()} Aging Congress. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+}
+
 exports.getAll = async (req, res, next) => {
   try {
     const { edition, paymentStatus, category, page = 1, limit = 20, search } = req.query;
@@ -242,7 +345,7 @@ exports.capturePaypalOrder = async (req, res, next) => {
       registrationId,
       { paymentStatus: 'confirmed', transactionId: captureId },
       { new: true }
-    );
+    ).populate('edition', 'title year');
 
     if (!registration) {
       return res.status(404).json({ success: false, message: 'Registration not found.' });
@@ -251,19 +354,11 @@ exports.capturePaypalOrder = async (req, res, next) => {
     try {
       await sendEmail({
         to: registration.email,
-        subject: 'Payment Confirmed – Aging Congress Registration',
-        html: `
-          <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
-            <h2 style="color:#0f766e;">Payment Confirmed</h2>
-            <p>Dear ${registration.title ? registration.title + ' ' : ''}${registration.firstName} ${registration.lastName},</p>
-            <p>Your payment of <strong>USD ${registration.amount}</strong> has been received and your congress registration is confirmed.</p>
-            <p><strong>Transaction ID:</strong> ${captureId}</p>
-            <p style="color:#6b7280;font-size:13px;">Reference ID: ${registration._id}</p>
-          </div>
-        `,
+        subject: `Registration Confirmed – Aging Congress${registration.edition?.year ? ' ' + registration.edition.year : ''}`,
+        html: buildConfirmationEmail(registration, captureId),
       });
     } catch {
-      // Non-critical
+      // Non-critical — don't fail the response if email errors
     }
 
     res.json({ success: true, data: registration });

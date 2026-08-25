@@ -1,4 +1,23 @@
 require('dotenv').config();
+
+// ── JWT secret guard ──────────────────────────────────────────────────────────
+(function validateSecrets() {
+  const WEAK_PLACEHOLDERS = [
+    'change_this_to_a_long_random_secret_string',
+    'secret', 'changeme', 'jwt_secret', 'your_secret',
+  ];
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32 || WEAK_PLACEHOLDERS.some(p => secret.toLowerCase().includes(p))) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('FATAL: JWT_SECRET is missing or insecure. Set a 64+ char random hex string in .env');
+      process.exit(1);
+    } else {
+      console.warn('WARNING: JWT_SECRET is weak or not set. Run: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))" and set it in .env');
+    }
+  }
+})();
+// ─────────────────────────────────────────────────────────────────────────────
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');

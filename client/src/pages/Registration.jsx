@@ -91,7 +91,7 @@ export default function Registration() {
   });
 
   const createPaypalOrder = async () => {
-    if (!captchaToken) {
+    if (RECAPTCHA_SITE_KEY && !captchaToken) {
       toast.error('Please complete the CAPTCHA verification first.');
       throw new Error('captcha required');
     }
