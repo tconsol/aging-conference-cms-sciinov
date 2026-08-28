@@ -7,6 +7,9 @@ const router = express.Router();
 // Public submission
 router.post('/submit', ctrl.submit);
 
+// Intent tracking — called when user enters payment step
+router.post('/intent', ctrl.trackIntent);
+
 // PayPal payment (public — user initiates)
 router.post('/paypal/create-order', ctrl.createPaypalOrder);
 router.post('/paypal/capture-order', ctrl.capturePaypalOrder);

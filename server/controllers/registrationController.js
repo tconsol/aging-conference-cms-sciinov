@@ -443,6 +443,41 @@ function buildMultipleAttemptsEmail(data) {
 </html>`;
 }
 
+exports.trackIntent = async (req, res, next) => {
+  try {
+    const { email, firstName, lastName, title, country } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'email required' });
+
+    const prevAttempts = await Registration.countDocuments({
+      email: email.toLowerCase(),
+      paymentStatus: { $in: ['pending', 'cancelled'] },
+    });
+
+    const data = { email, firstName, lastName, title, country };
+    try {
+      if (prevAttempts === 0) {
+        await sendEmail({
+          to: email,
+          subject: 'Conference Registration Reminder – Payment Pending',
+          html: buildPendingReminderEmail(data),
+        });
+        console.log(`[Intent] Reminder email sent to ${email} (1st attempt)`);
+      } else {
+        await sendEmail({
+          to: email,
+          subject: 'ICAG 2027 Registration Assistance Available',
+          html: buildMultipleAttemptsEmail(data),
+        });
+        console.log(`[Intent] Multiple-attempts email sent to ${email} (attempt #${prevAttempts + 1})`);
+      }
+    } catch (emailErr) {
+      console.error('[Intent] Email failed:', emailErr.message);
+    }
+
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
 exports.createPaypalOrder = async (req, res, next) => {
   try {
     const { captchaToken, ...rawData } = req.body;
@@ -469,12 +504,6 @@ exports.createPaypalOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid registration amount.' });
     }
 
-    // Count previous incomplete attempts by this email
-    const prevAttempts = await Registration.countDocuments({
-      email: data.email.toLowerCase(),
-      paymentStatus: { $in: ['pending', 'cancelled'] },
-    });
-
     // Save pending registration
     const registration = await Registration.create({ ...data, paymentStatus: 'pending' });
 
@@ -484,25 +513,6 @@ exports.createPaypalOrder = async (req, res, next) => {
       currency: data.currency || 'USD',
       description: `Congress Registration – ${data.category}`,
     });
-
-    // Send appropriate follow-up email (non-blocking)
-    try {
-      if (prevAttempts === 0) {
-        await sendEmail({
-          to: data.email,
-          subject: 'Conference Registration Reminder – Payment Pending',
-          html: buildPendingReminderEmail(data),
-        });
-      } else {
-        await sendEmail({
-          to: data.email,
-          subject: 'ICAG 2027 Registration Assistance Available',
-          html: buildMultipleAttemptsEmail(data),
-        });
-      }
-    } catch (emailErr) {
-      console.warn('[Registration] Follow-up email failed:', emailErr.message);
-    }
 
     res.json({ success: true, orderId: order.id, registrationId: registration._id });
   } catch (err) { next(err); }

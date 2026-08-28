@@ -247,6 +247,15 @@ export default function Registration() {
     recaptchaRef.current?.reset();
     setStep('payment');
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Fire intent tracking email (non-blocking — don't delay the UI)
+    submissionsAPI.trackRegistrationIntent({
+      email: formData.email,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      title: formData.title,
+      country: formData.country,
+    }).catch(() => {});
   };
 
   const handlePromoApply = () => {
