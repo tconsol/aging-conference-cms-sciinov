@@ -286,6 +286,163 @@ async function verifyCaptcha(token) {
   return data.success === true;
 }
 
+function buildPendingReminderEmail(data) {
+  const fullName = `${data.title ? data.title + ' ' : ''}${data.firstName} ${data.lastName}`;
+  const isIndia = (data.country || '').toLowerCase() === 'india';
+  const razorpayNote = isIndia ? `
+    <tr><td colspan="2" style="padding:0"></td></tr>
+    <tr>
+      <td colspan="2" style="padding:14px 20px;background:#fffbeb;border-radius:6px;font-size:13px;color:#92400e;line-height:1.6">
+        <strong>For participants in India:</strong> As PayPal is currently restricted, we can provide you with a secure
+        <strong>Razorpay payment link</strong> to help you complete your registration quickly and conveniently.
+        Please reply to this email and we will send you the link.
+      </td>
+    </tr>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.08)">
+
+    <div style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:32px 40px">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.65);text-transform:uppercase">Aging Congress</p>
+      <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2">Registration Reminder</h1>
+      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">Your payment is still pending — complete your registration today.</p>
+    </div>
+
+    <div style="padding:28px 40px 0">
+      <p style="margin:0;font-size:15px;color:#334155">Dear <strong>${fullName}</strong>,</p>
+      <p style="margin:12px 0 0;font-size:14px;color:#64748b;line-height:1.6">
+        We noticed that your registration for the Aging Congress is not yet complete. Your information has been saved,
+        but payment has not been received. Please log in and complete your payment to secure your spot.
+      </p>
+    </div>
+
+    <div style="padding:20px 40px 0">
+      <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden">
+        <tr>
+          <td style="padding:12px 20px;font-size:13px;color:#6b7280;border-bottom:1px solid #f1f5f9;width:42%">Registrant</td>
+          <td style="padding:12px 20px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9">${fullName}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 20px;font-size:13px;color:#6b7280;border-bottom:1px solid #f1f5f9">Email</td>
+          <td style="padding:12px 20px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9">${data.email}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 20px;font-size:13px;color:#6b7280;border-bottom:1px solid #f1f5f9">Category</td>
+          <td style="padding:12px 20px;font-size:13px;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9">${CATEGORY_LABELS[data.category] || data.category || '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding:12px 20px;font-size:13px;color:#6b7280">Payment Status</td>
+          <td style="padding:12px 20px;font-size:13px;font-weight:700;color:#dc2626">Pending</td>
+        </tr>
+        ${razorpayNote}
+      </table>
+    </div>
+
+    <div style="padding:24px 40px">
+      <a href="https://aging.sciinovdbms.com/register"
+        style="display:inline-block;background:#0d9488;color:#ffffff;font-size:14px;font-weight:700;padding:13px 28px;border-radius:8px;text-decoration:none">
+        Complete Registration →
+      </a>
+    </div>
+
+    <div style="padding:0 40px 28px">
+      <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6">
+        If you need assistance or have any questions, please reply to this email. We are happy to help.
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#475569">
+        Kind regards,<br>
+        <strong>Shirley Saxon</strong><br>
+        Program Director | ICAG 2027<br>
+        Sciinov Group<br>
+        <a href="mailto:shirleysaxon@sciinovhealth.com" style="color:#0d9488">shirleysaxon@sciinovhealth.com</a>
+      </p>
+    </div>
+
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#94a3b8">© ${new Date().getFullYear()} Aging Congress. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+}
+
+function buildMultipleAttemptsEmail(data) {
+  const fullName = `${data.title ? data.title + ' ' : ''}${data.firstName} ${data.lastName}`;
+  const isIndia = (data.country || '').toLowerCase() === 'india';
+  const razorpaySection = isIndia ? `
+    <div style="margin:20px 0;padding:16px 20px;background:#fffbeb;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0">
+      <p style="margin:0;font-size:14px;color:#92400e;line-height:1.6">
+        <strong>For participants in India:</strong> As PayPal is currently restricted in India, we can provide you with
+        a secure <strong>Razorpay payment link</strong> to complete your registration quickly and conveniently.
+        Please reply to this email and we will send you the secure link.
+      </p>
+    </div>` : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 8px rgba(0,0,0,0.08)">
+
+    <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);padding:32px 40px">
+      <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.65);text-transform:uppercase">ICAG 2027 · Registration Assistance</p>
+      <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2">We're Here to Help You Register</h1>
+      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">We noticed multiple registration attempts — let us assist you.</p>
+    </div>
+
+    <div style="padding:28px 40px 0">
+      <p style="margin:0;font-size:15px;color:#334155">Dear <strong>${fullName}</strong>,</p>
+      <p style="margin:12px 0 0;font-size:14px;color:#64748b;line-height:1.6">
+        We noticed that you have tried to register for the Aging Congress multiple times. Thank you for your patience —
+        it appears your registration is not yet complete. We would like to help you finish the process as smoothly as possible.
+      </p>
+    </div>
+
+    ${razorpaySection}
+
+    <div style="padding:${isIndia ? '0' : '20px'} 40px 0">
+      <p style="margin:0;font-size:14px;color:#475569;line-height:1.7">
+        If you encountered any issues during the payment step or have questions about the registration process,
+        please do not hesitate to reply to this email. We are available to assist you promptly.
+      </p>
+      <p style="margin:16px 0 0;font-size:14px;color:#475569;line-height:1.7">
+        Whenever you are ready, you can continue your registration from where you left off:
+      </p>
+    </div>
+
+    <div style="padding:20px 40px">
+      <a href="https://aging.sciinovdbms.com/register"
+        style="display:inline-block;background:#1e40af;color:#ffffff;font-size:14px;font-weight:700;padding:13px 28px;border-radius:8px;text-decoration:none">
+        Complete My Registration →
+      </a>
+    </div>
+
+    <div style="padding:0 40px 28px">
+      <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6">
+        We look forward to welcoming you to ICAG 2027.
+      </p>
+      <p style="margin:16px 0 0;font-size:13px;color:#475569">
+        Best regards,<br>
+        <strong>Shirley Saxon</strong><br>
+        Program Director | ICAG 2027<br>
+        Sciinov Group<br>
+        <a href="mailto:shirleysaxon@sciinovhealth.com" style="color:#1e40af">shirleysaxon@sciinovhealth.com</a>
+      </p>
+    </div>
+
+    <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:14px 40px;text-align:center">
+      <p style="margin:0;font-size:11px;color:#94a3b8">© ${new Date().getFullYear()} Aging Congress. All rights reserved.</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+}
+
 exports.createPaypalOrder = async (req, res, next) => {
   try {
     const { captchaToken, ...rawData } = req.body;
@@ -312,6 +469,12 @@ exports.createPaypalOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid registration amount.' });
     }
 
+    // Count previous incomplete attempts by this email
+    const prevAttempts = await Registration.countDocuments({
+      email: data.email.toLowerCase(),
+      paymentStatus: { $in: ['pending', 'cancelled'] },
+    });
+
     // Save pending registration
     const registration = await Registration.create({ ...data, paymentStatus: 'pending' });
 
@@ -321,6 +484,25 @@ exports.createPaypalOrder = async (req, res, next) => {
       currency: data.currency || 'USD',
       description: `Congress Registration – ${data.category}`,
     });
+
+    // Send appropriate follow-up email (non-blocking)
+    try {
+      if (prevAttempts === 0) {
+        await sendEmail({
+          to: data.email,
+          subject: 'Conference Registration Reminder – Payment Pending',
+          html: buildPendingReminderEmail(data),
+        });
+      } else {
+        await sendEmail({
+          to: data.email,
+          subject: 'ICAG 2027 Registration Assistance Available',
+          html: buildMultipleAttemptsEmail(data),
+        });
+      }
+    } catch (emailErr) {
+      console.warn('[Registration] Follow-up email failed:', emailErr.message);
+    }
 
     res.json({ success: true, orderId: order.id, registrationId: registration._id });
   } catch (err) { next(err); }

@@ -164,6 +164,7 @@ export default function Registration() {
   const [promoInput, setPromoInput] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const { register, handleSubmit, control, formState: { errors }, watch, setValue } = useForm();
   const selectedEdition = watch('edition');
@@ -217,6 +218,7 @@ export default function Registration() {
     setPromoInput('');
     setAppliedDiscount(0);
     setPromoApplied(false);
+    setTermsAccepted(false);
     setStep('pricing');
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -587,16 +589,50 @@ export default function Registration() {
                       <p className="text-xs text-slate-400 text-center">* All prices are in USD only</p>
                     </div>
 
-                    {/* CTA */}
-                    <div className="px-6 pb-6">
+                    {/* T&C + CTA */}
+                    <div className="px-6 pb-6 space-y-3">
+                      {/* Terms checkbox */}
+                      <label className="flex items-start gap-3 cursor-pointer group p-3 rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50/40 transition-all">
+                        <div className="relative shrink-0 mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            className="sr-only"
+                          />
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all
+                            ${termsAccepted ? 'bg-teal-600 border-teal-600' : 'bg-white border-slate-300 group-hover:border-teal-400'}`}>
+                            {termsAccepted && (
+                              <svg width="11" height="8" viewBox="0 0 11 8" fill="none">
+                                <path d="M1 4L4 7L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-sm text-slate-600 leading-snug">
+                          I confirm that I have read and agree to the{' '}
+                          <a
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-teal-600 font-semibold underline underline-offset-2 hover:text-teal-700"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Terms and Conditions
+                          </a>
+                          {' '}<span className="text-red-500">*</span>
+                        </span>
+                      </label>
+
                       <button
                         type="button"
                         onClick={proceedToPayment}
+                        disabled={!selectedCategory || !termsAccepted}
                         className="w-full flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-wide transition-all duration-200"
                         style={{
-                          background: selectedCategory ? '#0f766e' : '#e2e8f0',
-                          color: selectedCategory ? '#fff' : '#94a3b8',
-                          cursor: selectedCategory ? 'pointer' : 'default',
+                          background: (selectedCategory && termsAccepted) ? '#0f766e' : '#e2e8f0',
+                          color: (selectedCategory && termsAccepted) ? '#fff' : '#94a3b8',
+                          cursor: (selectedCategory && termsAccepted) ? 'pointer' : 'not-allowed',
                         }}>
                         <CreditCard size={16} /> Proceed to Pay
                       </button>
@@ -614,40 +650,10 @@ export default function Registration() {
           <div className="container-custom">
             <StepBar current="form" />
 
-            <div className="flex flex-col-reverse lg:grid lg:grid-cols-3 lg:gap-12 gap-8">
-
-              {/* Sidebar */}
-              <div className="space-y-5">
-                {pricingLoading ? (
-                  <div className="flex justify-center py-8"><Spinner /></div>
-                ) : Object.keys(activePrices).length > 0 ? (
-                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-5">
-                    <h3 className="font-bold text-slate-900 mb-3 text-sm">Registration Fees</h3>
-                    <div className="flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
-                      {Object.entries(activePrices).filter(([, amt]) => amt > 0).map(([cat, amt]) => (
-                        <div key={cat} className="p-3 rounded-xl border border-slate-200 bg-white shrink-0 lg:shrink min-w-[140px] lg:min-w-0">
-                          <p className="font-semibold text-xs text-slate-700">{CATEGORY_LABELS[cat] ?? cat}</p>
-                          <p className="text-teal-700 font-bold text-sm mt-0.5">USD {amt.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="bg-teal-50 rounded-xl border border-teal-100 p-5">
-                  <h4 className="font-bold text-slate-900 mb-2.5 text-sm">What&apos;s Included</h4>
-                  <ul className="text-sm text-slate-600 flex flex-col gap-2">
-                    {['Full congress access', 'Congress materials', 'Certificate of participation', 'Networking events', 'Lunch & refreshments (in-person)'].map((item) => (
-                      <li key={item} className="flex items-center gap-2">
-                        <CheckCircle size={13} className="text-green-500 shrink-0" /> {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+            <div className="max-w-2xl mx-auto w-full">
 
               {/* Form */}
-              <div className="lg:col-span-2">
+              <div>
                 <form onSubmit={proceedToPricing} className="flex flex-col gap-5">
                   <SectionHeader title="Personal Information" centered={false} />
 
