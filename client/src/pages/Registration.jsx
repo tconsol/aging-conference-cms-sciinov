@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
   CheckCircle, ArrowLeft, CreditCard, ShieldCheck,
   Mic, Video, Image, Monitor, Users, Globe, GraduationCap,
-  Tag, Minus, Plus,
+  Tag, Minus, Plus, Clock,
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -26,6 +26,8 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 const TAX_RATE = 0.048;
 const ACCOMPANYING_RATE = 300;
+// How long a pending payment stays valid before the form resets itself
+const PAYMENT_WINDOW_SECONDS = 10 * 60;
 
 const TIER_LABELS = { early_bird: 'Early Bird', mid_term: 'Mid Term', on_spot: 'On Spot' };
 
@@ -105,7 +107,7 @@ function StepBar({ current }) {
             </div>
             <span className={`text-xs font-semibold hidden sm:block ${i === idx ? 'text-teal-700' : i < idx ? 'text-green-600' : 'text-slate-400'}`}>{s.label}</span>
           </div>
-          {i < steps.length - 1 && <div className="flex-1 mx-3 h-px bg-slate-200 mx-2" />}
+          {i < steps.length - 1 && <div className="flex-1 mx-3 h-px bg-slate-200" />}
         </div>
       ))}
     </div>
@@ -152,9 +154,20 @@ export default function Registration() {
   const [step, setStep] = useState('form');
   const [formData, setFormData] = useState(null);   // step 1 data
   const [pendingData, setPendingData] = useState(null); // final payload
-  const [registrationId, setRegistrationId] = useState(null);
   const [paypalCapturing, setPaypalCapturing] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
+  // Creating the order round-trips to our API (which itself calls reCAPTCHA and
+  // PayPal), so it can take several seconds. Without this the button just sits
+  // there looking dead while PayPal waits on the promise.
+  const [orderCreating, setOrderCreating] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  // reCAPTCHA v2 tokens expire after ~2 minutes. Gating the *mounting* of
+  // PayPalButtons on the live token meant an expiry unmounted the component
+  // mid-payment, and the library's unmount cleanup calls buttons.close() —
+  // which is what was making the card form vanish while users were typing.
+  // Mount on "was solved at least once" instead; createPaypalOrder still
+  // refuses to run without a currently-valid token.
+  const [captchaSolvedOnce, setCaptchaSolvedOnce] = useState(false);
   const recaptchaRef = useRef(null);
   const registrationIdRef = useRef(null);
   const contentRef = useRef(null);
@@ -246,6 +259,7 @@ export default function Registration() {
     };
     setPendingData(payload);
     setCaptchaToken(null);
+    setCaptchaSolvedOnce(false);
     recaptchaRef.current?.reset();
     setStep('payment');
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -278,15 +292,16 @@ export default function Registration() {
       toast.error('Please complete the CAPTCHA verification first.');
       throw new Error('captcha required');
     }
+    setOrderCreating(true);
     try {
       const res = await submissionsAPI.createPaypalOrder({ ...pendingData, notes: pendingData.specialRequirements, captchaToken });
-      const regId = res.data.registrationId;
-      setRegistrationId(regId);
-      registrationIdRef.current = regId;
+      registrationIdRef.current = res.data.registrationId;
       return res.data.orderId;
     } catch (err) {
       toast.error(getErrorMessage(err));
       throw err;
+    } finally {
+      setOrderCreating(false);
     }
   };
 
@@ -297,18 +312,62 @@ export default function Registration() {
       setSubmitted(true);
       setStep('form');
       setPendingData(null);
-      setRegistrationId(null);
       registrationIdRef.current = null;
       setCaptchaToken(null);
+      setCaptchaSolvedOnce(false);
       recaptchaRef.current?.reset();
-    } catch {
+    } catch (err) {
+      console.error('[PayPal] capture failed after approval:', err);
       toast.error('Payment processed but confirmation failed. Please contact support.');
     } finally {
       setPaypalCapturing(false);
     }
   };
 
-  const onPaypalError = () => toast.error('Payment failed or was cancelled. Please try again.');
+  const onPaypalError = (err) => {
+    console.error('[PayPal] checkout error:', err);
+    toast.error('Payment failed or was cancelled. Please try again.');
+  };
+
+  /* ── Payment session window ──────────────────────────────────────────────
+     The payment step holds a pending registration and a live PayPal order, so
+     it can't sit open indefinitely. Ten minutes, counted down visibly, then the
+     form is reset and the user is returned to the start of registration.
+     The countdown deliberately stops once a capture is in flight — expiring
+     mid-payment would strand a charge that PayPal has already taken.        */
+  const resetPaymentSession = () => {
+    setPendingData(null);
+    registrationIdRef.current = null;
+    setCaptchaToken(null);
+    setCaptchaSolvedOnce(false);
+    recaptchaRef.current?.reset();
+    setSecondsLeft(null);
+  };
+
+  useEffect(() => {
+    if (step !== 'payment' || paypalCapturing) return;
+
+    setSecondsLeft(PAYMENT_WINDOW_SECONDS);
+    const id = setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s === null) return null;
+        if (s <= 1) {
+          clearInterval(id);
+          toast.error('Payment session expired. Please start your registration again.');
+          resetPaymentSession();
+          setStep('form');
+          contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return null;
+        }
+        return s - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [step, paypalCapturing]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const formatCountdown = (s) =>
+    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   const editionLabel = editions.find((e) => e._id === (pendingData?.edition || formData?.edition));
   const inputCls = 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500';
@@ -391,8 +450,41 @@ export default function Registration() {
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
                     <ShieldCheck size={13} /> Verify you&apos;re human before proceeding
                   </div>
-                  <ReCAPTCHA ref={recaptchaRef} sitekey={RECAPTCHA_SITE_KEY}
-                    onChange={(t) => setCaptchaToken(t)} onExpired={() => setCaptchaToken(null)} />
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={(t) => {
+                      setCaptchaToken(t);
+                      if (t) setCaptchaSolvedOnce(true);
+                    }}
+                    onExpired={() => setCaptchaToken(null)}
+                  />
+
+                  {/* Token expired but the buttons stay mounted, so an open
+                      payment window is never destroyed underneath the user. */}
+                  {captchaSolvedOnce && !captchaToken && (
+                    <p className="text-xs text-amber-600 text-center max-w-xs">
+                      Verification expired — please tick the box again before paying.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Session countdown — visible so the reset is never a surprise */}
+              {!paypalCapturing && secondsLeft !== null && (
+                <div
+                  className="flex items-center justify-center gap-2 mb-4 px-4 py-2.5 rounded-xl border text-sm"
+                  style={
+                    secondsLeft <= 60
+                      ? { background: '#fef2f2', borderColor: '#fecaca', color: '#b91c1c' }
+                      : { background: '#f8fafc', borderColor: '#e2e8f0', color: '#64748b' }
+                  }
+                >
+                  <Clock size={14} className="shrink-0" />
+                  <span>
+                    Complete payment within{' '}
+                    <strong className="tabular-nums">{formatCountdown(secondsLeft)}</strong>
+                  </span>
                 </div>
               )}
 
@@ -401,14 +493,34 @@ export default function Registration() {
                   <Spinner size="lg" />
                   <p className="text-sm text-slate-500">Confirming your payment…</p>
                 </div>
-              ) : (captchaToken || !RECAPTCHA_SITE_KEY) ? (
-                <PayPalButtons
-                  style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' }}
-                  createOrder={createPaypalOrder}
-                  onApprove={onPaypalApprove}
-                  onError={onPaypalError}
-                  onCancel={() => toast('Payment cancelled.')}
-                />
+              ) : (captchaSolvedOnce || !RECAPTCHA_SITE_KEY) ? (
+                <div className="relative">
+                  <PayPalButtons
+                    style={{ layout: 'vertical', color: 'blue', shape: 'rect', label: 'pay' }}
+                    createOrder={createPaypalOrder}
+                    onApprove={onPaypalApprove}
+                    onError={onPaypalError}
+                    onCancel={() => toast('Payment cancelled.')}
+                  />
+
+                  {/* Covers the multi-second gap between clicking a payment
+                      method and PayPal's own UI appearing, which otherwise
+                      looks like nothing happened. */}
+                  {orderCreating && (
+                    <div
+                      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl"
+                      style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(2px)' }}
+                    >
+                      <Spinner size="lg" />
+                      <div className="text-center">
+                        <p className="text-sm font-semibold text-slate-700">Opening secure payment…</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          This can take a few seconds. Please don&apos;t close this page.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-sm text-slate-500">
                   Complete the CAPTCHA above to enable payment.

@@ -193,7 +193,7 @@ export default function Pricing() {
               <Button to="/contact" size="lg" variant="outline">Contact Us</Button>
             </div>
           ) : (
-            <div className="flex flex-col gap-14">
+            <div className="flex flex-col gap-9 md:gap-14">
 
               {/* Fee table */}
               <div>
@@ -220,8 +220,98 @@ export default function Pricing() {
                   />
                 </div>
 
-                {/* Wide table scrolls in its own container */}
-                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                {/* ── Mobile: one card per tier ──────────────────────────────
+                    The comparison table needs ~560px to stay readable, which
+                    forces sideways scrolling on a phone. Below md each tier
+                    becomes its own card instead. Desktop is untouched.      */}
+                <div className="flex flex-col gap-4 md:hidden">
+                  {visibleTiers.map((tier) => {
+                    const live = tier.isActive;
+                    const end = tier.endDate || tier.deadline;
+                    const state = deadlineState(end);
+
+                    return (
+                      <div
+                        key={tier._id}
+                        className="rounded-2xl border overflow-hidden"
+                        style={{
+                          borderColor: live ? 'var(--brand)' : '#e2e8f0',
+                          boxShadow: live
+                            ? '0 4px 20px color-mix(in srgb, var(--brand) 14%, transparent)'
+                            : 'none',
+                        }}
+                      >
+                        {/* Tier header */}
+                        <div
+                          className="px-4 py-4"
+                          style={{ background: live ? 'var(--brand-dark)' : '#f8fafc' }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <h3
+                                className="font-black text-base leading-tight"
+                                style={{ color: live ? '#fff' : '#1e293b' }}
+                              >
+                                {tier.label || TIER_LABELS[tier.name] || tier.name}
+                              </h3>
+                              {end && (
+                                <p
+                                  className="text-xs mt-1"
+                                  style={{ color: live ? 'rgba(255,255,255,0.72)' : '#94a3b8' }}
+                                >
+                                  {state?.isClosed ? 'Closed' : 'Closes'} {formatDeadline(end)}
+                                </p>
+                              )}
+                            </div>
+                            {live && (
+                              <span className="shrink-0 text-[10px] font-black uppercase tracking-wider text-white bg-white/20 px-2 py-1 rounded-full">
+                                Open
+                              </span>
+                            )}
+                          </div>
+                          {state && (
+                            <div className="mt-3">
+                              <DeadlineBadge date={end} compact />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Prices */}
+                        <div className="px-4 bg-white divide-y divide-slate-100">
+                          {categories.map((cat) => {
+                            const amount = tier.prices?.[cat];
+                            if (!amount) return null;
+                            return (
+                              <div key={cat} className="flex items-center justify-between gap-3 py-3">
+                                <span className="text-sm text-slate-700 leading-snug min-w-0">
+                                  {categoryLabel(cat)}
+                                </span>
+                                <span
+                                  className="reg-figure font-black text-base shrink-0"
+                                  style={{ color: live ? '#0f172a' : '#94a3b8' }}
+                                >
+                                  {money(amount)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="px-4 py-3 bg-slate-50 flex items-center justify-between gap-3">
+                          <span className="text-xs italic text-slate-400">All prices in USD</span>
+                          {live && (
+                            <Button to="/registration" size="sm">
+                              Register <ArrowRight size={14} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: wide comparison table, scrolls in its own container */}
+                <div className="hidden md:block overflow-x-auto border border-slate-200 rounded-2xl">
                   <div style={{ minWidth: 560 }}>
                     {/* Column heads */}
                     <div
@@ -338,9 +428,9 @@ export default function Pricing() {
               )}
 
               {/* Includes */}
-              <div className="rounded-2xl border border-slate-200 p-6 sm:p-9">
-                <h2 className="text-2xl font-black text-slate-900 mb-7">Registration Includes</h2>
-                <div className="grid md:grid-cols-2 gap-9">
+              <div className="rounded-2xl border border-slate-200 p-5 sm:p-9">
+                <h2 className="text-xl md:text-2xl font-black text-slate-900 mb-5 md:mb-7">Registration Includes</h2>
+                <div className="grid md:grid-cols-2 gap-7 md:gap-9">
                   {[
                     { title: 'For In-Person Participants', items: INCLUDES_INPERSON, note: true },
                     { title: 'For Virtual Participants', items: INCLUDES_VIRTUAL, note: false },
@@ -377,7 +467,7 @@ export default function Pricing() {
                     Contact us and we'll help you pick the right registration category.
                   </p>
                 </div>
-                <div className="flex gap-3 flex-wrap shrink-0">
+                <div className="flex flex-col sm:flex-row gap-3 sm:flex-wrap shrink-0">
                   <Button to="/contact" variant="outline">Ask a Question</Button>
                   <Button to="/registration">Register Now <ArrowRight size={15} /></Button>
                 </div>
