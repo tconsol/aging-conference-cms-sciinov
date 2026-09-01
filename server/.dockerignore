@@ -1,0 +1,29 @@
+# Host node_modules must never enter the image: it holds platform-specific
+# binaries (sharp, bcrypt) built for the developer's OS, which would shadow the
+# Linux builds installed by `npm ci`.
+node_modules
+npm-debug.log*
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# VCS / editor
+.git
+.gitignore
+.vscode
+.idea
+
+# Local artefacts
+*.log
+logs
+coverage
+.nyc_output
+tmp
+temp
+uploads
+
+# Docker's own files
+Dockerfile
+.dockerignore

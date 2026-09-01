@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import SplashScreen from './components/ui/SplashScreen';
@@ -5,42 +6,59 @@ import { SubmitterAuthProvider } from './context/submitterAuthContext';
 
 // Pages
 import Home from './pages/Home';
-import About from './pages/About';
-import Editions from './pages/Editions';
-import EditionDetail from './pages/EditionDetail';
-import Sessions from './pages/Sessions';
-import SessionDetail from './pages/SessionDetail';
-import Program from './pages/Program';
-import ImportantDates from './pages/ImportantDates';
-import Venue from './pages/Venue';
-import Speakers from './pages/Speakers';
-import SpeakerDetail from './pages/SpeakerDetail';
-import Committee from './pages/Committee';
-import CommitteeDetail from './pages/CommitteeDetail';
-import Organizers from './pages/Organizers';
-import AbstractSubmission from './pages/AbstractSubmission';
-import Registration from './pages/Registration';
-import Pricing from './pages/Pricing';
-import News from './pages/News';
-import NewsDetail from './pages/NewsDetail';
-import Reports from './pages/Reports';
-import ReportDetail from './pages/ReportDetail';
-import Downloads from './pages/Downloads';
-import Contact from './pages/Contact';
-import Help from './pages/Help';
-import SupportTickets from './pages/SupportTickets';
-import Sponsorship from './pages/Sponsorship';
-import Partners from './pages/Partners';
-import Testimonials from './pages/Testimonials';
-import StaticPage from './pages/StaticPage';
-import Newsletter from './pages/Newsletter';
-import BecomeASpeaker from './pages/BecomeASpeaker';
-import Brochure from './pages/Brochure';
+const About = lazy(() => import('./pages/About'));
+const Editions = lazy(() => import('./pages/Editions'));
+const EditionDetail = lazy(() => import('./pages/EditionDetail'));
+const Sessions = lazy(() => import('./pages/Sessions'));
+const SessionDetail = lazy(() => import('./pages/SessionDetail'));
+const Program = lazy(() => import('./pages/Program'));
+const ImportantDates = lazy(() => import('./pages/ImportantDates'));
+const Venue = lazy(() => import('./pages/Venue'));
+const Speakers = lazy(() => import('./pages/Speakers'));
+const SpeakerDetail = lazy(() => import('./pages/SpeakerDetail'));
+const Committee = lazy(() => import('./pages/Committee'));
+const CommitteeDetail = lazy(() => import('./pages/CommitteeDetail'));
+const Organizers = lazy(() => import('./pages/Organizers'));
+const AbstractSubmission = lazy(() => import('./pages/AbstractSubmission'));
+const Registration = lazy(() => import('./pages/Registration'));
+const Pricing = lazy(() => import('./pages/Pricing'));
+const News = lazy(() => import('./pages/News'));
+const NewsDetail = lazy(() => import('./pages/NewsDetail'));
+const Reports = lazy(() => import('./pages/Reports'));
+const ReportDetail = lazy(() => import('./pages/ReportDetail'));
+const Downloads = lazy(() => import('./pages/Downloads'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Help = lazy(() => import('./pages/Help'));
+const SupportTickets = lazy(() => import('./pages/SupportTickets'));
+const Sponsorship = lazy(() => import('./pages/Sponsorship'));
+const Partners = lazy(() => import('./pages/Partners'));
+const Testimonials = lazy(() => import('./pages/Testimonials'));
+const StaticPage = lazy(() => import('./pages/StaticPage'));
+const Newsletter = lazy(() => import('./pages/Newsletter'));
+const BecomeASpeaker = lazy(() => import('./pages/BecomeASpeaker'));
+const Brochure = lazy(() => import('./pages/Brochure'));
 
 // Portal pages
-import PortalLogin from './pages/portal/PortalLogin';
-import PortalDashboard from './pages/portal/PortalDashboard';
-import AcceptanceLetter from './pages/portal/AcceptanceLetter';
+const PortalLogin = lazy(() => import('./pages/portal/PortalLogin'));
+const PortalDashboard = lazy(() => import('./pages/portal/PortalDashboard'));
+const AcceptanceLetter = lazy(() => import('./pages/portal/AcceptanceLetter'));
+
+// Shown while a route chunk downloads. Deliberately minimal so a fast
+// connection never flashes a heavy skeleton.
+function RouteFallback() {
+  return (
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          width: 34, height: 34, borderRadius: '50%',
+          border: '3px solid #e2e8f0', borderTopColor: 'var(--brand)',
+          animation: 'route-spin 0.7s linear infinite',
+        }}
+      />
+      <style>{`@keyframes route-spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
 
 function PortalRoot() {
   return (
@@ -54,6 +72,7 @@ export default function App() {
   return (
     <>
       <SplashScreen />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
         {/* Public site */}
         <Route element={<Layout />}>
@@ -100,6 +119,7 @@ export default function App() {
           <Route path="/portal/acceptance-letter" element={<AcceptanceLetter />} />
         </Route>
       </Routes>
+      </Suspense>
     </>
   );
 }
