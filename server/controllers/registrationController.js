@@ -6,6 +6,7 @@ const SiteSettings = require('../models/SiteSettings');
 const { sendEmail } = require('../utils/email');
 const paypal = require('../utils/paypal');
 const { broadcast } = require('../utils/sseClients');
+const { priceFor } = require('../utils/pricing');
 
 const CATEGORY_LABELS = {
   oral_inperson:     'Oral Presentation (In-Person)',
@@ -171,7 +172,7 @@ exports.submit = async (req, res, next) => {
         const TAX_RATE = 0.048;
         const round2 = (n) => Math.round(n * 100) / 100;
 
-        const basePrice = tier.prices?.[data.category] ?? 0;
+        const basePrice = priceFor(tier, data.category);
         const participants = Math.max(1, Number(data.participants) || 1);
         const accompanying = Math.max(0, Number(data.accompanyingPersons) || 0);
         const subtotal = basePrice * participants + accompanying * ACCOMPANYING_RATE;
@@ -248,7 +249,7 @@ exports.adminCreate = async (req, res, next) => {
     // Derive amount from the pricing tier when the admin didn't type one in
     if (data.pricingTier && data.category && (data.amount === undefined || data.amount === null)) {
       const tier = await PricingTier.findById(data.pricingTier);
-      if (tier) data.amount = tier.prices?.[data.category] ?? 0;
+      if (tier) data.amount = priceFor(tier, data.category);
     }
     if (data.amount !== undefined) data.amount = Number(data.amount);
     if (!data.currency) data.currency = 'USD';
@@ -757,7 +758,7 @@ exports.createPaypalOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Selected pricing tier is no longer available.' });
     }
 
-    const basePrice = tier.prices?.[data.category] ?? 0;
+    const basePrice = priceFor(tier, data.category);
     const participants = Math.max(1, Number(data.participants) || 1);
     const accompanying = Math.max(0, Number(data.accompanyingPersons) || 0);
 
