@@ -34,6 +34,12 @@ const registrationSchema = new mongoose.Schema(
       required: [true, 'Attendance mode is required'],
     },
     pricingTier: { type: mongoose.Schema.Types.ObjectId, ref: 'PricingTier' },
+    // Counts the paid amount was derived from — kept alongside `amount` so the
+    // admin panel can see what was actually purchased, not just the total.
+    participants: { type: Number, default: 1, min: 1 },
+    accompanyingPersons: { type: Number, default: 0, min: 0 },
+    accompanyingFee: { type: Number, default: 0 },
+    taxAmount: { type: Number, default: 0 },
     amount: Number,
     currency: { type: String, default: 'USD' },
     paymentStatus: {

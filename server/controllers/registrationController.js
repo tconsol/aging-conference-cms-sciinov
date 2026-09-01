@@ -165,8 +165,24 @@ exports.submit = async (req, res, next) => {
     if (data.pricingTier && data.category) {
       const tier = await PricingTier.findById(data.pricingTier);
       if (tier) {
-        data.amount = tier.prices?.[data.category] ?? 0;
+        // Same formula as createPaypalOrder — a bare per-person price silently
+        // discards participants/accompanying and can zero out valid totals.
+        const ACCOMPANYING_RATE = 300;
+        const TAX_RATE = 0.048;
+        const round2 = (n) => Math.round(n * 100) / 100;
+
+        const basePrice = tier.prices?.[data.category] ?? 0;
+        const participants = Math.max(1, Number(data.participants) || 1);
+        const accompanying = Math.max(0, Number(data.accompanyingPersons) || 0);
+        const subtotal = basePrice * participants + accompanying * ACCOMPANYING_RATE;
+        const taxAmount = round2(subtotal * TAX_RATE);
+
+        data.amount = round2(subtotal + taxAmount);
         data.currency = 'USD';
+        data.participants = participants;
+        data.accompanyingPersons = accompanying;
+        data.accompanyingFee = round2(accompanying * ACCOMPANYING_RATE);
+        data.taxAmount = taxAmount;
       } else {
         delete data.pricingTier;
         delete data.amount;
@@ -718,18 +734,53 @@ exports.createPaypalOrder = async (req, res, next) => {
       return res.status(400).json({ success: false, message: captcha.message });
     }
 
-    // Re-verify amount server-side
-    if (data.pricingTier && data.category) {
-      const tier = await PricingTier.findById(data.pricingTier);
-      if (tier) {
-        data.amount = tier.prices?.[data.category] ?? 0;
-        data.currency = 'USD';
-      }
+    // Recompute the charge server-side rather than trusting the client's total.
+    // This previously collapsed to just the bare per-person tier price —
+    // dropping participants, accompanying persons and tax entirely — which
+    // both undercharged multi-participant registrations and, whenever a
+    // tier×category combination had no price set (defaults to 0 in the
+    // schema), zeroed out otherwise-valid orders and 400'd them.
+    //
+    // NOTE: ACCOMPANYING_RATE and TAX_RATE must stay in sync with the same
+    // constants in client/src/pages/Registration.jsx — there is no shared
+    // config between the two apps yet.
+    const ACCOMPANYING_RATE = 300;
+    const TAX_RATE = 0.048;
+    const round2 = (n) => Math.round(n * 100) / 100;
+
+    if (!data.pricingTier || !data.category) {
+      return res.status(400).json({ success: false, message: 'Pricing tier and category are required.' });
     }
 
-    if (!data.amount || data.amount <= 0) {
+    const tier = await PricingTier.findById(data.pricingTier);
+    if (!tier) {
+      return res.status(400).json({ success: false, message: 'Selected pricing tier is no longer available.' });
+    }
+
+    const basePrice = tier.prices?.[data.category] ?? 0;
+    const participants = Math.max(1, Number(data.participants) || 1);
+    const accompanying = Math.max(0, Number(data.accompanyingPersons) || 0);
+
+    const participantsFee = basePrice * participants;
+    const accompanyingFee = accompanying * ACCOMPANYING_RATE;
+    const subtotal = participantsFee + accompanyingFee;
+    // Discounts aren't trusted from the client — there is no server-verified
+    // promo system yet (the UI's promo field is a placeholder that never
+    // actually applies one), so this is always 0 today.
+    const discount = 0;
+    const taxAmount = round2((subtotal - discount) * TAX_RATE);
+    const amount = round2(subtotal - discount + taxAmount);
+
+    if (amount <= 0) {
       return res.status(400).json({ success: false, message: 'Invalid registration amount.' });
     }
+
+    data.amount = amount;
+    data.currency = 'USD';
+    data.participants = participants;
+    data.accompanyingPersons = accompanying;
+    data.accompanyingFee = round2(accompanyingFee);
+    data.taxAmount = taxAmount;
 
     // Save pending registration
     const registration = await Registration.create({ ...data, paymentStatus: 'pending' });
