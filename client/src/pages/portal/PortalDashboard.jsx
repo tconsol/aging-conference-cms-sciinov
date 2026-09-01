@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   FileText, Download, CheckCircle, XCircle, ExternalLink,
@@ -40,8 +40,11 @@ const TABS = [
 ];
 
 // ── Status stepper ───────────────────────────────────────────────────────────
-function StatusStepper({ status }) {
+function StatusStepper({ status, celebrate = false }) {
   const isRejected = status === 'rejected';
+  // Accepted is the end of the journey, so its step reads as completed rather
+  // than as the one still in progress
+  const isComplete = status === 'accepted';
   const currentIdx = isRejected ? STEPS.length - 1 : STEPS.findIndex((s) => s.key === status);
 
   return (
@@ -63,28 +66,48 @@ function StatusStepper({ status }) {
         left: 20,
         height: 2,
         width: currentIdx === 0 ? 0 : `calc(${(currentIdx / (STEPS.length - 1)) * 100}% - 40px)`,
-        background: isRejected ? '#ef4444' : 'var(--brand)',
+        background: isRejected ? '#ef4444' : isComplete ? '#22c55e' : 'var(--brand)',
         zIndex: 0,
         transition: 'width 0.4s ease',
       }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
         {STEPS.map((step, i) => {
-          const done      = !isRejected && i < currentIdx;
-          const active    = !isRejected && i === currentIdx;
+          const done      = !isRejected && (i < currentIdx || (isComplete && i === currentIdx));
+          const active    = !isRejected && i === currentIdx && !isComplete;
           const isFinalRj = isRejected && i === STEPS.length - 1;
           const color     = isFinalRj ? '#ef4444' : active ? 'var(--brand)' : done ? '#22c55e' : '#cbd5e1';
 
+          // Only the step the submission is currently on animates — earlier ones
+          // are settled history, later ones haven't happened yet.
+          // Accepted swaps the looping ripple for a one-shot celebration.
+          const isCurrent = i === currentIdx;
+          const celebrates = isCurrent && isComplete && celebrate;
+          // Accepted settles once its celebration has played; the looping ripple
+          // stays only for statuses that are still in progress
+          const ripples = isCurrent && !isComplete;
+          const rippleColor = isFinalRj
+            ? 'rgba(239, 68, 68, 0.5)'
+            : active
+              ? 'color-mix(in srgb, var(--brand) 45%, transparent)'
+              : 'rgba(34, 197, 94, 0.5)';
+
           return (
             <div key={step.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                border: `2.5px solid ${color}`,
-                background: (done || active || isFinalRj) ? color : '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: active ? `0 0 0 4px color-mix(in srgb, ${color} 20%, transparent)` : 'none',
-                transition: 'all 0.25s',
-              }}>
+              <div
+                className={celebrates ? 'step-celebrate' : ripples ? 'step-ripple' : 'step-marker'}
+                style={{
+                  width: 36, height: 36, borderRadius: '50%',
+                  border: `2.5px solid ${color}`,
+                  background: (done || active || isFinalRj) ? color : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.25s, border-color 0.25s',
+                  ['--ripple']: rippleColor,
+                  // Celebration keeps its own two-stage timing; the others pop
+                  // in left to right with the ripple starting immediately.
+                  animationDelay: celebrates ? '0.15s, 0.4s' : `${i * 0.09}s, 0s`,
+                }}
+              >
                 {done ? (
                   <CheckCircle size={15} color="#fff" strokeWidth={2.5} />
                 ) : isFinalRj ? (
@@ -125,6 +148,49 @@ function InfoRow({ label, value, mono }) {
   );
 }
 
+/**
+ * Declared at module scope on purpose. Defining it inside ChangePasswordForm
+ * created a new component type on every render, so React remounted the input
+ * and focus was lost after each keystroke.
+ */
+function PasswordField({ label, value, visible, onChange, onToggle }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={visible ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="••••••••"
+          autoComplete={label.toLowerCase().includes('current') ? 'current-password' : 'new-password'}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '10px 42px 10px 14px',
+            fontSize: 13, border: '1.5px solid #e2e8f0',
+            borderRadius: 10, outline: 'none',
+            background: '#f8fafc', color: '#0f172a',
+            transition: 'border-color 0.15s, background 0.15s',
+          }}
+          onFocus={(e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.background = '#fff'; }}
+          onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; }}
+        />
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={visible ? 'Hide password' : 'Show password'}
+          style={{
+            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2,
+          }}
+        >
+          {visible ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Password change form ──────────────────────────────────────────────────────
 function ChangePasswordForm() {
   const [form, setForm]     = useState({ current: '', next: '', confirm: '' });
@@ -159,34 +225,14 @@ function ChangePasswordForm() {
     }
   };
 
-  const PasswordField = ({ label, field }) => (
-    <div>
-      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type={show[field] ? 'text' : 'password'}
-          value={form[field]}
-          onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
-          placeholder="••••••••"
-          style={{
-            width: '100%', boxSizing: 'border-box',
-            padding: '10px 42px 10px 14px',
-            fontSize: 13, border: '1.5px solid #e2e8f0',
-            borderRadius: 10, outline: 'none',
-            background: '#f8fafc', color: '#0f172a',
-            transition: 'border-color 0.15s, background 0.15s',
-          }}
-          onFocus={(e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.background = '#fff'; }}
-          onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; }}
-        />
-        <button type="button" onClick={() => toggle(field)} style={{
-          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2,
-        }}>
-          {show[field] ? <EyeOff size={15} /> : <Eye size={15} />}
-        </button>
-      </div>
-    </div>
+  const field = (label, name) => (
+    <PasswordField
+      label={label}
+      value={form[name]}
+      visible={show[name]}
+      onChange={(v) => setForm((f) => ({ ...f, [name]: v }))}
+      onToggle={() => toggle(name)}
+    />
   );
 
   return (
@@ -205,9 +251,9 @@ function ChangePasswordForm() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <PasswordField label="Current Password" field="current" />
-        <PasswordField label="New Password (min. 6 chars)" field="next" />
-        <PasswordField label="Confirm New Password" field="confirm" />
+        {field('Current Password', 'current')}
+        {field('New Password (min. 6 chars)', 'next')}
+        {field('Confirm New Password', 'confirm')}
 
         <button
           type="submit"
@@ -247,6 +293,14 @@ export default function PortalDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [letterDownloading, setLetterDownloading] = useState(false);
+
+  // The celebration is a welcome moment, not a loop: play it on the first
+  // render of an accepted dashboard, then leave the marker settled. This ref
+  // lives here rather than in the stepper because the Overview tab unmounts
+  // when the user switches tabs, which would otherwise replay it.
+  const celebratedRef = useRef(false);
+  const celebrate = !celebratedRef.current;
+  useEffect(() => { celebratedRef.current = true; }, []);
 
   // Letter of Acceptance, proxied through the API so the browser saves it
   const handleLetterDownload = async () => {
@@ -416,7 +470,7 @@ export default function PortalDashboard() {
               )}
             </div>
             <div style={{ padding: '24px 24px 20px' }}>
-              <StatusStepper status={s.status} />
+              <StatusStepper status={s.status} celebrate={celebrate} />
             </div>
           </div>
 

@@ -253,3 +253,69 @@
 @media (prefers-reduced-motion: reduce) {
   .reg-rise, .reg-meter-fill { animation: none; }
 }
+
+/* ── Submission status stepper ────────────────────────────────────────────── */
+/* Ripple rings expand outward from each step marker. box-shadow is used rather
+   than a pseudo-element so the ring is never clipped by the circle it sits on.
+   Each step passes its own --ripple colour and a stagger delay, so completed
+   steps pulse in sequence rather than all at once. */
+@keyframes step-ripple {
+  0%   { box-shadow: 0 0 0 0 var(--ripple, rgba(34, 197, 94, 0.5)); }
+  70%  { box-shadow: 0 0 0 11px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+/* One-time entrance so markers settle in instead of snapping */
+@keyframes step-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.step-marker {
+  animation: step-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.step-ripple {
+  animation:
+    step-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    step-ripple 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-marker,
+  .step-ripple { animation: none; }
+}
+
+/* Accepted is the end of the road, so its marker gets a one-shot celebration
+   instead of the looping ripple: a springy overshoot plus two rings bursting
+   outward at different rates. Runs once on mount and settles. */
+@keyframes step-celebrate {
+  0%   { transform: scale(0.3) rotate(-30deg); opacity: 0; }
+  45%  { transform: scale(1.22) rotate(6deg);  opacity: 1; }
+  65%  { transform: scale(0.93) rotate(-3deg); }
+  82%  { transform: scale(1.05) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+
+@keyframes step-burst {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55), 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  45% {
+    box-shadow: 0 0 0 13px rgba(34, 197, 94, 0), 0 0 0 5px rgba(34, 197, 94, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 0 26px rgba(34, 197, 94, 0), 0 0 0 24px rgba(34, 197, 94, 0);
+  }
+}
+
+.step-celebrate {
+  animation:
+    step-celebrate 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    step-burst 1.25s ease-out 0.2s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-celebrate { animation: none; }
+}

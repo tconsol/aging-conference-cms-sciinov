@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Printer, ArrowLeft } from 'lucide-react';
+import { Printer, ArrowLeft, Download, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useSubmitterAuth } from '../../context/submitterAuthContext';
 import { usecongress } from '../../context/congressContext';
 
@@ -18,6 +19,74 @@ export default function AcceptanceLetter() {
 
   const siteName = siteSettings?.siteName || 'Aging Congress';
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const letterRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
+
+  /**
+   * Rasterises the letter and lays it into an A4 PDF, splitting across pages
+   * when it runs long. Loaded on demand so the PDF libraries stay out of the
+   * main bundle.
+   */
+  const handleSavePdf = async () => {
+    if (!letterRef.current) return;
+    setExporting(true);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const canvas = await html2canvas(letterRef.current, {
+        scale: 2,              // sharper text
+        backgroundColor: '#ffffff',
+        useCORS: true,         // let the logo through if it is remote
+        logging: false,
+        onclone: (doc) => {
+          // html2canvas can't rasterise border-image or clip-path, so swap them
+          // for plain equivalents in the throwaway clone it renders from
+          doc.querySelectorAll('*').forEach((el) => {
+            const cs = doc.defaultView.getComputedStyle(el);
+            if (cs.borderImageSource && cs.borderImageSource !== 'none') {
+              el.style.borderImage = 'none';
+              el.style.borderBottomColor = cs.borderBottomColor || '#0f766e';
+            }
+            if (cs.clipPath && cs.clipPath !== 'none') el.style.clipPath = 'none';
+          });
+        },
+      });
+
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const margin = 10;
+      const imgW = pageW - margin * 2;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const img = canvas.toDataURL('image/jpeg', 0.95);
+
+      if (imgH <= pageH - margin * 2) {
+        pdf.addImage(img, 'JPEG', margin, margin, imgW, imgH);
+      } else {
+        // Taller than one page: shift the same image up per page and clip
+        const usableH = pageH - margin * 2;
+        let remaining = imgH;
+        let offset = 0;
+        while (remaining > 0) {
+          pdf.addImage(img, 'JPEG', margin, margin - offset, imgW, imgH);
+          remaining -= usableH;
+          offset += usableH;
+          if (remaining > 0) pdf.addPage();
+        }
+      }
+
+      pdf.save(`Letter-of-Acceptance-${submitter?.loginId || 'abstract'}.pdf`);
+    } catch {
+      toast.error('Could not build the PDF. Try the Print button and choose "Save as PDF".');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !submitter) navigate('/portal/login', { replace: true });
@@ -48,17 +117,33 @@ export default function AcceptanceLetter() {
           style={{
             display: 'flex', alignItems: 'center', gap: 7,
             padding: '9px 18px', fontSize: 13, fontWeight: 700,
-            background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
-            color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer',
+            background: '#fff', color: 'var(--brand-dark)',
+            border: '1.5px solid var(--brand)', borderRadius: 8, cursor: 'pointer',
           }}
         >
-          <Printer size={14} /> Print / Save as PDF
+          <Printer size={14} /> Print
+        </button>
+        <button
+          onClick={handleSavePdf}
+          disabled={exporting}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            padding: '9px 18px', fontSize: 13, fontWeight: 700,
+            background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
+            color: '#fff', border: 'none', borderRadius: 8,
+            cursor: exporting ? 'not-allowed' : 'pointer',
+            opacity: exporting ? 0.7 : 1,
+          }}
+        >
+          {exporting
+            ? <><Loader2 size={14} className="animate-spin" /> Preparing…</>
+            : <><Download size={14} /> Save as PDF</>}
         </button>
       </div>
 
       {/* Letter */}
       <div style={{ maxWidth: 740, margin: '32px auto', padding: '0 24px' }}>
-        <div style={{
+        <div ref={letterRef} style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
           borderRadius: 4,
@@ -215,7 +300,7 @@ export default function AcceptanceLetter() {
         </div>
 
         <p className="no-print" style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginTop: 16 }}>
-          Use "Print / Save as PDF" to save this letter. <Link to="/portal/dashboard" style={{ color: 'var(--brand)' }}>Back to Dashboard →</Link>
+          "Save as PDF" downloads the letter to your device. <Link to="/portal/dashboard" style={{ color: 'var(--brand)' }}>Back to Dashboard →</Link>
         </p>
       </div>
 
