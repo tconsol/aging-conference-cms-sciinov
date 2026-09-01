@@ -2,6 +2,24 @@ const jwt = require('jsonwebtoken');
 const Abstract = require('../models/Abstract');
 const { streamGCSFile, gcsPathFromUrl } = require('../utils/gcs');
 
+// Streams the submitter's own Letter of Acceptance back as an attachment.
+exports.downloadMyAcceptanceLetter = async (req, res, next) => {
+  try {
+    const abstract = await Abstract.findById(req.submitter.abstractId)
+      .select('acceptanceLetterUrl acceptanceLetterPublicId acceptanceLetterName status');
+    if (!abstract) return res.status(404).json({ success: false, message: 'Submission not found.' });
+
+    const path = abstract.acceptanceLetterPublicId || gcsPathFromUrl(abstract.acceptanceLetterUrl);
+    if (!path) return res.status(404).json({ success: false, message: 'No acceptance letter available yet.' });
+
+    const ok = await streamGCSFile(res, {
+      filename: path,
+      downloadName: abstract.acceptanceLetterName || 'Letter-of-Acceptance.pdf',
+    });
+    if (!ok) return res.status(404).json({ success: false, message: 'File no longer available.' });
+  } catch (err) { next(err); }
+};
+
 // Streams the submitter's own uploaded file back as an attachment.
 exports.downloadMyFile = async (req, res, next) => {
   try {

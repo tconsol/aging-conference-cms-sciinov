@@ -246,6 +246,25 @@ export default function PortalDashboard() {
   const [tab, setTab] = useState('overview');
   const [refreshing, setRefreshing] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [letterDownloading, setLetterDownloading] = useState(false);
+
+  // Letter of Acceptance, proxied through the API so the browser saves it
+  const handleLetterDownload = async () => {
+    setLetterDownloading(true);
+    try {
+      const res = await portalApi.get('/abstracts/portal/acceptance-letter', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = submitter?.acceptanceLetterName || 'Letter-of-Acceptance.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Could not download the letter. Please try again.');
+    } finally {
+      setLetterDownloading(false);
+    }
+  };
 
   // Proxied through the API so the browser saves the file rather than
   // navigating to it <a download> is ignored cross-origin.
@@ -418,6 +437,43 @@ export default function PortalDashboard() {
                   <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>Your abstract has been accepted. Complete your registration to confirm participation.</div>
                 </div>
               </div>
+              {/* Official uploaded letter takes precedence over the generated one */}
+              {s.acceptanceLetterUrl && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12, flexWrap: 'wrap',
+                  background: '#fff', border: '1px solid #86efac',
+                  borderRadius: 10, padding: '12px 14px', marginBottom: 14,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <FileText size={16} color="#16a34a" style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#14532d' }}>
+                        {s.acceptanceLetterName || 'Letter of Acceptance'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#166534', marginTop: 1 }}>
+                        Official letter issued by the committee
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLetterDownload}
+                    disabled={letterDownloading}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', fontSize: 12, fontWeight: 700,
+                      background: '#16a34a', color: '#fff',
+                      border: 'none', borderRadius: 8,
+                      cursor: letterDownloading ? 'not-allowed' : 'pointer',
+                      opacity: letterDownloading ? 0.65 : 1,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Download size={13} /> {letterDownloading ? 'Preparing…' : 'Download'}
+                  </button>
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <Link to="/portal/acceptance-letter" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -427,7 +483,7 @@ export default function PortalDashboard() {
                   textDecoration: 'none', boxShadow: '0 1px 6px rgba(22,163,74,0.1)',
                   transition: 'background 0.15s',
                 }}>
-                  <Download size={14} /> Acceptance Letter
+                  <Download size={14} /> {s.acceptanceLetterUrl ? 'View Online Letter' : 'Acceptance Letter'}
                 </Link>
                 <Link to="/registration" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 7,

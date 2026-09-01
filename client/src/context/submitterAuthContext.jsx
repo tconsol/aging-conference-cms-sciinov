@@ -57,8 +57,14 @@ export function SubmitterAuthProvider({ children }) {
     esRef.current = es;
 
     es.addEventListener('status_update', (e) => {
-      const { status, adminNotes } = JSON.parse(e.data);
-      setSubmitter((prev) => prev ? { ...prev, status, adminNotes: adminNotes ?? prev.adminNotes } : prev);
+      const { status, adminNotes, acceptanceLetterUrl, acceptanceLetterName } = JSON.parse(e.data);
+      setSubmitter((prev) => prev ? {
+        ...prev,
+        status,
+        adminNotes: adminNotes ?? prev.adminNotes,
+        acceptanceLetterUrl: acceptanceLetterUrl ?? prev.acceptanceLetterUrl,
+        acceptanceLetterName: acceptanceLetterName ?? prev.acceptanceLetterName,
+      } : prev);
     });
 
     es.onerror = () => { es.close(); esRef.current = null; };

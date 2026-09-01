@@ -17,6 +17,7 @@ router.post('/portal/login', portalCtrl.login);
 router.get('/portal/me', submitterAuth, portalCtrl.getMySubmission);
 router.patch('/portal/change-password', submitterAuth, portalCtrl.changePassword);
 router.get('/portal/file', submitterAuth, portalCtrl.downloadMyFile);
+router.get('/portal/acceptance-letter', submitterAuth, portalCtrl.downloadMyAcceptanceLetter);
 
 // SSE real-time status updates for submitter portal
 router.get('/portal/events', async (req, res) => {
@@ -43,7 +44,9 @@ router.use(protect);
 router.get('/', ctrl.getAll);
 router.get('/:id', ctrl.getOne);
 router.get('/:id/file', ctrl.downloadFile);
-router.patch('/:id/status', ctrl.updateStatus);
+router.get('/:id/acceptance-letter', ctrl.downloadAcceptanceLetter);
+// multipart so the Letter of Acceptance can ride along with the status change
+router.patch('/:id/status', uploadDoc.single('acceptanceLetter'), ctrl.updateStatus);
 router.patch('/:id', ctrl.updateAbstract);
 router.delete('/:id', ctrl.remove);
 

@@ -33,6 +33,13 @@ const abstractSchema = new mongoose.Schema(
     fileUrl: String,
     filePublicId: String,
     fileName: String,
+
+    // Letter of Acceptance, uploaded by an admin when the abstract is accepted.
+    // Emailed to the author as an attachment and downloadable from their portal.
+    acceptanceLetterUrl: String,
+    acceptanceLetterPublicId: String,
+    acceptanceLetterName: String,
+    acceptanceLetterSentAt: Date,
     status: {
       type: String,
       enum: ['pending', 'received_accepted', 'under_review', 'decision_pending', 'accepted', 'rejected'],

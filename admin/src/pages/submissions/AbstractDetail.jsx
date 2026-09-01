@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   ArrowLeft, Download, Edit2, Key, Copy, Check, Eye,
   User, FileText, Building, ChevronDown, ChevronUp,
-  Layers, CalendarDays, Clock, Loader2,
+  Layers, CalendarDays, Clock, Loader2, Upload,
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
@@ -199,8 +199,11 @@ export default function AbstractDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [letterFile, setLetterFile] = useState(null);
+
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
   const editForm = useForm();
+  const watchedStatus = watch('status');
 
   const fetchAbstract = async () => {
     setLoading(true);
@@ -221,13 +224,35 @@ export default function AbstractDetail() {
   const onStatusSubmit = async (formData) => {
     setSaving(true);
     try {
-      await abstractsAPI.updateStatus(id, { status: formData.status, adminNotes: formData.adminNotes });
-      toast.success('Status updated. Email sent to submitter.');
+      // Sent as multipart so the Letter of Acceptance rides along with the change
+      const fd = new FormData();
+      fd.append('status', formData.status);
+      fd.append('adminNotes', formData.adminNotes || '');
+      if (formData.status === 'accepted' && letterFile) {
+        fd.append('acceptanceLetter', letterFile);
+      }
+
+      await abstractsAPI.updateStatus(id, fd);
+      toast.success(
+        formData.status === 'accepted' && letterFile
+          ? 'Status updated. Acceptance letter emailed to the submitter.'
+          : 'Status updated. Email sent to submitter.'
+      );
+      setLetterFile(null);
       fetchAbstract();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLetterDownload = async () => {
+    try {
+      const res = await abstractsAPI.downloadAcceptanceLetter(id);
+      downloadBlob(res.data, abstract.acceptanceLetterName || 'Letter-of-Acceptance.pdf');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -403,6 +428,56 @@ export default function AbstractDetail() {
                 placeholder="Notes sent to submitter on update…"
                 rows={3}
               />
+
+              {/* Letter of Acceptance — only relevant once accepted */}
+              {watchedStatus === 'accepted' && (
+                <div className="rounded-xl border border-green-200 bg-green-50/60 p-3">
+                  <p className="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">
+                    Letter of Acceptance
+                  </p>
+
+                  {abstract.acceptanceLetterUrl && !letterFile && (
+                    <div className="flex items-center justify-between gap-2 bg-white border border-green-200 rounded-lg px-3 py-2 mb-2">
+                      <span className="text-xs text-slate-700 truncate min-w-0">
+                        {abstract.acceptanceLetterName || 'Uploaded'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleLetterDownload}
+                        className="text-xs font-bold text-green-700 hover:underline shrink-0"
+                      >
+                        Download
+                      </button>
+                    </div>
+                  )}
+
+                  <label className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-green-300 bg-white hover:border-green-500 cursor-pointer transition-colors">
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={(e) => setLetterFile(e.target.files?.[0] || null)}
+                    />
+                    <Upload size={13} className="text-green-600 shrink-0" />
+                    <span className="text-xs text-slate-600 truncate min-w-0">
+                      {letterFile
+                        ? letterFile.name
+                        : abstract.acceptanceLetterUrl
+                          ? 'Replace letter (PDF / DOC)'
+                          : 'Upload letter (PDF / DOC)'}
+                    </span>
+                  </label>
+
+                  <p className="text-[11px] text-green-700 mt-2 leading-relaxed">
+                    {letterFile
+                      ? 'Attached to the notification email and downloadable from the author’s portal.'
+                      : abstract.acceptanceLetterUrl
+                        ? 'Already available to the author. Upload a new file to replace it.'
+                        : 'Optional — attach it to the acceptance email and publish it to the author’s portal.'}
+                  </p>
+                </div>
+              )}
+
               <Button type="submit" loading={saving} className="w-full">
                 Save & Notify
               </Button>

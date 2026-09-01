@@ -7,6 +7,7 @@ export const abstractsAPI = {
   updateStatus: (id, data) => api.patch(`/abstracts/${id}/status`, data),
   updateAbstract: (id, data) => api.patch(`/abstracts/${id}`, data),
   downloadFile: (id) => api.get(`/abstracts/${id}/file`, { responseType: 'blob' }),
+  downloadAcceptanceLetter: (id) => api.get(`/abstracts/${id}/acceptance-letter`, { responseType: 'blob' }),
   delete: (id) => api.delete(`/abstracts/${id}`),
 };
 

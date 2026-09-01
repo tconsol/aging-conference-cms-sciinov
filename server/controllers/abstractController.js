@@ -108,6 +108,24 @@ exports.downloadFile = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Streams the Letter of Acceptance back as an attachment (admin).
+exports.downloadAcceptanceLetter = async (req, res, next) => {
+  try {
+    const abstract = await Abstract.findById(req.params.id)
+      .select('acceptanceLetterUrl acceptanceLetterPublicId acceptanceLetterName');
+    if (!abstract) return res.status(404).json({ success: false, message: 'Abstract not found.' });
+
+    const path = abstract.acceptanceLetterPublicId || gcsPathFromUrl(abstract.acceptanceLetterUrl);
+    if (!path) return res.status(404).json({ success: false, message: 'No acceptance letter uploaded.' });
+
+    const ok = await streamGCSFile(res, {
+      filename: path,
+      downloadName: abstract.acceptanceLetterName || 'Letter-of-Acceptance.pdf',
+    });
+    if (!ok) return res.status(404).json({ success: false, message: 'File no longer available.' });
+  } catch (err) { next(err); }
+};
+
 exports.submit = async (req, res, next) => {
   try {
     const data = { ...req.body };
@@ -184,18 +202,56 @@ exports.submit = async (req, res, next) => {
 exports.updateStatus = async (req, res, next) => {
   try {
     const { status, adminNotes } = req.body;
+
+    const existing = await Abstract.findById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, message: 'Abstract not found.' });
+
+    const update = { status, adminNotes };
+
+    // Letter of Acceptance — only meaningful on an accepted abstract
+    let letterBuffer = null;
+    let letterMime = null;
+    if (req.file && status === 'accepted') {
+      if (existing.acceptanceLetterPublicId) await deleteFromGCS(existing.acceptanceLetterPublicId);
+      const dest = gcsFilename('aging-congress/acceptance-letters', req.file.mimetype, req.file.originalname);
+      const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });
+      update.acceptanceLetterUrl = result.url;
+      update.acceptanceLetterPublicId = result.filename;
+      update.acceptanceLetterName = req.file.originalname;
+      update.acceptanceLetterSentAt = new Date();
+      letterBuffer = req.file.buffer;
+      letterMime = req.file.mimetype;
+    }
+
     const abstract = await Abstract.findByIdAndUpdate(
       req.params.id,
-      { status, adminNotes },
+      update,
       { new: true, runValidators: true }
     );
-    if (!abstract) return res.status(404).json({ success: false, message: 'Abstract not found.' });
 
     const info = STATUS_INFO[status];
     if (info) {
       try {
+        const portalUrl = process.env.PORTAL_URL || process.env.FRONTEND_URL || '';
+        const letterNote = letterBuffer
+          ? `<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:14px 16px;margin-top:16px;">
+               <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#14532d;">Letter of Acceptance attached</p>
+               <p style="margin:0;font-size:13px;color:#166534;">Your official Letter of Acceptance is attached to this email. You can also download it any time from your submission portal.</p>
+             </div>`
+          : '';
+        const registerNote = status === 'accepted'
+          ? `<p style="margin-top:20px;"><a href="${portalUrl}" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:6px;">Complete Your Registration</a></p>`
+          : '';
+
         await sendEmail({
           to: abstract.email,
+          attachments: letterBuffer
+            ? [{
+                filename: abstract.acceptanceLetterName || 'Letter-of-Acceptance.pdf',
+                content: letterBuffer,
+                contentType: letterMime || 'application/pdf',
+              }]
+            : undefined,
           subject: `Abstract Status Update ${info.label}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
@@ -213,6 +269,8 @@ exports.updateStatus = async (req, res, next) => {
                 </div>
                 <p style="color:#475569;">${info.message}</p>
                 ${adminNotes ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:12px 16px;margin-top:16px;"><p style="margin:0;font-size:13px;color:#92400e;"><strong>Note from the committee:</strong> ${adminNotes}</p></div>` : ''}
+                ${letterNote}
+                ${registerNote}
                 <p style="color:#64748b;font-size:13px;margin-top:20px;">Login ID: <strong style="font-family:Courier New,monospace;">${abstract.loginId || abstract._id}</strong></p>
               </div>
             </div>
@@ -226,6 +284,8 @@ exports.updateStatus = async (req, res, next) => {
     broadcastToAbstract(abstract._id, 'status_update', {
       status: abstract.status,
       adminNotes: abstract.adminNotes || null,
+      acceptanceLetterUrl: abstract.acceptanceLetterUrl || null,
+      acceptanceLetterName: abstract.acceptanceLetterName || null,
     });
 
     res.json({ success: true, data: abstract });

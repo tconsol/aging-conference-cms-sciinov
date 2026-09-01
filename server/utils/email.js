@@ -10,13 +10,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async ({ to, subject, html, text }) => {
+// `attachments` follows nodemailer's shape, e.g.
+// [{ filename: 'letter.pdf', content: <Buffer>, contentType: 'application/pdf' }]
+const sendEmail = async ({ to, subject, html, text, attachments }) => {
   return transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to,
     subject,
     html,
     text,
+    ...(attachments?.length ? { attachments } : {}),
   });
 };
 
