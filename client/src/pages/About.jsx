@@ -116,7 +116,7 @@ export default function About() {
                     <p className="text-slate-500 leading-relaxed">
                       Founded to address the growing need for a dedicated international forum on aging
                       research, our congress has grown into one of the most prestigious gatherings in
-                      geroscience — uniting researchers from molecular biology, clinical medicine,
+                      geroscience uniting researchers from molecular biology, clinical medicine,
                       epidemiology, and translational science to drive breakthroughs.
                     </p>
                   )}
@@ -126,7 +126,7 @@ export default function About() {
                 </div>
               </div>
 
-              {/* Stats row — large typographic numbers */}
+              {/* Stats row large typographic numbers */}
               <div
                 className="grid grid-cols-2 lg:grid-cols-4 rounded-3xl overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 80%, black) 100%)' }}

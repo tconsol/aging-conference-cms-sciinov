@@ -175,14 +175,14 @@ export default function Speakers() {
                       )}
                     </td>
                     <td className="px-6 py-3 font-medium text-slate-800">{item.fullName}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.designation || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.organization || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.country || '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.designation || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.organization || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.country || ''}</td>
                     <td className="px-6 py-3">
                       {item.isFeatured ? (
                         <Badge variant="warning">Featured</Badge>
                       ) : (
-                        <span className="text-slate-400 text-xs">—</span>
+                        <span className="text-slate-400 text-xs"></span>
                       )}
                     </td>
                     <td className="px-6 py-3">

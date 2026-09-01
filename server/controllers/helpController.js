@@ -1,11 +1,17 @@
 const FAQ = require('../models/FAQ');
 const SupportTicket = require('../models/SupportTicket');
-const nextDisplayOrder = require('../utils/autoOrder');
 const { sendEmail } = require('../utils/email');
+const { broadcast } = require('../utils/sseClients');
+const {
+  orderForCreate, settleOrder, closeOrderGap, healOrders,
+} = require('../utils/displayOrder');
 
-// FAQs
+// FAQs are ordered globally across topics, matching how the admin list renders them
+const ORDER_SCOPE = [];
+
 exports.getAllFAQs = async (req, res, next) => {
   try {
+    await healOrders(FAQ, ORDER_SCOPE);
     const filter = {};
     if (req.query.active === 'true') filter.isActive = true;
     const faqs = await FAQ.find(filter).sort({ displayOrder: 1 }).populate('topic', 'name subtitle icon displayOrder');
@@ -15,10 +21,12 @@ exports.getAllFAQs = async (req, res, next) => {
 
 exports.createFAQ = async (req, res, next) => {
   try {
-    const faqData = { ...req.body };
-    if (!faqData.displayOrder) faqData.displayOrder = await nextDisplayOrder(FAQ);
-    const faq = await FAQ.create(faqData);
-    res.status(201).json({ success: true, data: faq });
+    const data = { ...req.body };
+    data.displayOrder = await orderForCreate(FAQ, data, ORDER_SCOPE);
+    const faq = await FAQ.create(data);
+    await settleOrder(FAQ, faq, ORDER_SCOPE);
+    const saved = await FAQ.findById(faq._id).populate('topic', 'name subtitle icon displayOrder');
+    res.status(201).json({ success: true, data: saved });
   } catch (err) { next(err); }
 };
 
@@ -26,13 +34,16 @@ exports.updateFAQ = async (req, res, next) => {
   try {
     const faq = await FAQ.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!faq) return res.status(404).json({ success: false, message: 'FAQ not found.' });
-    res.json({ success: true, data: faq });
+    await settleOrder(FAQ, faq, ORDER_SCOPE);
+    const saved = await FAQ.findById(faq._id).populate('topic', 'name subtitle icon displayOrder');
+    res.json({ success: true, data: saved });
   } catch (err) { next(err); }
 };
 
 exports.removeFAQ = async (req, res, next) => {
   try {
-    await FAQ.findByIdAndDelete(req.params.id);
+    const faq = await FAQ.findByIdAndDelete(req.params.id);
+    if (faq) await closeOrderGap(FAQ, faq, ORDER_SCOPE);
     res.json({ success: true, message: 'FAQ deleted.' });
   } catch (err) { next(err); }
 };
@@ -63,6 +74,15 @@ exports.getTicket = async (req, res, next) => {
 exports.submitTicket = async (req, res, next) => {
   try {
     const ticket = await SupportTicket.create(req.body);
+
+    broadcast('new_ticket', {
+      id: ticket._id,
+      name: ticket.name,
+      email: ticket.email,
+      subject: ticket.subject,
+      createdAt: ticket.createdAt,
+    });
+
     try {
       await sendEmail({
         to: ticket.email,

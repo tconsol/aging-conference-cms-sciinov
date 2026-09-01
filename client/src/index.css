@@ -193,3 +193,63 @@
     text-decoration: underline;
   }
 }
+
+/* ── Deadline urgency pulse ──────────────────────────────────────────────── */
+/* Used by tier countdown badges as their deadline approaches. */
+@keyframes deadline-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+@keyframes deadline-ring {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: 0.5; }
+  70%  { box-shadow: 0 0 0 7px transparent; opacity: 0; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 0; }
+}
+.deadline-pulse    { animation: deadline-pulse 1.8s ease-in-out infinite; }
+.deadline-pulse-fast { animation: deadline-pulse 1s ease-in-out infinite; }
+.deadline-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  animation: deadline-ring 1.8s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .deadline-pulse,
+  .deadline-pulse-fast,
+  .deadline-dot::after { animation: none; }
+}
+
+/* Pricing register  layout helpers only; colour and type come from the
+   existing site system (Inter + brand vars). Namespaced `reg-`. */
+@keyframes reg-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes reg-meter-in { from { transform: scaleX(0); } }
+
+.reg-rise { animation: reg-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+.reg-meter {
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.reg-meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: left center;
+  animation: reg-meter-in 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Fee figures line up down each column */
+.reg-figure { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+
+.reg-col { transition: background-color 0.2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reg-rise, .reg-meter-fill { animation: none; }
+}

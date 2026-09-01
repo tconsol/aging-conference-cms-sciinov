@@ -4,36 +4,43 @@ import { useAuth } from './AuthContext';
 
 const RegistrationBadgeContext = createContext(null);
 
-// Nav path -> which counter it clears when visited
-const PATHS = {
-  registrations: '/registrations',
-  abstracts: '/abstracts',
+// SSE event -> the sidebar nav href whose badge it increments.
+// Visiting that href clears the badge. Add a row here to badge a new section.
+const EVENT_PATHS = {
+  new_registration: '/registrations',
+  new_intent:       '/registrations',
+  new_abstract:     '/abstracts',
+  new_ticket:       '/help/tickets',
+  new_contact:      '/contact',
+  new_subscriber:   '/newsletter',
 };
+
+const BADGE_PATHS = [...new Set(Object.values(EVENT_PATHS))];
 
 export function RegistrationBadgeProvider({ children }) {
   const { token } = useAuth();
   const location = useLocation();
 
-  const [count, setCount] = useState(0);                 // registrations
-  const [abstractCount, setAbstractCount] = useState(0); // abstracts
-  const [lastEventTime, setLastEventTime] = useState(null);
-  const [lastAbstractEventTime, setLastAbstractEventTime] = useState(null);
+  // { '/registrations': 2, '/contact': 1, ... }
+  const [counts, setCounts] = useState({});
+  // { '/registrations': 1712345678901, ... } pages watch these to auto-refresh
+  const [lastEvents, setLastEvents] = useState({});
 
   const esRef = useRef(null);
   const pathnameRef = useRef(location.pathname);
 
-  // Keep pathnameRef current so SSE handlers read latest value without stale closure
+  // Keep pathnameRef current so SSE handlers read the latest value without a stale closure
   useEffect(() => {
     pathnameRef.current = location.pathname;
   }, [location.pathname]);
 
-  // Reset the relevant badge when its page is opened
+  // Clear a section's badge as soon as its page is opened
   useEffect(() => {
-    if (location.pathname === PATHS.registrations) setCount(0);
-    if (location.pathname === PATHS.abstracts) setAbstractCount(0);
+    if (BADGE_PATHS.includes(location.pathname)) {
+      setCounts((c) => (c[location.pathname] ? { ...c, [location.pathname]: 0 } : c));
+    }
   }, [location.pathname]);
 
-  // SSE connection for live events
   useEffect(() => {
     if (!token) return;
 
@@ -45,19 +52,15 @@ export function RegistrationBadgeProvider({ children }) {
       es = new EventSource(`${baseUrl}/registrations/events?token=${encodeURIComponent(token)}`);
       esRef.current = es;
 
-      const handleRegistration = () => {
-        setLastEventTime(Date.now());
-        if (pathnameRef.current !== PATHS.registrations) setCount((c) => c + 1);
-      };
-
-      const handleAbstract = () => {
-        setLastAbstractEventTime(Date.now());
-        if (pathnameRef.current !== PATHS.abstracts) setAbstractCount((c) => c + 1);
-      };
-
-      es.addEventListener('new_registration', handleRegistration);
-      es.addEventListener('new_intent', handleRegistration);
-      es.addEventListener('new_abstract', handleAbstract);
+      Object.entries(EVENT_PATHS).forEach(([event, path]) => {
+        es.addEventListener(event, () => {
+          setLastEvents((prev) => ({ ...prev, [path]: Date.now() }));
+          // Don't badge the page the admin is already looking at
+          if (pathnameRef.current !== path) {
+            setCounts((prev) => ({ ...prev, [path]: (prev[path] || 0) + 1 }));
+          }
+        });
+      });
 
       es.onerror = () => {
         es.close();
@@ -76,27 +79,27 @@ export function RegistrationBadgeProvider({ children }) {
     };
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const resetCount = useCallback(() => setCount(0), []);
-  const resetAbstractCount = useCallback(() => setAbstractCount(0), []);
+  const resetPath = useCallback((path) => {
+    setCounts((prev) => (prev[path] ? { ...prev, [path]: 0 } : prev));
+  }, []);
 
-  // Badge counts keyed by nav href, consumed by the Sidebar
-  const badges = {
-    [PATHS.registrations]: count,
-    [PATHS.abstracts]: abstractCount,
+  const value = {
+    badges: counts,
+    lastEvents,
+    resetPath,
+
+    // Convenience accessors for the pages already wired up
+    count: counts['/registrations'] || 0,
+    lastEventTime: lastEvents['/registrations'] || null,
+    resetCount: useCallback(() => resetPath('/registrations'), [resetPath]),
+
+    abstractCount: counts['/abstracts'] || 0,
+    lastAbstractEventTime: lastEvents['/abstracts'] || null,
+    resetAbstractCount: useCallback(() => resetPath('/abstracts'), [resetPath]),
   };
 
   return (
-    <RegistrationBadgeContext.Provider
-      value={{
-        count,
-        resetCount,
-        lastEventTime,
-        abstractCount,
-        resetAbstractCount,
-        lastAbstractEventTime,
-        badges,
-      }}
-    >
+    <RegistrationBadgeContext.Provider value={value}>
       {children}
     </RegistrationBadgeContext.Provider>
   );

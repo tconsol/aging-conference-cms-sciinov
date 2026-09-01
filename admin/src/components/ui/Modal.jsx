@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const sizes = {
@@ -18,7 +19,10 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
 
   if (!open) return null;
 
-  return (
+  // Portalled to <body>: as a child of a page wrapper the fixed overlay would inherit
+  // `space-y-*` margins, and a top margin on an inset-0 fixed box pushes it down the
+  // page, leaving a strip of background above the backdrop.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -53,6 +57,7 @@ export default function Modal({ open, onClose, title, children, size = 'md', foo
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

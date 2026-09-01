@@ -31,7 +31,7 @@ export default function Venue() {
     <div>
       <PageHero
         title="Congress Venue"
-        subtitle="Find everything you need to know about where we're gathering — location, access, and facilities."
+        subtitle="Find everything you need to know about where we're gathering location, access, and facilities."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Venue' }]}
       />
 

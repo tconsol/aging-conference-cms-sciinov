@@ -622,7 +622,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Row 1 — scrolls left */}
+          {/* Row 1 scrolls left */}
           <div className="relative mb-5">
             <div className="flex gap-5 marquee-left" style={{ width: 'max-content' }}>
               {[...testimonials, ...testimonials].map((t, i) => (
@@ -634,7 +634,7 @@ export default function Home() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-950 to-transparent z-10" />
           </div>
 
-          {/* Row 2 — scrolls right (only if enough items) */}
+          {/* Row 2 scrolls right (only if enough items) */}
           {testimonials.length >= 2 && (
             <div className="relative">
               <div className="flex gap-5 marquee-right" style={{ width: 'max-content' }}>

@@ -100,7 +100,7 @@ function InfoRow({ label, value, mono, full }) {
 
 function ExpandableText({ text, maxLines = 4 }) {
   const [expanded, setExpanded] = useState(false);
-  if (!text) return <span className="text-slate-400 italic text-sm">—</span>;
+  if (!text) return <span className="text-slate-400 italic text-sm"></span>;
 
   const lines = text.split('\n');
   const shouldCollapse = lines.length > maxLines || text.length > 400;
@@ -138,7 +138,7 @@ function UploadedFileCard({ abstract }) {
     setDownloading(true);
     try {
       // Proxied through the API so the browser saves the file instead of
-      // navigating to it — <a download> is ignored cross-origin.
+      // navigating to it <a download> is ignored cross-origin.
       const res = await abstractsAPI.downloadFile(abstract._id);
       downloadBlob(res.data, abstract.fileName || 'abstract');
     } catch (err) {
@@ -334,7 +334,7 @@ export default function AbstractDetail() {
         {/* ── Left column ── */}
         <div className="lg:col-span-2 space-y-5">
 
-          {/* Uploaded file — first, it's the thing reviewers reach for */}
+          {/* Uploaded file first, it's the thing reviewers reach for */}
           {abstract.fileUrl && <UploadedFileCard abstract={abstract} />}
 
           {/* Author card */}

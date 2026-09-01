@@ -55,7 +55,8 @@ export default function ImageUpload({ label, name, register, watch, error, curre
             </div>
             <div className="text-center">
               <p className="text-sm font-medium text-slate-600">Click to upload image</p>
-              <p className="text-xs text-slate-400 mt-0.5">JPEG, PNG, WebP up to 5MB</p>
+              <p className="text-xs text-slate-400 mt-0.5">JPEG, PNG, WebP up to 15MB</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Auto-converted to WebP &amp; optimised on upload</p>
             </div>
           </div>
         )}

@@ -56,7 +56,7 @@ function FlipCard({ value, label }) {
   const [shown, setShown]       = useState(target); // fully rendered value
   const [flipping, setFlipping] = useState(false);
   const timerRef  = useRef(null);
-  const fkRef     = useRef(0); // flip key — forces new element per animation
+  const fkRef     = useRef(0); // flip key forces new element per animation
 
   useEffect(() => {
     if (target === shown) return;
@@ -88,10 +88,10 @@ function FlipCard({ value, label }) {
         boxShadow: 'none',
       }}>
 
-        {/* Static top  — immediately shows TARGET when flip starts */}
+        {/* Static top  immediately shows TARGET when flip starts */}
         <Half isTop bg={topBg} digit={flipping ? target : shown} />
 
-        {/* Static bottom — shows SHOWN (prev) while flipping so the flap hides it */}
+        {/* Static bottom shows SHOWN (prev) while flipping so the flap hides it */}
         <Half bg={botBg} digit={shown} />
 
         {/* Divider line */}

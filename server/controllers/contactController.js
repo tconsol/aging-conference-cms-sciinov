@@ -1,9 +1,19 @@
 const ContactMessage = require('../models/ContactMessage');
 const { sendEmail } = require('../utils/email');
+const { broadcast } = require('../utils/sseClients');
 
 exports.submit = async (req, res, next) => {
   try {
     const message = await ContactMessage.create(req.body);
+
+    broadcast('new_contact', {
+      id: message._id,
+      name: message.name,
+      email: message.email,
+      subject: message.subject,
+      createdAt: message.createdAt,
+    });
+
     try {
       await sendEmail({
         to: message.email,

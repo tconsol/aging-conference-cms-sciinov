@@ -1,4 +1,4 @@
-# Project Proposal — Aging Congress CMS Platform
+# Project Proposal Aging Congress CMS Platform
 
 **Prepared by:** Tcon Solutions
 **Prepared for:** Aging Congress
@@ -21,7 +21,7 @@ Aging Congress runs an annual international scientific conference and needs a pl
 - Collect and manage inbound submissions (registrations, abstracts, speaker applications, sponsorship inquiries, contact messages, support tickets, newsletter signups)
 - Present a professional, modern public website that stays accurate as content changes edition to edition
 
-## 3. What Has Been Delivered (Phase 1 — Complete)
+## 3. What Has Been Delivered (Phase 1 Complete)
 
 ### 3.1 Public Website (client)
 A 29-page React application covering the full attendee and prospective-speaker journey:
@@ -55,11 +55,11 @@ A dedicated administrative application covering:
 
 During a recent review, several defects were identified and resolved:
 
-- **Critical context bug** — the site-wide data provider (`congressProvider`) was defined with an incorrect naming convention, causing React to silently skip mounting it. This meant the "active edition" and site settings were never actually available anywhere in the app, masked by fallback defaults. Fixed.
-- **Orphaned content** — a previous conference edition had been deleted from the admin panel without its dependent records (sessions, pricing tiers, important dates, program schedule, several speakers) being reassigned, leaving them invisible on the live site. Data was safely re-attached to the current edition and stale 2025 dates were corrected to 2026.
-- **Data-race bugs** — several pages fired a fallback network request before the active edition loaded and a corrected one after; whichever resolved last would win, occasionally showing wrong data. Fixed across six pages by gating fetches on context readiness.
-- **Sessions page redesign** — rebuilt from a bare list into a searchable, modern card grid consistent with the rest of the site's design system.
-- **Official brochure** — regenerated as an accurate PDF from live conference data (replacing a broken placeholder file).
+- **Critical context bug** the site-wide data provider (`congressProvider`) was defined with an incorrect naming convention, causing React to silently skip mounting it. This meant the "active edition" and site settings were never actually available anywhere in the app, masked by fallback defaults. Fixed.
+- **Orphaned content** a previous conference edition had been deleted from the admin panel without its dependent records (sessions, pricing tiers, important dates, program schedule, several speakers) being reassigned, leaving them invisible on the live site. Data was safely re-attached to the current edition and stale 2025 dates were corrected to 2026.
+- **Data-race bugs** several pages fired a fallback network request before the active edition loaded and a corrected one after; whichever resolved last would win, occasionally showing wrong data. Fixed across six pages by gating fetches on context readiness.
+- **Sessions page redesign** rebuilt from a bare list into a searchable, modern card grid consistent with the rest of the site's design system.
+- **Official brochure** regenerated as an accurate PDF from live conference data (replacing a broken placeholder file).
 
 ## 5. Recommended Phase 2
 
@@ -68,7 +68,7 @@ During a recent review, several defects were identified and resolved:
 | 1 | Edition lifecycle safety | Prevent the class of bug found in this engagement by adding a cascading-delete guard or archive step when an Edition is removed |
 | 2 | Content QA pass | Several fields (venue address, one session description, three speaker profiles) still contain placeholder/test text visible on the live site |
 | 3 | Performance optimization | The client bundle is ~1.2 MB; code-splitting by route would meaningfully improve first-load time |
-| 4 | Automated test coverage | The defects above were only caught through manual, in-browser verification — a regression suite would catch them automatically going forward |
+| 4 | Automated test coverage | The defects above were only caught through manual, in-browser verification a regression suite would catch them automatically going forward |
 | 5 | Ongoing support retainer | Monthly maintenance window for content-model changes, dependency updates, and priority bug response |
 
 See the accompanying **Quotation** (`QUOTATION.md`) for itemized pricing on Phase 2, and the **PRD** (`PRD.md`) for full functional detail on the existing platform.
@@ -77,7 +77,7 @@ See the accompanying **Quotation** (`QUOTATION.md`) for itemized pricing on Phas
 
 - Issue-driven development: every fix in this engagement was verified against the real running application (browser automation, live API checks) rather than static code review alone
 - Direct database inspection before any data-affecting change, with destructive operations always confirmed before execution
-- Incremental delivery — each fix built, verified, and confirmed working before moving to the next
+- Incremental delivery each fix built, verified, and confirmed working before moving to the next
 
 ## 7. Technology Stack
 

@@ -17,7 +17,9 @@ import { programAPI, editionsAPI } from '../../api/congress';
 import { speakersAPI } from '../../api/people';
 import { getErrorMessage } from '../../utils/helpers';
 
-const typeOptions = [
+// Defaults only admins can add their own types, which are then remembered
+// because they come back with the saved slots.
+const DEFAULT_TYPE_OPTIONS = [
   { value: 'keynote', label: 'Keynote' },
   { value: 'plenary', label: 'Plenary' },
   { value: 'scientific', label: 'Scientific Session' },
@@ -28,6 +30,24 @@ const typeOptions = [
   { value: 'closing', label: 'Closing Ceremony' },
   { value: 'other', label: 'Other' },
 ];
+
+const ADD_NEW_TYPE = '__add_new_type__';
+
+// "poster_session" -> "Poster Session"
+const humanizeType = (value) =>
+  String(value || '')
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+
+// Free text -> a stable slug we can store and match on
+const slugifyType = (text) =>
+  String(text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 
 const typeBadgeVariant = {
   keynote: 'purple',
@@ -53,10 +73,6 @@ const typeLabel = {
   other: 'Other',
 };
 
-const dayOptions = [
-  { value: '1', label: 'Day 1' },
-  { value: '2', label: 'Day 2' },
-];
 
 export default function Program() {
   const [items, setItems] = useState([]);
@@ -70,7 +86,8 @@ export default function Program() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
+  const watchedType = watch('type');
 
   const fetchDependencies = async () => {
     try {
@@ -109,6 +126,23 @@ export default function Program() {
 
   const filteredItems = items.filter((item) => String(item.day) === activeDay);
 
+  // Days present in the data, plus one more so a new day can always be added
+  const usedDays = [...new Set(items.map((i) => Number(i.day)).filter(Boolean))].sort((a, b) => a - b);
+  const maxDay = usedDays.length ? Math.max(...usedDays) : 0;
+  const dayTabs = (usedDays.length ? usedDays : [1]).map(String);
+  const dayOptions = Array.from({ length: Math.max(maxDay, 1) + 1 }, (_, i) => {
+    const d = i + 1;
+    return { value: String(d), label: d > maxDay ? `Day ${d} (new)` : `Day ${d}` };
+  });
+
+  // Defaults + any custom types already saved, then the "add new" affordance
+  const typeOptions = (() => {
+    const known = new Set(DEFAULT_TYPE_OPTIONS.map((o) => o.value));
+    const custom = [...new Set(items.map((i) => i.type).filter((t) => t && !known.has(t)))]
+      .map((t) => ({ value: t, label: humanizeType(t) }));
+    return [...DEFAULT_TYPE_OPTIONS, ...custom, { value: ADD_NEW_TYPE, label: '＋ Add new type…' }];
+  })();
+
   const openModal = (data = null) => {
     if (data) {
       reset({
@@ -133,6 +167,18 @@ export default function Program() {
     try {
       const payload = { ...formData };
       if (!payload.speaker) delete payload.speaker;
+
+      // Resolve the "add new type" choice into the typed-in value
+      if (payload.type === ADD_NEW_TYPE) {
+        const custom = slugifyType(payload.newType);
+        if (!custom) {
+          toast.error('Enter a name for the new slot type.');
+          setSubmitting(false);
+          return;
+        }
+        payload.type = custom;
+      }
+      delete payload.newType;
       if (modal.data?._id) {
         await programAPI.update(modal.data._id, payload);
         toast.success('Slot updated successfully.');
@@ -182,9 +228,9 @@ export default function Program() {
         />
       </div>
 
-      {/* Day tabs */}
-      <div className="flex gap-2 mb-4">
-        {['1', '2'].map((day) => (
+      {/* Day tabs grow with the schedule, plus a shortcut to start the next day */}
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        {dayTabs.map((day) => (
           <button
             key={day}
             onClick={() => setActiveDay(day)}
@@ -197,6 +243,13 @@ export default function Program() {
             Day {day}
           </button>
         ))}
+        <button
+          onClick={() => { setActiveDay(String(maxDay + 1)); openModal(); }}
+          title={`Add the first slot for Day ${maxDay + 1}`}
+          className="px-3 py-2 text-sm font-medium rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-teal-400 hover:text-teal-700 transition-colors"
+        >
+          ＋ Day {maxDay + 1}
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
@@ -227,16 +280,16 @@ export default function Program() {
               <tbody className="divide-y divide-slate-50">
                 {filteredItems.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3 text-slate-700 font-medium">{item.startTime || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.endTime || '—'}</td>
+                    <td className="px-6 py-3 text-slate-700 font-medium">{item.startTime || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.endTime || ''}</td>
                     <td className="px-6 py-3 font-medium text-slate-800">{item.title}</td>
                     <td className="px-6 py-3">
                       <Badge variant={typeBadgeVariant[item.type] || 'default'}>
-                        {typeLabel[item.type] || item.type}
+                        {typeLabel[item.type] || humanizeType(item.type)}
                       </Badge>
                     </td>
                     <td className="px-6 py-3 text-slate-600">
-                      {item.speaker?.fullName || '—'}
+                      {item.speaker?.fullName || ''}
                     </td>
                     <td className="px-6 py-3">
                       <div className="flex items-center justify-end gap-1">
@@ -300,7 +353,8 @@ export default function Program() {
               error={errors.day?.message}
               options={dayOptions}
               required
-              defaultValue={modal.data ? String(modal.data.day) : ''}
+              defaultValue={modal.data ? String(modal.data.day) : activeDay}
+              hint={`Pick "Day ${maxDay + 1} (new)" to start another day`}
             />
             <Input
               label="Start Time"
@@ -334,7 +388,19 @@ export default function Program() {
               options={typeOptions}
               required
               defaultValue={modal.data?.type || ''}
+              hint="Not listed? Choose “＋ Add new type…”"
             />
+            {watchedType === ADD_NEW_TYPE && (
+              <div className="col-span-2">
+                <Input
+                  label="New Type Name"
+                  name="newType"
+                  register={register}
+                  placeholder="e.g. Panel Discussion"
+                  hint="Saved with this slot and offered in the list from then on."
+                />
+              </div>
+            )}
             <Select
               label="Speaker"
               name="speaker"

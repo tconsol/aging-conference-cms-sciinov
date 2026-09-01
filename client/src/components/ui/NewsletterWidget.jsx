@@ -23,7 +23,7 @@ export default function NewsletterWidget({ light = false }) {
   if (done) {
     return (
       <p className={`text-sm font-semibold ${light ? 'text-teal-300' : 'text-teal-700'}`}>
-        Subscribed — thank you!
+        Subscribed thank you!
       </p>
     );
   }

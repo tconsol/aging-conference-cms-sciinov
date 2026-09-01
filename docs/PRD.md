@@ -1,8 +1,8 @@
-# Product Requirements Document — Aging Congress CMS Platform
+# Product Requirements Document Aging Congress CMS Platform
 
 **Prepared by:** Tcon Solutions
 **Date:** July 23, 2026
-**Status:** Living document — reflects the platform as currently built
+**Status:** Living document reflects the platform as currently built
 
 ---
 
@@ -10,9 +10,9 @@
 
 The Aging Congress CMS Platform is a three-part system that lets a small conference-organizing team run an annual international scientific congress:
 
-1. **Client** — the public conference website
-2. **Admin** — the internal content management system
-3. **Server** — the shared REST API and database that both consume
+1. **Client** the public conference website
+2. **Admin** the internal content management system
+3. **Server** the shared REST API and database that both consume
 
 The platform is designed around a central **Edition** entity (e.g. "Aging Congress 2026"), so the same codebase and database serve multiple conference years without duplication.
 
@@ -82,7 +82,7 @@ The platform is designed around a central **Edition** entity (e.g. "Aging Congre
 
 **Requirement:** every content module must support create, edit, delete, and (where applicable) reorder and active/inactive toggling. Every submission module must support status transitions (e.g. pending → approved/rejected) and support staff review notes.
 
-**Requirement (currently a gap — see Section 7):** deleting an Edition must either be blocked while dependent records exist, or must cascade/reassign those records, so content is never silently orphaned.
+**Requirement (currently a gap see Section 7):** deleting an Edition must either be blocked while dependent records exist, or must cascade/reassign those records, so content is never silently orphaned.
 
 ### 4.3 Authentication & Roles
 
@@ -95,7 +95,7 @@ The platform is designed around a central **Edition** entity (e.g. "Aging Congre
 
 | Category | Requirement |
 |---|---|
-| Performance | Public pages should be interactive within 2s on a typical connection. *Current gap: client bundle is ~1.2 MB unsplit — see Section 7.* |
+| Performance | Public pages should be interactive within 2s on a typical connection. *Current gap: client bundle is ~1.2 MB unsplit see Section 7.* |
 | Responsiveness | All public pages must render correctly from mobile (375px) to desktop |
 | Security | No secrets in the repository; all admin routes protected by JWT; rate limiting on public write endpoints |
 | Data integrity | Edition-scoped records must never reference a non-existent Edition |
@@ -113,7 +113,7 @@ These were identified during the most recent engagement and are recommended for 
 
 1. **No cascading delete on Edition removal.** Deleting an Edition currently leaves all its dependent records in place with a now-invalid `edition` reference, making them invisible to the public site with no admin warning. This has already caused real content loss in production once.
 2. **Client bundle size.** ~1.2 MB unsplit JS bundle; recommend route-based code splitting.
-3. **Placeholder content live in production.** At least one session description, one venue address, and several speaker profiles contain visibly unfinished test text ("testing", "hyd", etc.) — needs an editorial cleanup pass.
+3. **Placeholder content live in production.** At least one session description, one venue address, and several speaker profiles contain visibly unfinished test text ("testing", "hyd", etc.) needs an editorial cleanup pass.
 4. **No automated test coverage.** All defects found in the last engagement were caught by manual/browser verification, not by a test suite.
 
 ## 8. Out of Scope

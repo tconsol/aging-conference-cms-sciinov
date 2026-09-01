@@ -164,7 +164,7 @@ export default function AbstractSubmission() {
                       <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-slate-100" style={{ background: '#f8fafc' }}>
                         <Key size={14} style={{ color: 'var(--brand-dark)' }} />
                         <span className="text-sm font-bold text-slate-700">Your Login Credentials</span>
-                        <span className="text-xs text-slate-400 ml-1">— also sent to your email</span>
+                        <span className="text-xs text-slate-400 ml-1">also sent to your email</span>
                       </div>
                       <div className="p-5 bg-white">
                         <div className="grid sm:grid-cols-2 gap-4 mb-5">
@@ -332,7 +332,7 @@ export default function AbstractSubmission() {
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Document (PDF, DOC, DOCX)</label>
-                    {/* Hidden native input — react-hook-form registers it */}
+                    {/* Hidden native input react-hook-form registers it */}
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"

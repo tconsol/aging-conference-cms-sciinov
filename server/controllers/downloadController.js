@@ -1,9 +1,14 @@
 const Download = require('../models/Download');
 const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
-const nextDisplayOrder = require('../utils/autoOrder');
+const {
+  orderForCreate, settleOrder, closeOrderGap,
+  healOrders,
+} = require('../utils/displayOrder');
+const ORDER_SCOPE = [];
 
 exports.getAll = async (req, res, next) => {
   try {
+    await healOrders(Download, ORDER_SCOPE);
     const filter = {};
     if (req.query.active === 'true') filter.isActive = true;
     if (req.query.type) filter.type = req.query.type;
@@ -23,7 +28,7 @@ exports.getOne = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const data = { ...req.body };
-    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(Download);
+    data.displayOrder = await orderForCreate(Download, data, ORDER_SCOPE);
     if (req.files?.file) {
       const f = req.files.file[0];
       const dest = gcsFilename('aging-congress/downloads', f.mimetype, f.originalname);
@@ -39,6 +44,7 @@ exports.create = async (req, res, next) => {
       data.thumbnailPublicId = r.filename;
     }
     const dl = await Download.create(data);
+    await settleOrder(Download, dl, ORDER_SCOPE);
     res.status(201).json({ success: true, data: dl });
   } catch (err) { next(err); }
 };
@@ -65,6 +71,7 @@ exports.update = async (req, res, next) => {
       data.thumbnailPublicId = r.filename;
     }
     const updated = await Download.findByIdAndUpdate(dl._id, data, { new: true });
+    await settleOrder(Download, updated, ORDER_SCOPE);
     res.json({ success: true, data: updated });
   } catch (err) { next(err); }
 };
@@ -76,6 +83,7 @@ exports.remove = async (req, res, next) => {
     if (dl.filePublicId) await deleteFromGCS(dl.filePublicId);
     if (dl.thumbnailPublicId) await deleteFromGCS(dl.thumbnailPublicId);
     await dl.deleteOne();
+    await closeOrderGap(Download, dl, ORDER_SCOPE);
     res.json({ success: true, message: 'Download deleted.' });
   } catch (err) { next(err); }
 };

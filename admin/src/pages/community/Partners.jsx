@@ -242,7 +242,7 @@ export default function Partners() {
                           {item.website}
                         </a>
                       ) : (
-                        <span className="text-slate-300">—</span>
+                        <span className="text-slate-300"></span>
                       )}
                     </td>
                     <td className="px-6 py-3">
@@ -257,7 +257,7 @@ export default function Partners() {
                         onToggle={() => toggleStatus(item)}
                       />
                     </td>
-                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button

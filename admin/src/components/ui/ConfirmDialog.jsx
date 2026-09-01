@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Pencil, X, Loader2, CloudOff } from 'lucide-react';
 
 export default function ConfirmDialog({
@@ -41,7 +42,9 @@ export default function ConfirmDialog({
 
   const IconComp = isDanger ? Trash2 : Pencil;
 
-  return (
+  // Portalled to <body> for the same reason as Modal a page wrapper's `space-y-*`
+  // margin would otherwise offset this fixed overlay downward.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
@@ -125,7 +128,7 @@ export default function ConfirmDialog({
                   className="w-4 h-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500 flex-shrink-0"
                 />
                 <span className="text-xs font-medium text-amber-800">
-                  I understand — permanently delete from cloud storage
+                  I understand permanently delete from cloud storage
                 </span>
               </label>
             </div>
@@ -177,6 +180,7 @@ export default function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

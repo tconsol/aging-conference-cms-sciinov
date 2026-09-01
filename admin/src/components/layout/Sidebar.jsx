@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, X, Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { navGroups } from '../../config/navGroups';
+import { navGroups, isExactNavHref } from '../../config/navGroups';
 import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
 // Pill badge component
@@ -62,6 +62,7 @@ function NavGroup({ group, badges = {} }) {
               <NavLink
                 key={item.href}
                 to={item.href}
+                end={isExactNavHref(item.href)}
                 className={({ isActive: active }) =>
                   `flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-all duration-150 ${
                     active
@@ -92,6 +93,7 @@ function CollapsedLink({ item, badges = {} }) {
     <NavLink
       to={item.href}
       title={item.label}
+      end={isExactNavHref(item.href)}
       className={({ isActive }) =>
         `relative flex items-center justify-center w-10 h-10 mx-auto rounded-md transition-all duration-150 ${
           isActive

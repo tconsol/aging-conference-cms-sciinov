@@ -12,10 +12,10 @@ import { contactAPI } from '../api/contact';
 import { getErrorMessage } from '../utils/helpers';
 
 const SPONSORSHIP_TYPES = [
-  { value: 'platinum', label: 'Platinum — $25,000' },
-  { value: 'gold',     label: 'Gold — $15,000' },
-  { value: 'silver',   label: 'Silver — $8,000' },
-  { value: 'bronze',   label: 'Bronze — $3,500' },
+  { value: 'platinum', label: 'Platinum $25,000' },
+  { value: 'gold',     label: 'Gold $15,000' },
+  { value: 'silver',   label: 'Silver $8,000' },
+  { value: 'bronze',   label: 'Bronze $3,500' },
   { value: 'custom',   label: 'Custom Package' },
 ];
 
@@ -123,7 +123,7 @@ export default function Sponsorship() {
             <p className="text-xs font-black uppercase tracking-[0.25em] mb-2" style={{ color: 'var(--brand)' }}>Why Sponsor</p>
             <h2 className="text-3xl font-black text-slate-900 mb-3">Reach the World's Aging Research Community</h2>
             <p className="text-slate-500 max-w-2xl leading-relaxed">
-              Sponsoring the Aging Congress puts your organisation at the forefront of geroscience — the fastest-growing field in biomedical research.
+              Sponsoring the Aging Congress puts your organisation at the forefront of geroscience the fastest-growing field in biomedical research.
             </p>
           </div>
 

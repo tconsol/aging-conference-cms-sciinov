@@ -161,10 +161,10 @@ export default function Venue() {
                 {items.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-slate-800">{item.name}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.city || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.country || '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.city || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.country || ''}</td>
                     <td className="px-6 py-3 text-slate-600">
-                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : '—'}
+                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : ''}
                     </td>
                     <td className="px-6 py-3">
                       {item.photos?.length > 0 ? (
@@ -173,7 +173,7 @@ export default function Venue() {
                           <span className="text-xs">{item.photos.length}</span>
                         </div>
                       ) : (
-                        <span className="text-slate-400 text-xs">—</span>
+                        <span className="text-slate-400 text-xs"></span>
                       )}
                     </td>
                     <td className="px-6 py-3">

@@ -48,9 +48,9 @@ function buildConfirmationEmail(reg, captureId, ctx = {}) {
   const siteName    = ctx.siteName    || 'Aging Congress';
   const contactEmail = ctx.contactEmail || '';
   const fullName    = `${reg.title ? reg.title + ' ' : ''}${reg.firstName} ${reg.lastName}`;
-  const editionLine = reg.edition ? `${reg.edition.title}${reg.edition.year ? ' (' + reg.edition.year + ')' : ''}` : (ctx.editionLabel || '—');
-  const categoryLine  = CATEGORY_LABELS[reg.category]  || reg.category  || '—';
-  const attendanceLine = ATTENDANCE_LABELS[reg.attendanceMode] || reg.attendanceMode || '—';
+  const editionLine = reg.edition ? `${reg.edition.title}${reg.edition.year ? ' (' + reg.edition.year + ')' : ''}` : (ctx.editionLabel || '');
+  const categoryLine  = CATEGORY_LABELS[reg.category]  || reg.category  || '';
+  const attendanceLine = ATTENDANCE_LABELS[reg.attendanceMode] || reg.attendanceMode || '';
   const invoiceDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const refId = String(reg._id).toUpperCase().slice(-8);
   const year = new Date().getFullYear();
@@ -100,7 +100,7 @@ function buildConfirmationEmail(reg, captureId, ctx = {}) {
       <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
         ${row('Invoice Date', invoiceDate)}
         ${row('Invoice Ref', '#INV-' + refId)}
-        ${row('Transaction ID', captureId || '—')}
+        ${row('Transaction ID', captureId || '')}
         ${row('Payment Method', 'PayPal')}
         ${row('Currency', reg.currency || 'USD')}
         <tr>
@@ -249,17 +249,17 @@ exports.adminCreate = async (req, res, next) => {
       amount: registration.amount,
     });
 
-    // Optional confirmation email — only when the admin ticks the box
+    // Optional confirmation email only when the admin ticks the box
     if (req.body.sendEmail && registration.paymentStatus === 'confirmed') {
       try {
         const ctx = await getSiteCtx();
         await sendEmail({
           to: registration.email,
-          subject: `Registration Confirmed — ${ctx.editionLabel || ctx.siteName}`,
+          subject: `Registration Confirmed ${ctx.editionLabel || ctx.siteName}`,
           html: buildConfirmationEmail(registration, registration.transactionId, ctx),
         });
       } catch {
-        // Non-critical — record is already saved
+        // Non-critical record is already saved
       }
     }
 
@@ -280,7 +280,7 @@ exports.handlePaypalWebhook = async (req, res, next) => {
     // Verify signature using raw body (Buffer)
     const isValid = await paypal.verifyWebhookSignature({
       headers: req.headers,
-      rawBody: req.body, // raw Buffer — express.raw() is applied to this route
+      rawBody: req.body, // raw Buffer express.raw() is applied to this route
     });
 
     if (!isValid) {
@@ -330,12 +330,12 @@ exports.handlePaypalWebhook = async (req, res, next) => {
     }
 
     if (eventType === 'PAYMENT.CAPTURE.PENDING') {
-      // Payment held by PayPal (e.g. eCheck, review) — keep as pending, log it
+      // Payment held by PayPal (e.g. eCheck, review) keep as pending, log it
       const captureId = resource.id;
-      console.log(`[PayPal Webhook] Capture pending for ${captureId} — awaiting PayPal release`);
+      console.log(`[PayPal Webhook] Capture pending for ${captureId} awaiting PayPal release`);
     }
 
-    // Always return 200 quickly — PayPal retries on any non-2xx
+    // Always return 200 quickly PayPal retries on any non-2xx
     res.sendStatus(200);
   } catch (err) {
     console.error('[PayPal Webhook] Error:', err.message);
@@ -390,7 +390,7 @@ function buildPendingReminderEmail(data, ctx = {}) {
     <div style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%);padding:32px 40px">
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.65);text-transform:uppercase">${editionLabel || siteName}</p>
       <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2">Registration Reminder</h1>
-      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">Your payment is still pending — complete your registration today.</p>
+      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">Your payment is still pending complete your registration today.</p>
     </div>
 
     <div style="padding:28px 40px 0">
@@ -481,13 +481,13 @@ function buildMultipleAttemptsEmail(data, ctx = {}) {
     <div style="background:linear-gradient(135deg,#1e3a5f 0%,#1e40af 100%);padding:32px 40px">
       <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.15em;color:rgba(255,255,255,0.65);text-transform:uppercase">${editionLabel || siteName} · Registration Assistance</p>
       <h1 style="margin:0;font-size:22px;font-weight:700;color:#ffffff;line-height:1.2">We're Here to Help You Register</h1>
-      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">We noticed multiple registration attempts — let us assist you.</p>
+      <p style="margin:8px 0 0;font-size:13px;color:rgba(255,255,255,0.78)">We noticed multiple registration attempts let us assist you.</p>
     </div>
 
     <div style="padding:28px 40px 0">
       <p style="margin:0;font-size:15px;color:#334155">Dear <strong>${fullName}</strong>,</p>
       <p style="margin:12px 0 0;font-size:14px;color:#64748b;line-height:1.6">
-        We noticed that you have tried to register for ${editionLabel || siteName} multiple times. Thank you for your patience —
+        We noticed that you have tried to register for ${editionLabel || siteName} multiple times. Thank you for your patience 
         your registration is not yet complete. We would like to help you finish the process as smoothly as possible.
       </p>
     </div>
@@ -755,7 +755,7 @@ exports.capturePaypalOrder = async (req, res, next) => {
         html: buildConfirmationEmail(registration, captureId, ctx),
       });
     } catch {
-      // Non-critical — don't fail the response if email errors
+      // Non-critical don't fail the response if email errors
     }
 
     res.json({ success: true, data: registration });

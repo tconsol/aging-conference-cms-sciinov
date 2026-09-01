@@ -9,11 +9,10 @@ import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
 import { registrationsAPI } from '../../api/submissions';
 import { pricingAPI } from '../../api/finance';
-import { CATEGORY_LABELS, PAYMENT_METHOD_OPTIONS, getErrorMessage } from '../../utils/helpers';
+import { CATEGORY_LABELS, categoryLabel, PAYMENT_METHOD_OPTIONS, getErrorMessage } from '../../utils/helpers';
 
 const TITLE_OPTIONS = ['Dr.', 'Prof.', 'Mr.', 'Ms.', 'Mrs.'].map((v) => ({ value: v, label: v }));
 
-const CATEGORY_OPTIONS = Object.entries(CATEGORY_LABELS).map(([value, label]) => ({ value, label }));
 
 const ATTENDANCE_OPTIONS = [
   { value: 'in_person', label: 'In-Person' },
@@ -123,8 +122,15 @@ export default function ManualRegistrationModal({ open, onClose, editions = [], 
     label: e.year ? `${e.title} (${e.year})` : e.title,
   }));
 
+  // Defaults plus any custom categories the edition's pricing tiers define
+  const categoryOptions = (() => {
+    const keys = new Set(Object.keys(CATEGORY_LABELS));
+    tiers.forEach((t) => Object.keys(t.prices || {}).forEach((k) => keys.add(k)));
+    return [...keys].map((value) => ({ value, label: categoryLabel(value) }));
+  })();
+
   const tierOptions = [
-    { value: '', label: '— No tier / custom amount —' },
+    { value: '', label: 'No tier / custom amount ' },
     ...tiers.map((t) => ({
       value: t._id,
       label: `${t.label || TIER_NAME_LABELS[t.name] || t.name}${t.isActive ? ' · Active' : ''}`,
@@ -208,7 +214,7 @@ export default function ManualRegistrationModal({ open, onClose, editions = [], 
             register={register}
             required="Category is required"
             error={errors.category?.message}
-            options={CATEGORY_OPTIONS}
+            options={categoryOptions}
             placeholder="Select category…"
             defaultValue=""
           />
@@ -242,7 +248,7 @@ export default function ManualRegistrationModal({ open, onClose, editions = [], 
             type="number"
             step="0.01"
             register={register}
-            hint="Auto-filled from the pricing tier — override if needed"
+            hint="Auto-filled from the pricing tier override if needed"
           />
           <Select
             label="Currency"
@@ -284,7 +290,7 @@ export default function ManualRegistrationModal({ open, onClose, editions = [], 
           name="notes"
           register={register}
           rows={2}
-          placeholder="Optional — visible to admins only"
+          placeholder="Optional visible to admins only"
         />
 
         {/* Send email toggle */}

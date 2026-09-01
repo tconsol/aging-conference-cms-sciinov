@@ -88,3 +88,15 @@ export const NAV_SEARCH_INDEX = navGroups.flatMap((group) =>
     ? [{ label: group.label, href: group.href, icon: group.icon, group: group.label }]
     : group.items.map((item) => ({ ...item, group: group.label }))
 );
+
+const ALL_HREFS = NAV_SEARCH_INDEX.map((i) => i.href);
+
+// NavLink marks ancestors active by default, so "/help" would light up on
+// "/help/tickets". Links that are a parent of another nav link need `end` so they
+// only match exactly. Links with no nav children keep prefix matching, which is
+// what keeps "/registrations" active on "/registrations/:id".
+export const NAV_EXACT_HREFS = new Set(
+  ALL_HREFS.filter((href) => ALL_HREFS.some((other) => other !== href && other.startsWith(`${href}/`)))
+);
+
+export const isExactNavHref = (href) => NAV_EXACT_HREFS.has(href);

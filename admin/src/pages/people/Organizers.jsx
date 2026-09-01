@@ -225,8 +225,8 @@ export default function Organizers() {
                       )}
                     </td>
                     <td className="px-6 py-3 font-medium text-slate-800">{item.name}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.designation || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.designation || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-3">
                       <StatusToggle
                         isActive={item.isActive}
@@ -341,7 +341,7 @@ export default function Organizers() {
         <RichTextEditor
           value={orgContent}
           onChange={setOrgContent}
-          placeholder="Add information about your organization — mission, history, global presence, etc."
+          placeholder="Add information about your organization mission, history, global presence, etc."
         />
       </div>
 

@@ -1,4 +1,5 @@
 const { Storage } = require('@google-cloud/storage');
+const sharp = require('sharp');
 
 const storage = new Storage({
   projectId: process.env.GCS_PROJECT_ID,
@@ -14,22 +15,57 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GCS_BUCKET_NAME);
 
-const uploadToGCS = (buffer, { destination, contentType = 'application/octet-stream' }) =>
-  new Promise((resolve, reject) => {
-    const file = bucket.file(destination);
+// Raster images we re-encode to WebP. SVG is left alone (it's already vector/text).
+const CONVERTIBLE_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+const WEBP_MAX_WIDTH = 1920; // plenty for full-bleed banners; never upscales
+const WEBP_QUALITY = 80;
+
+// Re-encodes a raster image to WebP and caps its dimensions. Returns the original
+// buffer untouched if it isn't a convertible image or if encoding fails, so a bad
+// upload degrades to "stored as-is" rather than failing the request.
+const toWebp = async (buffer, contentType) => {
+  if (!CONVERTIBLE_IMAGE_TYPES.includes(contentType)) return null;
+  try {
+    const output = await sharp(buffer)
+      .rotate() // honour EXIF orientation before we strip metadata
+      .resize({ width: WEBP_MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
+    return output;
+  } catch {
+    return null;
+  }
+};
+
+const uploadToGCS = async (buffer, { destination, contentType = 'application/octet-stream' }) => {
+  let finalBuffer = buffer;
+  let finalType = contentType;
+  let finalDest = destination;
+
+  const converted = await toWebp(buffer, contentType);
+  if (converted) {
+    finalBuffer = converted;
+    finalType = 'image/webp';
+    finalDest = destination.replace(/\.[^./]+$/, '') + '.webp';
+  }
+
+  return new Promise((resolve, reject) => {
+    const file = bucket.file(finalDest);
     const stream = file.createWriteStream({
-      metadata: { contentType },
+      metadata: { contentType: finalType, cacheControl: 'public, max-age=31536000' },
       resumable: false,
     });
     stream.on('error', reject);
     stream.on('finish', () => {
       resolve({
-        url: `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/${destination}`,
-        filename: destination,
+        url: `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/${finalDest}`,
+        filename: finalDest,
       });
     });
-    stream.end(buffer);
+    stream.end(finalBuffer);
   });
+};
 
 const deleteFromGCS = async (filename) => {
   if (!filename) return;

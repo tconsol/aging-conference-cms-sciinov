@@ -221,7 +221,7 @@ export default function Downloads() {
                         <Badge variant={typeVariantMap[item.type] || 'default'} className="capitalize">
                           {item.type}
                         </Badge>
-                      ) : '—'}
+                      ) : ''}
                     </td>
                     <td className="px-4 py-3 text-slate-600">{item.displayOrder}</td>
                     <td className="px-4 py-3">

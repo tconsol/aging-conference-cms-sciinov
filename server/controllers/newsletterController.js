@@ -1,4 +1,5 @@
 const NewsletterSubscriber = require('../models/NewsletterSubscriber');
+const { broadcast } = require('../utils/sseClients');
 
 exports.subscribe = async (req, res, next) => {
   try {
@@ -6,7 +7,10 @@ exports.subscribe = async (req, res, next) => {
     if (!email) return res.status(400).json({ success: false, message: 'Email required.' });
     const existing = await NewsletterSubscriber.findOne({ email });
     if (existing) return res.json({ success: true, message: 'Already subscribed.' });
-    await NewsletterSubscriber.create({ email });
+    const subscriber = await NewsletterSubscriber.create({ email });
+
+    broadcast('new_subscriber', { id: subscriber._id, email: subscriber.email, createdAt: subscriber.createdAt });
+
     res.status(201).json({ success: true, message: 'Subscribed successfully.' });
   } catch (err) { next(err); }
 };

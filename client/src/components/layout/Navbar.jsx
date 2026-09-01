@@ -517,7 +517,7 @@ export default function Navbar() {
               {/* Divider */}
               <div className="hidden lg:block" style={{ width: 1, height: 24, background: '#e2e8f0', margin: '0 4px' }} />
 
-              {/* Track — icon+label on xl, icon-only on lg */}
+              {/* Track icon+label on xl, icon-only on lg */}
               <Link
                 to="/portal/login"
                 title="Track My Abstract Submission"

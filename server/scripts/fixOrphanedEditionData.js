@@ -3,8 +3,8 @@
 // congress", 2025) was deleted from the admin panel without cascading the
 // deletion to its child records (ScientificSession, PricingTier,
 // ImportantDate, Brochure). Those records were left pointing at an Edition
-// id that no longer exists, so the client — which always filters by the
-// current active edition — was rendering them as empty/"Coming Soon".
+// id that no longer exists, so the client which always filters by the
+// current active edition was rendering them as empty/"Coming Soon".
 //
 // This script re-attaches the still-relevant orphaned records to the
 // current active edition, shifting their 2025 dates to sensible 2026
@@ -85,7 +85,7 @@ async function main() {
 
   console.log('\n══════════════════════════════════════════');
   console.log('  Done. Brochure and 2 "test" ImportantDate rows left untouched');
-  console.log('  (brochure file URL is fake placeholder data — needs a real upload via admin).');
+  console.log('  (brochure file URL is fake placeholder data needs a real upload via admin).');
   console.log('══════════════════════════════════════════\n');
 
   await mongoose.disconnect();

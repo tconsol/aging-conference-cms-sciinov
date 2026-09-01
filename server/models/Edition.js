@@ -26,6 +26,23 @@ const editionSchema = new mongoose.Schema(
         value: String,
       },
     ],
+    // Downloadable materials shown on the public "Past Events" card
+    conferenceBook: {
+      title: { type: String, trim: true, default: 'Conference Book' },
+      coverImage: String,
+      coverImagePublicId: String,
+      fileUrl: String,
+      filePublicId: String,
+      fileName: String,
+    },
+    conferenceProgram: {
+      title: { type: String, trim: true, default: 'Conference Program' },
+      coverImage: String,
+      coverImagePublicId: String,
+      fileUrl: String,
+      filePublicId: String,
+      fileName: String,
+    },
   },
   { timestamps: true }
 );

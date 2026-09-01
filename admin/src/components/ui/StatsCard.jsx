@@ -15,7 +15,7 @@ export default function StatsCard({ label, value, icon: Icon, color = 'blue', tr
         <Icon size={22} />
       </div>
       <div className="min-w-0">
-        <p className="text-2xl font-bold text-slate-800">{value ?? '—'}</p>
+        <p className="text-2xl font-bold text-slate-800">{value ?? ''}</p>
         <p className="text-sm text-slate-500 mt-0.5 truncate">{label}</p>
         {trend && <p className="text-xs text-green-600 mt-0.5">{trend}</p>}
       </div>

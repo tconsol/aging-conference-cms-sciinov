@@ -208,10 +208,10 @@ export default function Committee() {
                       )}
                     </td>
                     <td className="px-6 py-3 font-medium text-slate-800">{item.fullName}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.designation || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.organization || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.country || '—'}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.designation || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.organization || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.country || ''}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-3">
                       <StatusToggle
                         isActive={item.isActive}

@@ -185,7 +185,7 @@ export default function ReportDetail() {
                   {report.edition && typeof report.edition === 'object' && report.edition.year && (
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Edition</p>
-                      <p className="text-sm font-semibold text-slate-700">{report.edition.year} — {report.edition.city ?? ''}</p>
+                      <p className="text-sm font-semibold text-slate-700">{report.edition.year} {report.edition.city ?? ''}</p>
                     </div>
                   )}
                 </div>

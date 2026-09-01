@@ -187,9 +187,9 @@ export default function Sessions() {
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-slate-800">{item.title}</td>
                     <td className="px-6 py-3 text-slate-600">
-                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : '—'}
+                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : ''}
                     </td>
-                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-3">
                       <StatusToggle
                         isActive={item.isActive}

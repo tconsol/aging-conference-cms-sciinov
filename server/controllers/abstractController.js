@@ -16,7 +16,7 @@ const STATUS_INFO = {
     message: 'Your abstract is currently under peer review process by our scientific committee.',
   },
   decision_pending: {
-    label: 'Reviewed — Decision Pending',
+    label: 'Reviewed Decision Pending',
     color: '#d97706',
     message: 'Your abstract has been reviewed and the final decision is pending.',
   },
@@ -141,7 +141,7 @@ exports.submit = async (req, res, next) => {
     try {
       await sendEmail({
         to: abstract.email,
-        subject: `Abstract Submission Confirmed — ${abstract.loginId}`,
+        subject: `Abstract Submission Confirmed ${abstract.loginId}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
             <div style="background:#1e40af;padding:28px 24px;text-align:center;">
@@ -174,7 +174,7 @@ exports.submit = async (req, res, next) => {
         `,
       });
     } catch {
-      // Non-critical — don't fail the request
+      // Non-critical don't fail the request
     }
 
     res.status(201).json({ success: true, data: abstract, message: 'Abstract submitted successfully.' });
@@ -196,7 +196,7 @@ exports.updateStatus = async (req, res, next) => {
       try {
         await sendEmail({
           to: abstract.email,
-          subject: `Abstract Status Update — ${info.label}`,
+          subject: `Abstract Status Update ${info.label}`,
           html: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
               <div style="background:#1e40af;padding:28px 24px;text-align:center;">

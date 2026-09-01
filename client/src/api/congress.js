@@ -10,4 +10,6 @@ export const congressAPI = {
   getImportantDates: (params) => api.get('/important-dates', { params }),
   getVenues: (params) => api.get('/venues', { params }),
   getVenueByEdition: (editionId) => api.get(`/venues/by-edition/${editionId}`),
+  getGallery: (editionId) => api.get('/gallery', { params: { edition: editionId } }),
+  downloadMaterial: (editionId, type) => api.get(`/editions/${editionId}/materials/${type}/download`, { responseType: 'blob' }),
 };

@@ -44,7 +44,7 @@ export default function Reports() {
                   key={report._id}
                   className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  {/* Cover image — fixed height so all cards align */}
+                  {/* Cover image fixed height so all cards align */}
                   <div className="relative w-full aspect-[16/9] overflow-hidden shrink-0" style={{ background: 'var(--brand-light)' }}>
                     {report.coverImage ? (
                       <img
@@ -59,7 +59,7 @@ export default function Reports() {
                     )}
                   </div>
 
-                  {/* Body — flex-1 keeps footer pinned to bottom */}
+                  {/* Body flex-1 keeps footer pinned to bottom */}
                   <div className="p-6 flex flex-col flex-1">
                     {report.createdAt && (
                       <p className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: 'var(--brand)' }}>

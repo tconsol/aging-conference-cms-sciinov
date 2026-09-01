@@ -21,7 +21,7 @@ function DetailRow({ label, value }) {
   return (
     <div className="grid grid-cols-3 gap-4 py-3 border-b border-slate-50 last:border-0">
       <dt className="text-sm font-medium text-slate-500">{label}</dt>
-      <dd className="col-span-2 text-sm text-slate-800 break-words whitespace-pre-wrap">{value || '—'}</dd>
+      <dd className="col-span-2 text-sm text-slate-800 break-words whitespace-pre-wrap">{value || ''}</dd>
     </div>
   );
 }
@@ -122,7 +122,7 @@ export default function SpeakerApplicationDetail() {
             <dl>
               <DetailRow
                 label="Congress Edition"
-                value={application.edition?.title ? `${application.edition.title} (${application.edition.year})` : '—'}
+                value={application.edition?.title ? `${application.edition.title} (${application.edition.year})` : ''}
               />
               <DetailRow label="Area of Expertise" value={application.expertise} />
               <DetailRow label="Submitted At" value={formatDateTime(application.createdAt)} />

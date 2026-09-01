@@ -138,10 +138,10 @@ export default function Theme() {
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-3">
             <h2 className="text-sm font-bold text-slate-700 mb-4">Fine-tune Colors</h2>
-            <ColorField label="Primary Color" name="primaryColor" description="Main brand color — buttons, links, accents" register={register} watch={watch} />
+            <ColorField label="Primary Color" name="primaryColor" description="Main brand color buttons, links, accents" register={register} watch={watch} />
             <ColorField label="Primary Dark"  name="primaryDark"  description="Hover state for buttons and active elements" register={register} watch={watch} />
             <ColorField label="Primary Light" name="primaryLight" description="Subtle backgrounds, ghost button hover" register={register} watch={watch} />
-            <ColorField label="Accent Color"  name="accentColor"  description="Highlights — badges, featured tags, stars" register={register} watch={watch} />
+            <ColorField label="Accent Color"  name="accentColor"  description="Highlights badges, featured tags, stars" register={register} watch={watch} />
           </div>
 
           {/* Admin panel theme toggle */}

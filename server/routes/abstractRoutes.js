@@ -18,7 +18,7 @@ router.get('/portal/me', submitterAuth, portalCtrl.getMySubmission);
 router.patch('/portal/change-password', submitterAuth, portalCtrl.changePassword);
 router.get('/portal/file', submitterAuth, portalCtrl.downloadMyFile);
 
-// SSE — real-time status updates for submitter portal
+// SSE real-time status updates for submitter portal
 router.get('/portal/events', async (req, res) => {
   try {
     const decoded = jwt.verify(req.query.token, process.env.JWT_SECRET);

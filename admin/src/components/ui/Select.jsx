@@ -1,8 +1,13 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Check } from 'lucide-react';
 
 const FLIP_MS = 140;
+
+// Dropdown placement constants
+const GAP = 4;        // space between trigger and list
+const EDGE = 8;       // min breathing room against the viewport edge
+const MAX_LIST_H = 280;
 
 export default function Select({
   label,
@@ -12,6 +17,7 @@ export default function Select({
   options = [],
   placeholder = 'Select...',
   required,
+  hint,
   className = '',
   // controlled mode (no register)
   value: controlledValue,
@@ -25,7 +31,7 @@ export default function Select({
   const listRef    = useRef(null);
 
   const [open, setOpen] = useState(false);
-  const [pos, setPos]   = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos]   = useState({ top: 0, left: 0, width: 0, maxHeight: MAX_LIST_H, up: false });
   const [val, setVal]   = useState(controlledValue ?? defaultValue ?? '');
 
   const isControlled = controlledValue !== undefined;
@@ -33,20 +39,45 @@ export default function Select({
   const selected     = options.find((o) => String(o.value) === String(displayVal));
 
   // React state is source of truth. When parent changes defaultValue (e.g. after
-  // reset() + setState), sync val. Never read from DOM — that caused the stale-display bug.
+  // reset() + setState), sync val. Never read from DOM that caused the stale-display bug.
   useEffect(() => {
     if (isControlled) return;
     setVal(defaultValue ?? '');
   }, [defaultValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Position portal ────────────────────────────────────────────────────
+  // Opens downward by default, but flips above the trigger when there isn't
+  // room below and there is more room above. Height is capped to whichever
+  // side it lands on so the list never runs off-screen.
   const calcPos = useCallback(() => {
     if (!triggerRef.current) return;
     const r = triggerRef.current.getBoundingClientRect();
-    setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+
+    const contentH   = listRef.current?.scrollHeight ?? MAX_LIST_H;
+    const spaceBelow = window.innerHeight - r.bottom - GAP - EDGE;
+    const spaceAbove = r.top - GAP - EDGE;
+    const desired    = Math.min(contentH, MAX_LIST_H);
+
+    const up = desired > spaceBelow && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(120, Math.min(desired, up ? spaceAbove : spaceBelow));
+
+    setPos((prev) => {
+      const next = {
+        top: up ? Math.max(EDGE, r.top - GAP - maxHeight) : r.bottom + GAP,
+        left: r.left,
+        width: r.width,
+        maxHeight,
+        up,
+      };
+      const same =
+        prev.top === next.top && prev.left === next.left && prev.width === next.width &&
+        prev.maxHeight === next.maxHeight && prev.up === next.up;
+      return same ? prev : next; // guard against a re-render loop
+    });
   }, []);
 
-  useEffect(() => { if (open) calcPos(); }, [open, calcPos]);
+  // Layout effect so the measured flip is applied before paint (no visible jump)
+  useLayoutEffect(() => { if (open) calcPos(); }, [open, calcPos]);
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +116,7 @@ export default function Select({
     setOpen(false);
   };
 
-  // Stable ref merger — empty deps [] keeps same function identity every render,
+  // Stable ref merger empty deps [] keeps same function identity every render,
   // preventing React from calling old ref(null) + new ref(node) which causes RHF
   // to re-register and reset the input value, fighting our React state.
   const rhfRefHolder = useRef(null);
@@ -106,7 +137,7 @@ export default function Select({
         </label>
       )}
 
-      {/* Controlled hidden input — value always mirrors React state, never DOM */}
+      {/* Controlled hidden input value always mirrors React state, never DOM */}
       {regProps && (
         <input
           type="hidden"
@@ -123,7 +154,8 @@ export default function Select({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className="w-full h-9 px-3 text-sm text-left flex items-center justify-between transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+        title={selected ? selected.label : undefined}
+        className="w-full h-9 px-3 gap-2 text-sm text-left flex items-center justify-between transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
         style={{
           border: error
             ? '1px solid #f87171'
@@ -134,7 +166,12 @@ export default function Select({
           clipPath: 'polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%)',
         }}
       >
-        <span style={{ color: selected ? '#0f172a' : '#94a3b8' }}>
+        {/* min-w-0 lets the label shrink so a long option ellipsises instead of
+            overflowing the fixed-height trigger */}
+        <span
+          className="truncate min-w-0 flex-1"
+          style={{ color: selected ? '#0f172a' : '#94a3b8' }}
+        >
           {selected ? selected.label : placeholder}
         </span>
         <ChevronDown
@@ -161,9 +198,13 @@ export default function Select({
             zIndex: 9999,
             background: '#fff',
             border: '1px solid #e2e8f0',
-            borderTop: '2px solid var(--brand-dark)',
-            boxShadow: '0 8px 24px color-mix(in srgb, var(--brand-dark) 18%, transparent), 0 2px 8px rgba(0,0,0,0.06)',
-            overflow: 'hidden',
+            // accent edge sits on whichever side faces the trigger
+            [pos.up ? 'borderBottom' : 'borderTop']: '2px solid var(--brand-dark)',
+            boxShadow: pos.up
+              ? '0 -8px 24px color-mix(in srgb, var(--brand-dark) 18%, transparent), 0 -2px 8px rgba(0,0,0,0.06)'
+              : '0 8px 24px color-mix(in srgb, var(--brand-dark) 18%, transparent), 0 2px 8px rgba(0,0,0,0.06)',
+            overflowY: 'auto',
+            maxHeight: pos.maxHeight,
           }}
         >
           {options.length === 0 ? (
@@ -176,7 +217,7 @@ export default function Select({
                   key={opt.value}
                   type="button"
                   onClick={() => pick(opt.value)}
-                  className="w-full px-3 py-2.5 text-sm text-left flex items-center justify-between transition-colors duration-100"
+                  className="w-full px-3 py-2.5 gap-2 text-sm text-left flex items-start justify-between transition-colors duration-100"
                   style={{
                     background: isSel ? 'var(--brand-light)' : 'transparent',
                     color: isSel ? 'var(--brand-dark)' : '#334155',
@@ -186,8 +227,8 @@ export default function Select({
                   onMouseEnter={(e) => { if (!isSel) e.currentTarget.style.background = '#f8fafc'; }}
                   onMouseLeave={(e) => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
                 >
-                  <span>{opt.label}</span>
-                  {isSel && <Check size={13} strokeWidth={2.5} style={{ color: 'var(--brand-dark)', flexShrink: 0 }} />}
+                  <span className="min-w-0 flex-1 leading-snug">{opt.label}</span>
+                  {isSel && <Check size={13} strokeWidth={2.5} style={{ color: 'var(--brand-dark)', flexShrink: 0, marginTop: 2 }} />}
                 </button>
               );
             })
@@ -196,6 +237,7 @@ export default function Select({
         document.body
       )}
 
+      {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
       {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );

@@ -44,7 +44,7 @@ app.use(cors({
 }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// PayPal webhook needs raw body for signature verification — must come before express.json()
+// PayPal webhook needs raw body for signature verification must come before express.json()
 app.post(
   '/api/registrations/paypal/webhook',
   express.raw({ type: 'application/json' }),
@@ -120,6 +120,7 @@ app.get('/api/dashboard', protect, async (req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/editions', require('./routes/editionRoutes'));
+app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
 app.use('/api/program', require('./routes/programRoutes'));
 app.use('/api/speakers', require('./routes/speakerRoutes'));

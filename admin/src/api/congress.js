@@ -8,6 +8,15 @@ export const editionsAPI = {
   update: (id, data) => api.put(`/editions/${id}`, data),
   delete: (id) => api.delete(`/editions/${id}`),
   setActive: (id) => api.patch(`/editions/${id}/set-active`),
+  updateMaterials: (id, data) => api.patch(`/editions/${id}/materials`, data),
+};
+
+// Gallery
+export const galleryAPI = {
+  getAll: (params) => api.get('/gallery', { params }),
+  create: (data) => api.post('/gallery', data),
+  update: (id, data) => api.patch(`/gallery/${id}`, data),
+  delete: (id) => api.delete(`/gallery/${id}`),
 };
 
 // Scientific Sessions

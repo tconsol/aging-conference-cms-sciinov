@@ -10,14 +10,14 @@ const router = express.Router();
 // Public submission
 router.post('/submit', ctrl.submit);
 
-// Intent tracking — called when user enters payment step
+// Intent tracking called when user enters payment step
 router.post('/intent', ctrl.trackIntent);
 
-// PayPal payment (public — user initiates)
+// PayPal payment (public user initiates)
 router.post('/paypal/create-order', ctrl.createPaypalOrder);
 router.post('/paypal/capture-order', ctrl.capturePaypalOrder);
 
-// SSE live-events — token via query param (EventSource can't send headers)
+// SSE live-events token via query param (EventSource can't send headers)
 router.get('/events', async (req, res) => {
   try {
     const token = req.query.token;

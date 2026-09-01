@@ -37,7 +37,7 @@ export default function Silk({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Render at 1/4 resolution, stretch via CSS — looks identical with bilinear filter
+    // Render at 1/4 resolution, stretch via CSS looks identical with bilinear filter
     const W = 320;
     const H = 180;
     canvas.width  = W;

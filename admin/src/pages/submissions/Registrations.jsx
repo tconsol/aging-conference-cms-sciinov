@@ -180,7 +180,7 @@ export default function Registrations() {
     return counts[key] ?? 0;
   };
 
-  // ── Intent row — shared between All tab and Tried tab ─────────────────────
+  // ── Intent row shared between All tab and Tried tab ─────────────────────
   const IntentRow = ({ intent }) => (
     <tr
       key={intent._id}
@@ -198,12 +198,12 @@ export default function Registrations() {
       <td className="px-3 py-2.5 text-slate-600 max-w-[160px]">
         <span className="block truncate" title={intent.email}>{intent.email}</span>
       </td>
-      <td className="px-3 py-2.5 text-slate-600">{intent.country || '—'}</td>
+      <td className="px-3 py-2.5 text-slate-600">{intent.country || ''}</td>
       <td className="px-3 py-2.5 text-slate-600">
-        {CATEGORY_LABELS[intent.category] || intent.category || '—'}
+        {categoryLabel(intent.category)}
       </td>
       <td className="px-3 py-2.5 text-slate-700 font-medium whitespace-nowrap">
-        {intent.amount > 0 ? `USD ${Number(intent.amount).toFixed(2)}` : '—'}
+        {intent.amount > 0 ? `USD ${Number(intent.amount).toFixed(2)}` : ''}
       </td>
       <td className="px-3 py-2.5">
         <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 9px', borderRadius:100, background:'#fffbeb', fontSize:11, fontWeight:600, color:'#92400e' }}>
@@ -382,7 +382,7 @@ export default function Registrations() {
                       </td>
                       <td className="px-3 py-2.5 text-slate-600">{item.country}</td>
                       <td className="px-3 py-2.5 text-slate-600">
-                        {CATEGORY_LABELS[item.category] || item.category}
+                        {categoryLabel(item.category)}
                       </td>
                       <td className="px-3 py-2.5 text-slate-700 font-medium whitespace-nowrap">
                         {formatCurrency(item.amount)}

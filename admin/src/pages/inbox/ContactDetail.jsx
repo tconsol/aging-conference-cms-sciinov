@@ -129,7 +129,7 @@ export default function ContactDetail() {
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Phone</p>
-            <p className="text-sm text-slate-700">{message.phone || '—'}</p>
+            <p className="text-sm text-slate-700">{message.phone || ''}</p>
           </div>
         </div>
 

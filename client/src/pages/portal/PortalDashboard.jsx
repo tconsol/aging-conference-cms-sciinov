@@ -248,7 +248,7 @@ export default function PortalDashboard() {
   const [downloading, setDownloading] = useState(false);
 
   // Proxied through the API so the browser saves the file rather than
-  // navigating to it — <a download> is ignored cross-origin.
+  // navigating to it <a download> is ignored cross-origin.
   const handleDownload = async () => {
     setDownloading(true);
     try {

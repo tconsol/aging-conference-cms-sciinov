@@ -11,7 +11,7 @@ function DetailRow({ label, value }) {
   return (
     <div className="grid grid-cols-3 gap-4 py-3 border-b border-slate-50 last:border-0">
       <dt className="text-sm font-medium text-slate-500">{label}</dt>
-      <dd className="col-span-2 text-sm text-slate-800 break-words">{value || '—'}</dd>
+      <dd className="col-span-2 text-sm text-slate-800 break-words">{value || ''}</dd>
     </div>
   );
 }
@@ -92,7 +92,7 @@ export default function IntentDetail() {
               border: '1px solid #fcd34d',
             }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
-              Tried — Incomplete Registration
+              Tried Incomplete Registration
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-800">{fullName || intent.email}</h1>
@@ -129,7 +129,7 @@ export default function IntentDetail() {
                 label="Edition"
                 value={intent.edition ? `${intent.edition.title}${intent.edition.year ? ' (' + intent.edition.year + ')' : ''}` : null}
               />
-              <DetailRow label="Category" value={CATEGORY_LABELS[intent.category] || intent.category} />
+              <DetailRow label="Category" value={categoryLabel(intent.category)} />
               <DetailRow label="Pricing Tier" value={intent.pricingTierLabel} />
               <DetailRow label="Participants" value={intent.participants} />
               <DetailRow label="Accompanying Persons" value={intent.accompanying} />

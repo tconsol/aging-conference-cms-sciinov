@@ -404,7 +404,7 @@ export default function JourneySection() {
             </p>
           </div>
 
-          {/* Track 1 — Speakers */}
+          {/* Track 1 Speakers */}
           <TrackSection
             icon={Mic}
             label="For Speakers / Researchers"
@@ -412,7 +412,7 @@ export default function JourneySection() {
             steps={SPEAKER_STEPS}
           />
 
-          {/* Track 2 — Attendees */}
+          {/* Track 2 Attendees */}
           <TrackSection
             icon={Users}
             label="For Attendees / Delegates"

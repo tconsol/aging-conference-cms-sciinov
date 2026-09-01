@@ -7,15 +7,15 @@ const programSlotSchema = new mongoose.Schema(
       ref: 'Edition',
       required: [true, 'Edition is required'],
     },
-    day: { type: Number, enum: [1, 2], required: [true, 'Day is required'] },
+    // Not capped to a fixed list an edition can run any number of days
+    day: { type: Number, required: [true, 'Day is required'], min: [1, 'Day must be 1 or greater'] },
     startTime: { type: String, required: [true, 'Start time is required'] },
     endTime: { type: String, required: [true, 'End time is required'] },
     title: { type: String, required: [true, 'Title is required'], trim: true },
-    type: {
-      type: String,
-      enum: ['keynote', 'plenary', 'scientific', 'coffee_break', 'lunch', 'workshop', 'opening', 'closing', 'other'],
-      default: 'scientific',
-    },
+    // Free-form so admins can introduce their own slot types (e.g. "panel",
+    // "poster_session"). The UI ships a set of defaults and remembers any custom
+    // values already in use.
+    type: { type: String, default: 'scientific', trim: true },
     speaker: { type: mongoose.Schema.Types.ObjectId, ref: 'Speaker' },
     description: String,
     room: String,

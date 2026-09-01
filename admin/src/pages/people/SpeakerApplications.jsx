@@ -127,7 +127,7 @@ export default function SpeakerApplications() {
                     <td className="px-4 py-3 font-medium text-slate-800 whitespace-nowrap">{item.name}</td>
                     <td className="px-4 py-3 text-slate-600">{item.email}</td>
                     <td className="px-4 py-3 text-slate-600">
-                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : '—'}
+                      {item.edition?.title ? `${item.edition.title} (${item.edition.year})` : ''}
                     </td>
                     <td className="px-4 py-3 text-slate-600 max-w-[180px] truncate">{item.expertise}</td>
                     <td className="px-4 py-3">{statusBadge(item.status)}</td>

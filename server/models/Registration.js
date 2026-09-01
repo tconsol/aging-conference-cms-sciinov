@@ -21,10 +21,12 @@ const registrationSchema = new mongoose.Schema(
     whatsapp: { type: String, trim: true },
     country: { type: String, required: [true, 'Country is required'], trim: true },
     organization: { type: String, trim: true },
+    // Not enum-capped: pricing tiers may define custom categories, and a
+    // registration has to be able to reference whichever one was chosen.
     category: {
       type: String,
-      enum: ['oral_inperson', 'oral_virtual', 'poster_inperson', 'poster_virtual', 'listener_inperson', 'listener_virtual', 'student'],
       required: [true, 'Category is required'],
+      trim: true,
     },
     attendanceMode: {
       type: String,

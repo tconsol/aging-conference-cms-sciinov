@@ -13,17 +13,17 @@
 /* ── Admin-themed overrides (flat selectors for max browser compat) ── */
 /* Active only when admin enables "Apply theme to admin panel"          */
 
-/* Backgrounds — solid */
+/* Backgrounds solid */
 body.admin-themed .bg-teal-600       { background-color: var(--brand)      !important; }
 body.admin-themed .bg-teal-700       { background-color: var(--brand-dark)  !important; }
 body.admin-themed .bg-teal-800       { background-color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
 
-/* Backgrounds — hover */
+/* Backgrounds hover */
 body.admin-themed .hover\:bg-teal-600:hover { background-color: var(--brand)      !important; }
 body.admin-themed .hover\:bg-teal-700:hover { background-color: var(--brand-dark)  !important; }
 body.admin-themed .hover\:bg-teal-800:hover { background-color: color-mix(in srgb, var(--brand-dark) 85%, black) !important; }
 
-/* Backgrounds — light */
+/* Backgrounds light */
 body.admin-themed .bg-teal-50        { background-color: var(--brand-light) !important; }
 body.admin-themed .bg-teal-100       { background-color: color-mix(in srgb, var(--brand) 12%, white) !important; }
 body.admin-themed .hover\:bg-teal-50:hover { background-color: var(--brand-light) !important; }

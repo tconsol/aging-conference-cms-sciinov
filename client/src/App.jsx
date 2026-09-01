@@ -7,6 +7,7 @@ import { SubmitterAuthProvider } from './context/submitterAuthContext';
 import Home from './pages/Home';
 import About from './pages/About';
 import Editions from './pages/Editions';
+import EditionDetail from './pages/EditionDetail';
 import Sessions from './pages/Sessions';
 import SessionDetail from './pages/SessionDetail';
 import Program from './pages/Program';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/editions" element={<Editions />} />
+          <Route path="/editions/:id" element={<EditionDetail />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/sessions/:id" element={<SessionDetail />} />
           <Route path="/program" element={<Program />} />
@@ -91,7 +93,7 @@ export default function App() {
           <Route path="/newsletter" element={<Newsletter />} />
         </Route>
 
-        {/* Submitter portal — own layout, own auth context */}
+        {/* Submitter portal own layout, own auth context */}
         <Route element={<PortalRoot />}>
           <Route path="/portal/login" element={<PortalLogin />} />
           <Route path="/portal/dashboard" element={<PortalDashboard />} />

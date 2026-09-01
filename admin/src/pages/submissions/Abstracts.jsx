@@ -29,7 +29,7 @@ const STATUS_OPTIONS = [
   { value: 'pending',           label: 'Pending' },
   { value: 'received_accepted', label: 'Received & Accepted for Review' },
   { value: 'under_review',      label: 'Under Peer Review Process' },
-  { value: 'decision_pending',  label: 'Reviewed — Decision Pending' },
+  { value: 'decision_pending',  label: 'Reviewed Decision Pending' },
   { value: 'accepted',          label: 'Accepted' },
   { value: 'rejected',          label: 'Rejected' },
 ];
@@ -132,7 +132,7 @@ function InlineStatusDropdown({ item, onUpdate, updating }) {
         )}
       </button>
 
-      {/* Portal dropdown — escapes overflow:hidden and overflow-x:auto containers */}
+      {/* Portal dropdown escapes overflow:hidden and overflow-x:auto containers */}
       {open && createPortal(
         <div
           ref={listRef}
@@ -253,7 +253,7 @@ export default function Abstracts() {
   // Clear the sidebar badge as soon as this page is opened
   useEffect(() => { resetAbstractCount(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Live push: a new abstract arrived while this page is open — refresh the table
+  // Live push: a new abstract arrived while this page is open refresh the table
   useEffect(() => {
     if (!lastAbstractEventTime) return;
     fetchItems();
@@ -389,7 +389,7 @@ export default function Abstracts() {
 
                     {/* Country */}
                     <td style={{ ...tdStyle, whiteSpace: 'nowrap', color: '#475569' }}>
-                      {item.country || '—'}
+                      {item.country || ''}
                     </td>
 
                     {/* Type */}
@@ -410,7 +410,7 @@ export default function Abstracts() {
                       </span>
                     </td>
 
-                    {/* Status — inline dropdown */}
+                    {/* Status inline dropdown */}
                     <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
                       <InlineStatusDropdown
                         item={item}

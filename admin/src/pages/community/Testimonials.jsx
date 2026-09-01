@@ -243,8 +243,8 @@ export default function Testimonials() {
                 {testimonials.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-2 font-medium text-slate-800 whitespace-nowrap">{item.name}</td>
-                    <td className="px-6 py-2 text-slate-600">{item.country || '—'}</td>
-                    <td className="px-6 py-2 text-slate-600">{item.designation || '—'}</td>
+                    <td className="px-6 py-2 text-slate-600">{item.country || ''}</td>
+                    <td className="px-6 py-2 text-slate-600">{item.designation || ''}</td>
                     <td className="px-6 py-2 text-slate-500 max-w-[200px]">
                       {truncate(item.message, 60)}
                     </td>
@@ -258,7 +258,7 @@ export default function Testimonials() {
                         onToggle={() => toggleStatus(item)}
                       />
                     </td>
-                    <td className="px-6 py-2 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-2 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-2 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button

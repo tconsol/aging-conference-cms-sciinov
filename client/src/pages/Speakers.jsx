@@ -127,7 +127,7 @@ export default function Speakers() {
   return (
     <div>
       <PageHero
-        title={editionLabel ? `Speakers — ${editionLabel}` : 'Speakers'}
+        title={editionLabel ? `Speakers ${editionLabel}` : 'Speakers'}
         subtitle="Meet the world-leading experts presenting at the Aging Congress."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Speakers' }]}
       />

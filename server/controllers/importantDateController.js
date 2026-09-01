@@ -1,8 +1,13 @@
 const ImportantDate = require('../models/ImportantDate');
-const nextDisplayOrder = require('../utils/autoOrder');
+const {
+  orderForCreate, settleOrder, closeOrderGap,
+  healOrders,
+} = require('../utils/displayOrder');
+const ORDER_SCOPE = ["edition"];
 
 exports.getAll = async (req, res, next) => {
   try {
+    await healOrders(ImportantDate, ORDER_SCOPE);
     const filter = {};
     if (req.query.edition) filter.edition = req.query.edition;
     if (req.query.category) filter.category = req.query.category;
@@ -22,8 +27,9 @@ exports.getOne = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const data = { ...req.body };
-    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(ImportantDate);
+    data.displayOrder = await orderForCreate(ImportantDate, data, ORDER_SCOPE);
     const date = await ImportantDate.create(data);
+    await settleOrder(ImportantDate, date, ORDER_SCOPE);
     res.status(201).json({ success: true, data: date });
   } catch (err) { next(err); }
 };
@@ -32,6 +38,7 @@ exports.update = async (req, res, next) => {
   try {
     const date = await ImportantDate.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!date) return res.status(404).json({ success: false, message: 'Date not found.' });
+    await settleOrder(ImportantDate, date, ORDER_SCOPE);
     res.json({ success: true, data: date });
   } catch (err) { next(err); }
 };
@@ -40,6 +47,7 @@ exports.remove = async (req, res, next) => {
   try {
     const date = await ImportantDate.findByIdAndDelete(req.params.id);
     if (!date) return res.status(404).json({ success: false, message: 'Date not found.' });
+    await closeOrderGap(ImportantDate, date, ORDER_SCOPE);
     res.json({ success: true, message: 'Date deleted.' });
   } catch (err) { next(err); }
 };

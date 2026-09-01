@@ -105,7 +105,7 @@ export default function Help() {
     <div>
       <PageHero
         title="FAQs"
-        subtitle="Your questions answered — everything you need to know about the Aging congress."
+        subtitle="Your questions answered everything you need to know about the Aging congress."
         breadcrumb={[{ label: 'Home', href: '/' }, { label: 'Help & Support' }, { label: 'FAQs' }]}
       />
 

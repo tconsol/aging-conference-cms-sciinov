@@ -1,9 +1,14 @@
 const Report = require('../models/Report');
 const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
-const nextDisplayOrder = require('../utils/autoOrder');
+const {
+  orderForCreate, settleOrder, closeOrderGap,
+  healOrders,
+} = require('../utils/displayOrder');
+const ORDER_SCOPE = [];
 
 exports.getAll = async (req, res, next) => {
   try {
+    await healOrders(Report, ORDER_SCOPE);
     const filter = {};
     if (req.query.published === 'true') filter.isPublished = true;
     const reports = await Report.find(filter).sort({ displayOrder: 1, createdAt: -1 });
@@ -22,7 +27,7 @@ exports.getOne = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const data = { ...req.body };
-    if (!data.displayOrder) data.displayOrder = await nextDisplayOrder(Report);
+    data.displayOrder = await orderForCreate(Report, data, ORDER_SCOPE);
     if (req.files?.coverImage) {
       const f = req.files.coverImage[0];
       const dest = gcsFilename('aging-congress/reports', f.mimetype, f.originalname);
@@ -38,6 +43,7 @@ exports.create = async (req, res, next) => {
       data.filePublicId = r.filename;
     }
     const report = await Report.create(data);
+    await settleOrder(Report, report, ORDER_SCOPE);
     res.status(201).json({ success: true, data: report });
   } catch (err) { next(err); }
 };
@@ -64,6 +70,7 @@ exports.update = async (req, res, next) => {
       data.filePublicId = r.filename;
     }
     const updated = await Report.findByIdAndUpdate(report._id, data, { new: true });
+    await settleOrder(Report, updated, ORDER_SCOPE);
     res.json({ success: true, data: updated });
   } catch (err) { next(err); }
 };
@@ -75,6 +82,7 @@ exports.remove = async (req, res, next) => {
     if (report.coverImagePublicId) await deleteFromGCS(report.coverImagePublicId);
     if (report.filePublicId) await deleteFromGCS(report.filePublicId);
     await report.deleteOne();
+    await closeOrderGap(Report, report, ORDER_SCOPE);
     res.json({ success: true, message: 'Report deleted.' });
   } catch (err) { next(err); }
 };

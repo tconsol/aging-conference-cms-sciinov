@@ -20,7 +20,7 @@ const paymentStatusOptions = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const paymentMethodOptions = [{ value: '', label: '— Not set —' }, ...PAYMENT_METHOD_OPTIONS];
+const paymentMethodOptions = [{ value: '', label: 'Not set ' }, ...PAYMENT_METHOD_OPTIONS];
 
 // Registrations confirmed before paymentMethod was tracked were all PayPal,
 // so fall back to that rather than showing a blank.
@@ -34,7 +34,7 @@ function DetailRow({ label, value }) {
   return (
     <div className="grid grid-cols-3 gap-4 py-3 border-b border-slate-50 last:border-0">
       <dt className="text-sm font-medium text-slate-500">{label}</dt>
-      <dd className="col-span-2 text-sm text-slate-800 break-words">{value || '—'}</dd>
+      <dd className="col-span-2 text-sm text-slate-800 break-words">{value || ''}</dd>
     </div>
   );
 }
@@ -148,7 +148,7 @@ export default function RegistrationDetail() {
             <h2 className="text-base font-semibold text-slate-700 mb-4">Registration Details</h2>
             <dl>
               <DetailRow label="Edition" value={registration.edition?.title || registration.editionId} />
-              <DetailRow label="Category" value={CATEGORY_LABELS[registration.category] || registration.category} />
+              <DetailRow label="Category" value={categoryLabel(registration.category)} />
               <DetailRow label="Attendance Mode" value={ATTENDANCE_MODE_LABELS[registration.attendanceMode] || registration.attendanceMode} />
               <DetailRow label="Amount" value={formatCurrency(registration.amount, registration.currency)} />
               <DetailRow label="Currency" value={registration.currency} />

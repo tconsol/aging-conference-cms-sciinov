@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { ChevronDown, Check, Search } from 'lucide-react';
 
 export default function Select({
@@ -16,8 +16,10 @@ export default function Select({
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [openUp, setOpenUp] = useState(false);
   const ref = useRef(null);
   const searchRef = useRef(null);
+  const listRef = useRef(null);
 
   const selected = options.find((o) => String(o.value) === String(value));
   const filteredOptions = searchable && query.trim()
@@ -37,6 +39,16 @@ export default function Select({
     if (open) document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [open]);
+
+  // Flip above the trigger when the list would overflow the viewport bottom
+  useLayoutEffect(() => {
+    if (!open || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const listH = listRef.current?.offsetHeight ?? 260;
+    const spaceBelow = window.innerHeight - r.bottom - 12;
+    const spaceAbove = r.top - 12;
+    setOpenUp(listH > spaceBelow && spaceAbove > spaceBelow);
+  }, [open, filteredOptions.length]);
 
   useEffect(() => {
     if (open && searchable) {
@@ -60,13 +72,16 @@ export default function Select({
           type="button"
           disabled={disabled}
           onClick={() => setOpen((o) => !o)}
-          className="w-full px-4 py-2.5 text-sm text-left flex items-center justify-between rounded-xl border transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+          title={selected ? selected.label : undefined}
+          className="w-full h-10 px-3 gap-2 text-sm text-left flex items-center justify-between border transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
           style={{
             borderColor: error ? '#f87171' : open ? 'var(--brand)' : '#e2e8f0',
-            boxShadow: open ? '0 0 0 2px color-mix(in srgb, var(--brand) 25%, transparent)' : 'none',
+            boxShadow: open ? '0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent)' : 'none',
+            // cut corner instead of a radius, matching the admin panel controls
+            clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%)',
           }}
         >
-          <span className={selected ? 'text-slate-800' : 'text-slate-400'}>
+          <span className={`truncate min-w-0 flex-1 ${selected ? 'text-slate-800' : 'text-slate-400'}`}>
             {selected ? selected.label : placeholder}
           </span>
           <ChevronDown
@@ -82,12 +97,16 @@ export default function Select({
 
         {open && (
           <div
-            className="absolute left-0 right-0 z-50 bg-white rounded-xl overflow-hidden"
+            ref={listRef}
+            className="absolute left-0 right-0 z-50 bg-white overflow-hidden"
             style={{
-              top: 'calc(100% + 4px)',
+              [openUp ? 'bottom' : 'top']: 'calc(100% + 4px)',
               border: '1px solid #e2e8f0',
-              borderTop: '2px solid var(--brand)',
-              boxShadow: '0 8px 24px color-mix(in srgb, var(--brand) 12%, transparent), 0 2px 8px rgba(0,0,0,0.06)',
+              // accent edge faces the trigger
+              [openUp ? 'borderBottom' : 'borderTop']: '2px solid var(--brand)',
+              boxShadow: openUp
+                ? '0 -8px 24px color-mix(in srgb, var(--brand) 12%, transparent), 0 -2px 8px rgba(0,0,0,0.06)'
+                : '0 8px 24px color-mix(in srgb, var(--brand) 12%, transparent), 0 2px 8px rgba(0,0,0,0.06)',
             }}
           >
             {searchable && (

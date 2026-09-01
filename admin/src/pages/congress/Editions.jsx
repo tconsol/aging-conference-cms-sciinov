@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Pencil, Trash2, Star, Plus, X } from 'lucide-react';
+import { Pencil, Trash2, Star, Plus, X, BookOpen, Images, MapPin, CalendarDays } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import Textarea from '../../components/ui/Textarea';
 import Modal from '../../components/ui/Modal';
-import Badge, { statusBadge } from '../../components/ui/Badge';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import ImageUpload from '../../components/ui/ImageUpload';
+import EditionMaterialsModal from './EditionMaterialsModal';
+import EditionGalleryModal from './EditionGalleryModal';
 import { editionsAPI } from '../../api/congress';
 import { formatDate, buildFormData, getErrorMessage } from '../../utils/helpers';
 
@@ -22,6 +23,24 @@ const statusOptions = [
   { value: 'past', label: 'Past' },
 ];
 
+const STATUS_STYLE = {
+  active:   { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
+  upcoming: { bg: '#fffbeb', color: '#b45309', border: '#fcd34d' },
+  past:     { bg: '#f8fafc', color: '#64748b', border: '#e2e8f0' },
+};
+
+function StatusPill({ status }) {
+  const s = STATUS_STYLE[status] || STATUS_STYLE.past;
+  return (
+    <span
+      className="inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-full border capitalize"
+      style={{ background: s.bg, color: s.color, borderColor: s.border }}
+    >
+      {status}
+    </span>
+  );
+}
+
 export default function Editions() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +49,8 @@ export default function Editions() {
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [settingActive, setSettingActive] = useState(null);
+  const [materialsEdition, setMaterialsEdition] = useState(null);
+  const [galleryEdition, setGalleryEdition] = useState(null);
 
   const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm();
   const { fields: highlightFields, append: appendHighlight, remove: removeHighlight } = useFieldArray({
@@ -50,6 +71,12 @@ export default function Editions() {
   };
 
   useEffect(() => { fetchItems(); }, []);
+
+  // Active edition pinned to top, rest sorted newest year first
+  const sortedItems = [...items].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return (b.year || 0) - (a.year || 0);
+  });
 
   const openModal = (data = null) => {
     if (data) {
@@ -138,92 +165,137 @@ export default function Editions() {
   return (
     <div>
       <PageHeader
-        title="congress Editions"
-        subtitle="Manage all congress editions"
+        title="Congress Editions"
+        subtitle="Manage all congress editions, materials, and photo galleries"
         action={() => openModal()}
         actionLabel="Add Edition"
       />
 
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <Spinner size="lg" />
-          </div>
-        ) : items.length === 0 ? (
-          <EmptyState
-            message="No editions yet"
-            description="Create your first congress edition."
-            action={() => openModal()}
-            actionLabel="Add Edition"
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Year</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Dates</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Is Active</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {items.map((item) => (
-                  <tr key={item._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-3 font-medium text-slate-800">{item.title}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.year}</td>
-                    <td className="px-6 py-3 text-slate-600">{item.city}, {item.country}</td>
-                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
-                      {formatDate(item.startDate)} – {formatDate(item.endDate)}
-                    </td>
-                    <td className="px-6 py-3">{statusBadge(item.status)}</td>
-                    <td className="px-6 py-3">
-                      {item.isActive && (
-                        <Badge variant="success">Current Edition</Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        {!item.isActive && (
-                          <button
-                            onClick={() => handleSetActive(item._id)}
-                            disabled={settingActive === item._id}
-                            title="Set as active"
-                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-amber-500 transition-colors"
-                          >
-                            {settingActive === item._id ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <Star size={15} />
-                            )}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => openModal(item)}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-teal-700 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          onClick={() => confirmDelete(item)}
-                          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-red-600 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+      {loading ? (
+        <div className="flex items-center justify-center h-48">
+          <Spinner size="lg" />
+        </div>
+      ) : sortedItems.length === 0 ? (
+        <EmptyState
+          message="No editions yet"
+          description="Create your first congress edition."
+          action={() => openModal()}
+          actionLabel="Add Edition"
+        />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {sortedItems.map((item) => (
+            <div
+              key={item._id}
+              className="bg-white rounded-2xl border shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+              style={{ borderColor: item.isActive ? '#5eead4' : '#f1f5f9' }}
+            >
+              {item.isActive && (
+                <div className="h-1" style={{ background: 'linear-gradient(90deg, #0d9488, #14b8a6)' }} />
+              )}
+              <div className="p-5 flex items-start justify-between gap-4 flex-wrap">
+                {/* Left: info */}
+                <div className="flex items-start gap-4 min-w-0 flex-1">
+                  {/* Banner thumbnail falls back to the year when none is set */}
+                  <div
+                    className="relative w-24 h-16 rounded-xl overflow-hidden flex-shrink-0 border"
+                    style={{ borderColor: item.isActive ? '#5eead4' : '#f1f5f9', background: '#f1f5f9' }}
+                  >
+                    {item.bannerImage ? (
+                      <img
+                        src={item.bannerImage}
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center font-black text-sm"
+                        style={{
+                          background: item.isActive ? '#0d9488' : '#f1f5f9',
+                          color: item.isActive ? '#fff' : '#94a3b8',
+                        }}
+                      >
+                        {item.year}
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                    )}
+                    {item.bannerImage && (
+                      <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[10px] font-bold text-center py-0.5">
+                        {item.year}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <h3 className="font-bold text-slate-800 text-[15px] leading-snug">{item.title}</h3>
+                      {item.isActive && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                          <Star size={10} className="fill-teal-700" /> Current Edition
+                        </span>
+                      )}
+                      <StatusPill status={item.status} />
+                    </div>
+                    <div className="flex items-center gap-4 flex-wrap text-xs text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <MapPin size={12} className="text-slate-400" />
+                        {item.city}, {item.country}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays size={12} className="text-slate-400" />
+                        {formatDate(item.startDate)} – {formatDate(item.endDate)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: actions */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => setMaterialsEdition(item)}
+                    title="Manage Book & Program"
+                    className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-teal-700 transition-colors"
+                  >
+                    <BookOpen size={14} />
+                    <span className="hidden lg:inline">Materials</span>
+                  </button>
+                  <button
+                    onClick={() => setGalleryEdition(item)}
+                    title="Manage Gallery"
+                    className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-50 hover:text-blue-700 transition-colors"
+                  >
+                    <Images size={14} />
+                    <span className="hidden lg:inline">Gallery</span>
+                  </button>
+                  <div className="w-px h-5 bg-slate-100 mx-1" />
+                  {!item.isActive && (
+                    <button
+                      onClick={() => handleSetActive(item._id)}
+                      disabled={settingActive === item._id}
+                      title="Set as active"
+                      className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-amber-500 transition-colors"
+                    >
+                      {settingActive === item._id ? <Spinner size="sm" /> : <Star size={15} />}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => openModal(item)}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-teal-700 transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => confirmDelete(item)}
+                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-red-600 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       <Modal
@@ -393,6 +465,23 @@ export default function Editions() {
         title="Delete Edition"
         message="Are you sure you want to delete this edition? This action cannot be undone."
         loading={deleting}
+      />
+
+      {/* Materials (Conference Book / Program) */}
+      <EditionMaterialsModal
+        open={!!materialsEdition}
+        onClose={() => setMaterialsEdition(null)}
+        edition={materialsEdition}
+        onSaved={(updated) => {
+          setItems((prev) => prev.map((it) => (it._id === updated._id ? updated : it)));
+        }}
+      />
+
+      {/* Photo Gallery */}
+      <EditionGalleryModal
+        open={!!galleryEdition}
+        onClose={() => setGalleryEdition(null)}
+        edition={galleryEdition}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-# Quotation — Aging Congress CMS: Phase 2 Development
+# Quotation Aging Congress CMS: Phase 2 Development
 
 **Prepared by:** Tcon Solutions
 **Prepared for:** Aging Congress
@@ -13,7 +13,7 @@
 
 | | |
 |---|---|
-| Standard development rate | **$XX/hr** *(placeholder — insert your rate)* |
+| Standard development rate | **$XX/hr** *(placeholder insert your rate)* |
 | Currency | USD |
 | Billing | Milestone-based, invoiced on completion of each item unless otherwise agreed |
 
@@ -40,11 +40,11 @@
 
 - Third-party hosting/service costs (MongoDB Atlas, Google Cloud Storage, domain/SSL)
 - New feature scope beyond what's listed above (quoted separately on request)
-- Content authoring (copy, translations, marketing material) — Tcon Solutions flags data-quality issues but does not author final content
+- Content authoring (copy, translations, marketing material) Tcon Solutions flags data-quality issues but does not author final content
 
 ## Payment Terms
 
-_[Insert your standard terms — e.g. 50% on kickoff, 50% on delivery; net 15 invoicing; etc.]_
+_[Insert your standard terms e.g. 50% on kickoff, 50% on delivery; net 15 invoicing; etc.]_
 
 ## Acceptance
 

@@ -90,7 +90,7 @@ export default function OrganizerCarousel({ organizers }) {
         className="relative w-full max-w-5xl flex justify-center items-center"
         style={{ height: CARD_HEIGHT + 60, perspective: '1200px' }}
       >
-        {/* Arrows — wrapper div owns position so Framer inline transform doesn't fight -translate-y-1/2 */}
+        {/* Arrows wrapper div owns position so Framer inline transform doesn't fight -translate-y-1/2 */}
         <div className="absolute left-4 top-1/2 -translate-y-1/2 z-30">
           <motion.button
             onClick={() => paginate(-1)}

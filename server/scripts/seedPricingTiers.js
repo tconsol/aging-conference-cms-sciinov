@@ -1,6 +1,6 @@
 /* node server/scripts/seedPricingTiers.js
    Seeds / upserts all 3 pricing tiers for the most-recent active edition.
-   Safe to re-run — uses upsert so won't duplicate.
+   Safe to re-run uses upsert so won't duplicate.
 */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const mongoose = require('mongoose');
@@ -74,7 +74,7 @@ async function run() {
       { ...tier, edition: edition._id },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
-    console.log(`  ✓ ${tier.label} — oral in-person $${tier.prices.oral_inperson}`);
+    console.log(`  ✓ ${tier.label} oral in-person $${tier.prices.oral_inperson}`);
   }
 
   console.log('\nDone. All 3 pricing tiers seeded.');

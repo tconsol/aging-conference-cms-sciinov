@@ -14,10 +14,12 @@ import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import PhoneInput from '../components/ui/PhoneInput';
 import Spinner from '../components/ui/Spinner';
+import DeadlineBadge from '../components/ui/DeadlineBadge';
 import { submissionsAPI } from '../api/submissions';
 import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
-import { getErrorMessage, CATEGORY_LABELS } from '../utils/helpers';
+import { getErrorMessage, categoryLabel } from '../utils/helpers';
+import { formatDeadline } from '../utils/deadline';
 import { COUNTRY_OPTIONS } from '../utils/countries';
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -248,7 +250,7 @@ export default function Registration() {
     setStep('payment');
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Fire intent tracking email (non-blocking — don't delay the UI)
+    // Fire intent tracking email (non-blocking don't delay the UI)
     submissionsAPI.trackRegistrationIntent({
       email: formData.email,
       firstName: formData.firstName,
@@ -336,7 +338,7 @@ export default function Registration() {
         </section>
 
       ) : step === 'payment' ? (
-        /* ══ STEP 3 — Payment ══════════════════════════════════════════════ */
+        /* ══ STEP 3 Payment ══════════════════════════════════════════════ */
         <section className="section-padding bg-white">
           <div className="container-custom">
             <div className="max-w-lg mx-auto" ref={contentRef}>
@@ -356,8 +358,8 @@ export default function Registration() {
                   {[
                     { label: 'Name', value: `${pendingData?.title ? pendingData.title + ' ' : ''}${pendingData?.firstName} ${pendingData?.lastName}` },
                     { label: 'Email', value: pendingData?.email },
-                    { label: 'Edition', value: editionLabel ? `${editionLabel.title} (${editionLabel.year})` : '—' },
-                    { label: 'Category', value: CATEGORY_LABELS[pendingData?.category] ?? pendingData?.category },
+                    { label: 'Edition', value: editionLabel ? `${editionLabel.title} (${editionLabel.year})` : '' },
+                    { label: 'Category', value: categoryLabel(pendingData?.category) },
                     { label: 'Attendance', value: pendingData?.attendanceMode === 'in_person' ? 'In-Person' : 'Virtual' },
                     { label: 'Participants', value: pendingData?.participants },
                     pendingData?.accompanyingPersons > 0 && { label: 'Accompanying', value: `${pendingData.accompanyingPersons} × $${ACCOMPANYING_RATE}` },
@@ -421,7 +423,7 @@ export default function Registration() {
         </section>
 
       ) : step === 'pricing' ? (
-        /* ══ STEP 2 — Pricing Selection (Light Theme) ══════════════════════ */
+        /* ══ STEP 2 Pricing Selection (Light Theme) ══════════════════════ */
         <section className="section-padding bg-slate-50">
           <div className="container-custom" ref={contentRef}>
             <StepBar current="pricing" />
@@ -465,9 +467,14 @@ export default function Registration() {
                             <p className="font-bold text-base" style={{ color: isActive ? '#fff' : '#475569', margin: 0 }}>{tier.label}</p>
                           )}
                           {tier.deadline && (
-                            <p className="text-xs mt-1" style={{ color: isActive ? '#ccfbf1' : '#94a3b8' }}>
-                              Ends {new Date(tier.deadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                            </p>
+                            <>
+                              <p className="text-xs mt-1" style={{ color: isActive ? '#ccfbf1' : '#94a3b8' }}>
+                                Ends {formatDeadline(tier.deadline)}
+                              </p>
+                              <div className="mt-2">
+                                <DeadlineBadge date={tier.deadline} compact />
+                              </div>
+                            </>
                           )}
                         </div>
 
@@ -507,10 +514,10 @@ export default function Registration() {
                                   }} />
                                 <Icon size={14} className="shrink-0" style={{ color: isSelected ? '#0d9488' : '#94a3b8' }} />
                                 <span className="flex-1 text-xs font-medium" style={{ color: isSelected ? '#0f766e' : (isActive ? '#374151' : '#9ca3af') }}>
-                                  {CATEGORY_LABELS[cat] ?? cat}
+                                  {categoryLabel(cat)}
                                 </span>
                                 <span className="text-xs font-bold whitespace-nowrap" style={{ color: isSelected ? '#0d9488' : (isActive ? '#374151' : '#9ca3af') }}>
-                                  {amt > 0 ? `$${amt.toLocaleString()}` : '—'}
+                                  {amt > 0 ? `$${amt.toLocaleString()}` : ''}
                                 </span>
                               </button>
                             );
@@ -549,7 +556,7 @@ export default function Registration() {
 
                     <div className="p-6 flex flex-col gap-3 flex-1">
                       {[
-                        { label: 'Registration Price', value: basePrice > 0 ? `$${basePrice.toLocaleString()}` : '—' },
+                        { label: 'Registration Price', value: basePrice > 0 ? `$${basePrice.toLocaleString()}` : '' },
                         { label: 'No. of Participants', value: participants },
                         { label: `Accompanying (${accompanying} × $${ACCOMPANYING_RATE})`, value: `$${accompanyingFee.toLocaleString()}` },
                       ].map(({ label, value }) => (
@@ -660,7 +667,7 @@ export default function Registration() {
         </section>
 
       ) : (
-        /* ══ STEP 1 — Personal Details ═════════════════════════════════════ */
+        /* ══ STEP 1 Personal Details ═════════════════════════════════════ */
         <section className="section-padding bg-white">
           <div className="container-custom">
             <StepBar current="form" />

@@ -191,8 +191,8 @@ export default function FAQTopics() {
                 {topics.map((item) => (
                   <tr key={item._id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-3 font-medium text-slate-800 whitespace-nowrap">{item.name}</td>
-                    <td className="px-6 py-3 text-slate-500 max-w-[240px] truncate">{item.subtitle || '—'}</td>
-                    <td className="px-6 py-3 text-slate-500 font-mono text-xs">{item.icon || '—'}</td>
+                    <td className="px-6 py-3 text-slate-500 max-w-[240px] truncate">{item.subtitle || ''}</td>
+                    <td className="px-6 py-3 text-slate-500 font-mono text-xs">{item.icon || ''}</td>
                     <td className="px-6 py-3">
                       <StatusToggle
                         isActive={item.isActive}
@@ -200,7 +200,7 @@ export default function FAQTopics() {
                         onToggle={() => toggleStatus(item)}
                       />
                     </td>
-                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? '—'}</td>
+                    <td className="px-6 py-3 text-slate-600">{item.displayOrder ?? ''}</td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button

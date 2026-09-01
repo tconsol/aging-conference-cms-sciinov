@@ -12,6 +12,7 @@ import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
 const LIMIT = 20;
 
@@ -30,6 +31,7 @@ const FILTER_OPTIONS = [
 
 export default function HelpTickets() {
   const navigate = useNavigate();
+  const { lastEvents } = useRegistrationBadge();
   const [tickets, setTickets] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,12 @@ export default function HelpTickets() {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets]);
+
+  // Live push: a ticket arrived while this page is open
+  useEffect(() => {
+    if (!lastEvents['/help/tickets']) return;
+    fetchTickets();
+  }, [lastEvents['/help/tickets']]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFilterChange = (val) => {
     setFilterStatus(val);
@@ -108,7 +116,7 @@ export default function HelpTickets() {
           <h1 className="text-xl font-bold text-slate-800">Support Tickets</h1>
           <p className="text-sm text-slate-500 mt-0.5">Help requests from attendees and visitors</p>
         </div>
-        <Button variant="secondary" onClick={() => navigate('/help/faqs')}>
+        <Button variant="secondary" onClick={() => navigate('/help')}>
           <LifeBuoy size={15} />
           Manage FAQs
         </Button>

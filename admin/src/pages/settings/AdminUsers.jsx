@@ -240,7 +240,7 @@ export default function AdminUsers() {
                       />
                     </td>
                     <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
-                      {formatDateTime(item.lastLogin) || '—'}
+                      {formatDateTime(item.lastLogin) || ''}
                     </td>
                     <td className="px-6 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">

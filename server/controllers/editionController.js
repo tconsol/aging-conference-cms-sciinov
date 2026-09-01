@@ -1,5 +1,6 @@
 const Edition = require('../models/Edition');
-const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
+const GalleryImage = require('../models/GalleryImage');
+const { uploadToGCS, deleteFromGCS, gcsFilename, streamGCSFile } = require('../utils/gcs');
 
 exports.getAll = async (req, res, next) => {
   try {
@@ -72,8 +73,87 @@ exports.remove = async (req, res, next) => {
     const edition = await Edition.findById(req.params.id);
     if (!edition) return res.status(404).json({ success: false, message: 'Edition not found.' });
     if (edition.bannerImagePublicId) await deleteFromGCS(edition.bannerImagePublicId);
+    if (edition.conferenceBook?.coverImagePublicId) await deleteFromGCS(edition.conferenceBook.coverImagePublicId);
+    if (edition.conferenceBook?.filePublicId) await deleteFromGCS(edition.conferenceBook.filePublicId);
+    if (edition.conferenceProgram?.coverImagePublicId) await deleteFromGCS(edition.conferenceProgram.coverImagePublicId);
+    if (edition.conferenceProgram?.filePublicId) await deleteFromGCS(edition.conferenceProgram.filePublicId);
+
+    const galleryImages = await GalleryImage.find({ edition: edition._id }).select('imagePublicId');
+    await Promise.all(galleryImages.map((img) => deleteFromGCS(img.imagePublicId)));
+    await GalleryImage.deleteMany({ edition: edition._id });
+
     await edition.deleteOne();
     res.json({ success: true, message: 'Edition deleted.' });
+  } catch (err) { next(err); }
+};
+
+// Conference Book + Conference Program materials shown on the public "Past Events" card
+exports.updateMaterials = async (req, res, next) => {
+  try {
+    const edition = await Edition.findById(req.params.id);
+    if (!edition) return res.status(404).json({ success: false, message: 'Edition not found.' });
+
+    const update = {};
+    const files = req.files || {};
+
+    if (req.body.bookTitle !== undefined) update['conferenceBook.title'] = req.body.bookTitle;
+    if (req.body.programTitle !== undefined) update['conferenceProgram.title'] = req.body.programTitle;
+
+    if (files.bookCoverImage?.[0]) {
+      if (edition.conferenceBook?.coverImagePublicId) await deleteFromGCS(edition.conferenceBook.coverImagePublicId);
+      const f = files.bookCoverImage[0];
+      const dest = gcsFilename('aging-congress/editions/materials', f.mimetype, f.originalname);
+      const r = await uploadToGCS(f.buffer, { destination: dest, contentType: f.mimetype });
+      update['conferenceBook.coverImage'] = r.url;
+      update['conferenceBook.coverImagePublicId'] = r.filename;
+    }
+    if (files.bookFile?.[0]) {
+      if (edition.conferenceBook?.filePublicId) await deleteFromGCS(edition.conferenceBook.filePublicId);
+      const f = files.bookFile[0];
+      const dest = gcsFilename('aging-congress/editions/materials', f.mimetype, f.originalname);
+      const r = await uploadToGCS(f.buffer, { destination: dest, contentType: f.mimetype });
+      update['conferenceBook.fileUrl'] = r.url;
+      update['conferenceBook.filePublicId'] = r.filename;
+      update['conferenceBook.fileName'] = f.originalname;
+    }
+    if (files.programCoverImage?.[0]) {
+      if (edition.conferenceProgram?.coverImagePublicId) await deleteFromGCS(edition.conferenceProgram.coverImagePublicId);
+      const f = files.programCoverImage[0];
+      const dest = gcsFilename('aging-congress/editions/materials', f.mimetype, f.originalname);
+      const r = await uploadToGCS(f.buffer, { destination: dest, contentType: f.mimetype });
+      update['conferenceProgram.coverImage'] = r.url;
+      update['conferenceProgram.coverImagePublicId'] = r.filename;
+    }
+    if (files.programFile?.[0]) {
+      if (edition.conferenceProgram?.filePublicId) await deleteFromGCS(edition.conferenceProgram.filePublicId);
+      const f = files.programFile[0];
+      const dest = gcsFilename('aging-congress/editions/materials', f.mimetype, f.originalname);
+      const r = await uploadToGCS(f.buffer, { destination: dest, contentType: f.mimetype });
+      update['conferenceProgram.fileUrl'] = r.url;
+      update['conferenceProgram.filePublicId'] = r.filename;
+      update['conferenceProgram.fileName'] = f.originalname;
+    }
+
+    const updated = await Edition.findByIdAndUpdate(req.params.id, { $set: update }, { new: true, runValidators: true });
+    res.json({ success: true, data: updated });
+  } catch (err) { next(err); }
+};
+
+// Public download proxy the browser ignores <a download> across origins,
+// so the "Download" button hits this instead of the raw GCS URL.
+exports.downloadMaterial = async (req, res, next) => {
+  try {
+    const { type } = req.params; // 'book' | 'program'
+    if (type !== 'book' && type !== 'program') return res.status(400).json({ success: false, message: 'Invalid material type.' });
+
+    const edition = await Edition.findById(req.params.id).select('conferenceBook conferenceProgram');
+    if (!edition) return res.status(404).json({ success: false, message: 'Edition not found.' });
+
+    const material = type === 'book' ? edition.conferenceBook : edition.conferenceProgram;
+    if (!material?.filePublicId) return res.status(404).json({ success: false, message: 'No file available.' });
+
+    const ok = await streamGCSFile(res, { filename: material.filePublicId, downloadName: material.fileName || `${type}.pdf` });
+    if (!ok) return res.status(404).json({ success: false, message: 'File no longer available.' });
   } catch (err) { next(err); }
 };
 

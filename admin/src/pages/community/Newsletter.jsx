@@ -10,10 +10,12 @@ import Pagination from '../../components/ui/Pagination';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
+import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
 const LIMIT = 50;
 
 export default function Newsletter() {
+  const { lastEvents } = useRegistrationBadge();
   const [subscribers, setSubscribers] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,12 @@ export default function Newsletter() {
   useEffect(() => {
     fetchSubscribers();
   }, [fetchSubscribers]);
+
+  // Live push: someone subscribed while this page is open
+  useEffect(() => {
+    if (!lastEvents['/newsletter']) return;
+    fetchSubscribers();
+  }, [lastEvents['/newsletter']]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearchChange = (val) => {
     setSearch(val);

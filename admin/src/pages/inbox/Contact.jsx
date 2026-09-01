@@ -10,6 +10,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
+import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
 const LIMIT = 20;
 
@@ -21,6 +22,7 @@ const FILTER_OPTIONS = [
 
 export default function Contact() {
   const navigate = useNavigate();
+  const { lastEvents } = useRegistrationBadge();
   const [messages, setMessages] = useState([]);
   const [total, setTotal] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -51,6 +53,12 @@ export default function Contact() {
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
+
+  // Live push: a message arrived while this page is open
+  useEffect(() => {
+    if (!lastEvents['/contact']) return;
+    fetchMessages();
+  }, [lastEvents['/contact']]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFilterChange = (val) => {
     setFilterRead(val);
