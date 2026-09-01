@@ -32,6 +32,7 @@ import Abstracts from './pages/submissions/Abstracts';
 import AbstractDetail from './pages/submissions/AbstractDetail';
 import Registrations from './pages/submissions/Registrations';
 import RegistrationDetail from './pages/submissions/RegistrationDetail';
+import IntentDetail from './pages/submissions/IntentDetail';
 
 // Finance
 import Pricing from './pages/finance/Pricing';
@@ -109,6 +110,7 @@ export default function App() {
           <Route path="/abstracts" element={<Abstracts />} />
           <Route path="/abstracts/:id" element={<AbstractDetail />} />
           <Route path="/registrations" element={<Registrations />} />
+          <Route path="/registrations/intents/:id" element={<IntentDetail />} />
           <Route path="/registrations/:id" element={<RegistrationDetail />} />
 
           {/* Finance */}

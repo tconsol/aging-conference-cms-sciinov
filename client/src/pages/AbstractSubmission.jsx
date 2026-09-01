@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Send, FileText, AlertCircle, CheckCircle, Key, ExternalLink } from 'lucide-react';
+import { Send, FileText, AlertCircle, CheckCircle, Key, ExternalLink, UploadCloud, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -41,7 +41,10 @@ export default function AbstractSubmission() {
   const [dates, setDates]         = useState([]);
   const [topics, setTopics]       = useState([]);
 
-  const { register, handleSubmit, control, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, control, formState: { errors }, reset, watch } = useForm();
+  const fileInputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileReg = register('file');
 
   useEffect(() => {
     const params = activeEdition?._id ? { edition: activeEdition._id } : {};
@@ -329,13 +332,98 @@ export default function AbstractSubmission() {
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1.5">Abstract Document (PDF, DOC, DOCX)</label>
+                    {/* Hidden native input — react-hook-form registers it */}
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                      {...register('file')}
-                      className="block w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:text-white hover:file:opacity-80 file:transition-opacity"
-                      style={{ '--file-bg': 'var(--brand-dark)' }}
+                      name={fileReg.name}
+                      onChange={fileReg.onChange}
+                      onBlur={fileReg.onBlur}
+                      ref={(el) => { fileReg.ref(el); fileInputRef.current = el; }}
+                      style={{ display: 'none' }}
+                      id="abstract-file-upload"
                     />
+                    {/* Styled drop zone */}
+                    {(() => {
+                      const selectedFile = watch('file');
+                      const hasFile = selectedFile instanceof FileList && selectedFile.length > 0;
+                      const fileName = hasFile ? selectedFile[0].name : null;
+                      const fileSize = hasFile ? (selectedFile[0].size / 1024).toFixed(0) + ' KB' : null;
+                      return (
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                          onDragLeave={() => setDragOver(false)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOver(false);
+                            const file = e.dataTransfer.files[0];
+                            if (file && fileInputRef.current) {
+                              const dt = new DataTransfer();
+                              dt.items.add(file);
+                              fileInputRef.current.files = dt.files;
+                              fileReg.onChange({ target: fileInputRef.current });
+                            }
+                          }}
+                          style={{
+                            border: `2px dashed ${dragOver ? 'var(--brand)' : hasFile ? '#22c55e' : '#cbd5e1'}`,
+                            borderRadius: 14,
+                            padding: '20px 16px',
+                            background: dragOver ? 'color-mix(in srgb, var(--brand) 5%, transparent)' : hasFile ? '#f0fdf4' : '#f8fafc',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 14,
+                            userSelect: 'none',
+                          }}
+                        >
+                          <div style={{
+                            width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                            background: hasFile ? '#dcfce7' : '#e2e8f0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'background 0.2s',
+                          }}>
+                            {hasFile
+                              ? <FileText size={20} style={{ color: '#16a34a' }} />
+                              : <UploadCloud size={20} style={{ color: '#94a3b8' }} />
+                            }
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {hasFile ? (
+                              <>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#166534', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {fileName}
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#4ade80' }}>{fileSize} · Click to change</p>
+                              </>
+                            ) : (
+                              <>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#475569' }}>
+                                  {dragOver ? 'Drop your file here' : 'Click to upload or drag & drop'}
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94a3b8' }}>PDF, DOC, DOCX · Max 10 MB</p>
+                              </>
+                            )}
+                          </div>
+                          {hasFile && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = '';
+                                  fileReg.onChange({ target: fileInputRef.current });
+                                }
+                              }}
+                              style={{ padding: 6, borderRadius: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <Button type="submit" size="lg" loading={loading} disabled={loading}>

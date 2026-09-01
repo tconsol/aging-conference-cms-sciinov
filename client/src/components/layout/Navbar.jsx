@@ -79,8 +79,6 @@ function DropdownMenu({ items, isOpen }) {
           background: '#ffffff',
           border: '1px solid #e2e8f0',
           borderTop: '2px solid var(--brand-dark)',
-          maxHeight: 340,
-          overflowY: 'auto',
         }}
       >
         {items.map((item, i) => (

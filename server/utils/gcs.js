@@ -40,6 +40,50 @@ const deleteFromGCS = async (filename) => {
   }
 };
 
+// Streams a stored object back to an Express response as an attachment.
+// Browsers ignore <a download> across origins, so downloads are proxied through us.
+const streamGCSFile = async (res, { filename, downloadName }) => {
+  const file = bucket.file(filename);
+  const [exists] = await file.exists();
+  if (!exists) return false;
+
+  let contentType = 'application/octet-stream';
+  try {
+    const [metadata] = await file.getMetadata();
+    if (metadata.contentType) contentType = metadata.contentType;
+  } catch {
+    // fall back to octet-stream
+  }
+
+  // ASCII fallback + RFC 5987 encoded name, and strip quotes/newlines to keep
+  // untrusted filenames out of the header grammar.
+  const safe = String(downloadName || 'download')
+    .replace(/[\r\n"\\]/g, '')
+    .replace(/[^\x20-\x7E]/g, '_');
+
+  res.setHeader('Content-Type', contentType);
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="${safe}"; filename*=UTF-8''${encodeURIComponent(downloadName || 'download')}`
+  );
+
+  await new Promise((resolve, reject) => {
+    file.createReadStream()
+      .on('error', reject)
+      .on('end', resolve)
+      .pipe(res);
+  });
+  return true;
+};
+
+// Recovers the object path from a stored public URL, for legacy records
+// saved before filePublicId was tracked.
+const gcsPathFromUrl = (url) => {
+  if (!url) return null;
+  const prefix = `https://storage.googleapis.com/${process.env.GCS_BUCKET_NAME}/`;
+  return url.startsWith(prefix) ? decodeURIComponent(url.slice(prefix.length)) : null;
+};
+
 const gcsFilename = (folder, mimetype, originalname) => {
   const ext = (originalname && originalname.includes('.'))
     ? originalname.split('.').pop()
@@ -48,4 +92,4 @@ const gcsFilename = (folder, mimetype, originalname) => {
   return `${folder}/${Date.now()}-${rand}.${ext}`;
 };
 
-module.exports = { uploadToGCS, deleteFromGCS, gcsFilename };
+module.exports = { uploadToGCS, deleteFromGCS, gcsFilename, streamGCSFile, gcsPathFromUrl };

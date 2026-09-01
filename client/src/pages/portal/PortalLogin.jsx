@@ -222,6 +222,18 @@ export default function PortalLogin() {
         </div>
       </div>
 
+      <Link to="/" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        marginTop: 20, fontSize: 12, fontWeight: 600,
+        color: '#64748b', textDecoration: 'none',
+        transition: 'color 0.15s',
+      }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-dark)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
+      >
+        ← Back to Home
+      </Link>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

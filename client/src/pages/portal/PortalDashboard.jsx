@@ -1,91 +1,111 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FileText, Download, CheckCircle, Clock, XCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import {
+  FileText, Download, CheckCircle, XCircle, ExternalLink,
+  RefreshCw, Eye, EyeOff, Lock, ChevronRight, User, Shield, AlertCircle,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSubmitterAuth } from '../../context/submitterAuthContext';
 import PortalLayout from '../../components/layout/PortalLayout';
+import portalApi from '../../api/portalApi';
 
-const STATUSES = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'received_accepted', label: 'Received & Accepted for Review' },
-  { key: 'under_review', label: 'Under Peer Review Process' },
-  { key: 'decision_pending', label: 'Reviewed — Decision Pending' },
-  { key: 'accepted', label: 'Accepted' },
-  { key: 'rejected', label: 'Rejected' },
+const STEPS = [
+  { key: 'pending',           label: 'Submitted' },
+  { key: 'received_accepted', label: 'Accepted for Review' },
+  { key: 'under_review',      label: 'Under Review' },
+  { key: 'decision_pending',  label: 'Decision Pending' },
+  { key: 'accepted',          label: 'Accepted' },
 ];
 
-const STATUS_COLORS = {
-  pending: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e', dot: '#f59e0b' },
-  received_accepted: { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af', dot: '#3b82f6' },
-  under_review: { bg: '#f5f3ff', border: '#c4b5fd', text: '#5b21b6', dot: '#7c3aed' },
-  decision_pending: { bg: '#fff7ed', border: '#fdba74', text: '#9a3412', dot: '#f97316' },
-  accepted: { bg: '#f0fdf4', border: '#86efac', text: '#14532d', dot: '#22c55e' },
-  rejected: { bg: '#fef2f2', border: '#fca5a5', text: '#7f1d1d', dot: '#ef4444' },
+const STATUS_CFG = {
+  pending:           { color: '#d97706', bg: '#fffbeb', border: '#fcd34d', label: 'Pending' },
+  received_accepted: { color: '#2563eb', bg: '#eff6ff', border: '#93c5fd', label: 'Received & Accepted' },
+  under_review:      { color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', label: 'Under Peer Review' },
+  decision_pending:  { color: '#ea580c', bg: '#fff7ed', border: '#fdba74', label: 'Decision Pending' },
+  accepted:          { color: '#16a34a', bg: '#f0fdf4', border: '#86efac', label: 'Accepted' },
+  rejected:          { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', label: 'Not Accepted' },
 };
 
 const PRESENTATION_LABELS = {
-  oral_inperson: 'Oral Presentation (In-Person)',
-  oral_virtual: 'Oral Presentation (Virtual)',
-  poster_inperson: 'Poster Presentation (In-Person)',
-  poster_virtual: 'Poster Presentation (Virtual)',
+  oral_inperson:   'Oral Presentation · In-Person',
+  oral_virtual:    'Oral Presentation · Virtual',
+  poster_inperson: 'Poster Presentation · In-Person',
+  poster_virtual:  'Poster Presentation · Virtual',
 };
 
-function StatusPipeline({ current }) {
-  const isRejected = current === 'rejected';
-  const mainStatuses = STATUSES.filter((s) => s.key !== 'rejected');
-  const currentIndex = mainStatuses.findIndex((s) => s.key === current);
-  const acceptedIndex = mainStatuses.findIndex((s) => s.key === 'accepted');
+const TABS = [
+  { key: 'overview', label: 'Overview', icon: User },
+  { key: 'abstract', label: 'My Abstract', icon: FileText },
+  { key: 'security', label: 'Change Password', icon: Shield },
+];
+
+// ── Status stepper ───────────────────────────────────────────────────────────
+function StatusStepper({ status }) {
+  const isRejected = status === 'rejected';
+  const currentIdx = isRejected ? STEPS.length - 1 : STEPS.findIndex((s) => s.key === status);
 
   return (
-    <div style={{ padding: '24px 0 8px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0, overflowX: 'auto', paddingBottom: 8 }}>
-        {mainStatuses.map((s, i) => {
-          const isDone = !isRejected && i < currentIndex;
-          const isCurrent = !isRejected && i === currentIndex;
-          const isRejectedFinal = isRejected && i === acceptedIndex;
-          const colors = isCurrent ? STATUS_COLORS[s.key] : isRejectedFinal ? STATUS_COLORS.rejected : {};
+    <div style={{ position: 'relative', padding: '8px 0 4px' }}>
+      {/* Connector line */}
+      <div style={{
+        position: 'absolute',
+        top: 24,
+        left: 20,
+        right: 20,
+        height: 2,
+        background: '#e2e8f0',
+        zIndex: 0,
+      }} />
+      {/* Active segment */}
+      <div style={{
+        position: 'absolute',
+        top: 24,
+        left: 20,
+        height: 2,
+        width: currentIdx === 0 ? 0 : `calc(${(currentIdx / (STEPS.length - 1)) * 100}% - 40px)`,
+        background: isRejected ? '#ef4444' : 'var(--brand)',
+        zIndex: 0,
+        transition: 'width 0.4s ease',
+      }} />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+        {STEPS.map((step, i) => {
+          const done      = !isRejected && i < currentIdx;
+          const active    = !isRejected && i === currentIdx;
+          const isFinalRj = isRejected && i === STEPS.length - 1;
+          const color     = isFinalRj ? '#ef4444' : active ? 'var(--brand)' : done ? '#22c55e' : '#cbd5e1';
 
           return (
-            <div key={s.key} style={{ display: 'flex', alignItems: 'flex-start', flex: 1, minWidth: 100 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                {/* Circle */}
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%',
-                  border: `2px solid ${isDone ? '#22c55e' : isCurrent ? (colors.dot || '#3b82f6') : isRejectedFinal ? '#ef4444' : '#e2e8f0'}`,
-                  background: isDone ? '#22c55e' : isCurrent ? (colors.dot || '#3b82f6') : isRejectedFinal ? '#ef4444' : '#f8fafc',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, position: 'relative', zIndex: 1,
-                  transition: 'all 0.2s',
-                }}>
-                  {isDone ? (
-                    <CheckCircle size={16} color="#fff" />
-                  ) : isRejectedFinal ? (
-                    <XCircle size={16} color="#fff" />
-                  ) : isCurrent ? (
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
-                  ) : (
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#cbd5e1' }} />
-                  )}
-                </div>
-                {/* Label */}
-                <div style={{
-                  textAlign: 'center', marginTop: 8, fontSize: 10, fontWeight: isCurrent || isRejectedFinal ? 700 : 500,
-                  color: isDone ? '#15803d' : isCurrent ? (colors.text || '#1e40af') : isRejectedFinal ? '#7f1d1d' : '#94a3b8',
-                  lineHeight: 1.3, maxWidth: 90, padding: '0 4px',
-                }}>
-                  {isRejectedFinal ? 'Rejected' : s.label}
-                </div>
+            <div key={step.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%',
+                border: `2.5px solid ${color}`,
+                background: (done || active || isFinalRj) ? color : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: active ? `0 0 0 4px color-mix(in srgb, ${color} 20%, transparent)` : 'none',
+                transition: 'all 0.25s',
+              }}>
+                {done ? (
+                  <CheckCircle size={15} color="#fff" strokeWidth={2.5} />
+                ) : isFinalRj ? (
+                  <XCircle size={15} color="#fff" strokeWidth={2.5} />
+                ) : active ? (
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
+                ) : (
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#e2e8f0' }} />
+                )}
               </div>
-              {/* Connector line */}
-              {i < mainStatuses.length - 1 && (
-                <div style={{
-                  height: 2, flex: 0,
-                  width: '100%', maxWidth: 40,
-                  marginTop: 15,
-                  background: isDone ? '#22c55e' : '#e2e8f0',
-                  transition: 'background 0.2s',
-                }} />
-              )}
+              <div style={{
+                marginTop: 8,
+                fontSize: 10,
+                fontWeight: (active || isFinalRj) ? 700 : done ? 600 : 400,
+                color: done ? '#15803d' : (active || isFinalRj) ? color : '#94a3b8',
+                textAlign: 'center',
+                lineHeight: 1.3,
+                maxWidth: 72,
+              }}>
+                {isFinalRj ? 'Not Accepted' : step.label}
+              </div>
             </div>
           );
         })}
@@ -94,31 +114,167 @@ function StatusPipeline({ current }) {
   );
 }
 
-function InfoRow({ label, value }) {
-  if (!value) return null;
+// ── Info table row ────────────────────────────────────────────────────────────
+function InfoRow({ label, value, mono }) {
+  if (!value && value !== 0) return null;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: 12, padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
-      <dt style={{ fontSize: 12, fontWeight: 600, color: '#64748b' }}>{label}</dt>
-      <dd style={{ fontSize: 13, color: '#1e293b', margin: 0 }}>{value}</dd>
+    <div style={{ display: 'flex', gap: 16, padding: '11px 0', borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8', minWidth: 140, paddingTop: 1 }}>{label}</div>
+      <div style={{ fontSize: 13, color: '#1e293b', fontFamily: mono ? 'monospace' : undefined, flex: 1 }}>{value}</div>
     </div>
   );
 }
 
+// ── Password change form ──────────────────────────────────────────────────────
+function ChangePasswordForm() {
+  const [form, setForm]     = useState({ current: '', next: '', confirm: '' });
+  const [show, setShow]     = useState({ current: false, next: false, confirm: false });
+  const [saving, setSaving] = useState(false);
+
+  const toggle = (field) => setShow((s) => ({ ...s, [field]: !s[field] }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.current || !form.next || !form.confirm) {
+      toast.error('All fields are required.'); return;
+    }
+    if (form.next.length < 6) {
+      toast.error('New password must be at least 6 characters.'); return;
+    }
+    if (form.next !== form.confirm) {
+      toast.error('New passwords do not match.'); return;
+    }
+    setSaving(true);
+    try {
+      await portalApi.patch('/abstracts/portal/change-password', {
+        currentPassword: form.current,
+        newPassword: form.next,
+      });
+      toast.success('Password updated. Please log in again.');
+      setForm({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Failed to update password.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const PasswordField = ({ label, field }) => (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={show[field] ? 'text' : 'password'}
+          value={form[field]}
+          onChange={(e) => setForm((f) => ({ ...f, [field]: e.target.value }))}
+          placeholder="••••••••"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '10px 42px 10px 14px',
+            fontSize: 13, border: '1.5px solid #e2e8f0',
+            borderRadius: 10, outline: 'none',
+            background: '#f8fafc', color: '#0f172a',
+            transition: 'border-color 0.15s, background 0.15s',
+          }}
+          onFocus={(e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.background = '#fff'; }}
+          onBlur={(e) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc'; }}
+        />
+        <button type="button" onClick={() => toggle(field)} style={{
+          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 2,
+        }}>
+          {show[field] ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <form onSubmit={handleSubmit} style={{ maxWidth: 420 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10, background: '#f1f5f9',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Lock size={16} color="var(--brand-dark)" />
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Change Password</div>
+          <div style={{ fontSize: 12, color: '#64748b' }}>Update your portal login password</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <PasswordField label="Current Password" field="current" />
+        <PasswordField label="New Password (min. 6 chars)" field="next" />
+        <PasswordField label="Confirm New Password" field="confirm" />
+
+        <button
+          type="submit"
+          disabled={saving}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '11px 20px', marginTop: 4,
+            fontSize: 13, fontWeight: 700,
+            background: saving ? '#94a3b8' : 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
+            color: '#fff', border: 'none', borderRadius: 10,
+            cursor: saving ? 'not-allowed' : 'pointer',
+            transition: 'opacity 0.15s',
+            boxShadow: '0 2px 8px color-mix(in srgb, var(--brand) 25%, transparent)',
+          }}
+          onMouseEnter={(e) => { if (!saving) e.currentTarget.style.opacity = '0.88'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+        >
+          {saving ? (
+            <>
+              <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+              Updating…
+            </>
+          ) : (
+            <><Lock size={14} /> Update Password</>
+          )}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+// ── Main dashboard ────────────────────────────────────────────────────────────
 export default function PortalDashboard() {
   const { submitter, loading, refresh } = useSubmitterAuth();
   const navigate = useNavigate();
+  const [tab, setTab] = useState('overview');
+  const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  // Proxied through the API so the browser saves the file rather than
+  // navigating to it — <a download> is ignored cross-origin.
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      const res = await portalApi.get('/abstracts/portal/file', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = submitter?.fileName || 'abstract';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Could not download the file. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !submitter) navigate('/portal/login', { replace: true });
   }, [submitter, loading, navigate]);
 
   const handleRefresh = async () => {
-    try {
-      await refresh();
-      toast.success('Status refreshed.');
-    } catch {
-      toast.error('Failed to refresh.');
-    }
+    setRefreshing(true);
+    try { await refresh(); toast.success('Status refreshed.'); }
+    catch { toast.error('Failed to refresh.'); }
+    finally { setRefreshing(false); }
   };
 
   if (loading || !submitter) {
@@ -131,199 +287,322 @@ export default function PortalDashboard() {
   }
 
   const s = submitter;
-  const statusColors = STATUS_COLORS[s.status] || STATUS_COLORS.pending;
+  const cfg = STATUS_CFG[s.status] || STATUS_CFG.pending;
   const isAccepted = s.status === 'accepted';
   const isRejected = s.status === 'rejected';
 
   return (
     <PortalLayout>
-      {/* Welcome */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>
-              Welcome, {s.firstName} {s.lastName}
-            </h1>
-            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
-              Login ID: <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--brand-dark)' }}>{s.loginId}</span>
-            </p>
+      {/* ── Header row ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
+            Submission Portal
           </div>
-          <button
-            onClick={handleRefresh}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              fontSize: 12, fontWeight: 600, color: '#64748b',
-              background: '#fff', border: '1px solid #e2e8f0',
-              borderRadius: 8, padding: '7px 14px', cursor: 'pointer',
-            }}
-          >
-            <RefreshCw size={13} /> Refresh Status
-          </button>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+            {s.firstName} {s.lastName}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, color: '#64748b' }}>
+              Login ID: <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--brand-dark)' }}>{s.loginId}</span>
+            </span>
+            <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1' }} />
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              padding: '3px 10px', borderRadius: 100,
+              background: cfg.bg, border: `1px solid ${cfg.border}`,
+              fontSize: 11, fontWeight: 700, color: cfg.color,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.color }} />
+              {cfg.label}
+            </span>
+          </div>
         </div>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 16px', borderRadius: 10,
+            fontSize: 12, fontWeight: 600, color: '#475569',
+            background: '#fff', border: '1.5px solid #e2e8f0',
+            cursor: refreshing ? 'not-allowed' : 'pointer',
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.color = 'var(--brand-dark)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569'; }}
+        >
+          <RefreshCw size={13} style={{ animation: refreshing ? 'spin 0.7s linear infinite' : 'none' }} />
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
       </div>
 
-      {/* Status Banner */}
-      <div style={{
-        background: statusColors.bg,
-        border: `1.5px solid ${statusColors.border}`,
-        borderRadius: 14,
-        padding: '20px 24px',
-        marginBottom: 24,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: statusColors.dot, flexShrink: 0 }} />
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: statusColors.text }}>
-            Current Status
-          </span>
-        </div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: statusColors.text, marginBottom: 4 }}>
-          {STATUSES.find((s2) => s2.key === s.status)?.label || s.status}
-        </div>
-        {s.adminNotes && (
-          <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(255,255,255,0.6)', borderRadius: 8, fontSize: 13, color: '#475569' }}>
-            <span style={{ fontWeight: 600 }}>Note: </span>{s.adminNotes}
-          </div>
-        )}
-
-        {/* Progress pipeline */}
-        <StatusPipeline current={s.status} />
+      {/* ── Tab navigation ── */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1.5px solid #e2e8f0', paddingBottom: 0 }}>
+        {TABS.map(({ key, label, icon: Icon }) => {
+          const active = tab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '10px 16px',
+                fontSize: 13, fontWeight: active ? 700 : 500,
+                color: active ? 'var(--brand-dark)' : '#64748b',
+                background: 'none', border: 'none',
+                borderBottom: `2px solid ${active ? 'var(--brand)' : 'transparent'}`,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                marginBottom: -1.5,
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = '#334155'; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = '#64748b'; }}
+            >
+              <Icon size={14} />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Action Buttons (only when accepted) */}
-      {isAccepted && (
-        <div style={{
-          background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-          border: '1.5px solid #86efac',
-          borderRadius: 14,
-          padding: '24px',
-          marginBottom: 24,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <CheckCircle size={20} color="#16a34a" />
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#14532d' }}>Congratulations! Your abstract has been accepted.</div>
-              <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>Please complete your registration to confirm your participation.</div>
+      {/* ── Overview tab ── */}
+      {tab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Status card */}
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            border: `1.5px solid ${cfg.border}`,
+            overflow: 'hidden',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ padding: '20px 24px', background: cfg.bg, borderBottom: `1px solid ${cfg.border}` }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+                Current Status
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: cfg.color }}>
+                {cfg.label}
+              </div>
+              {s.adminNotes && (
+                <div style={{
+                  marginTop: 12, padding: '10px 14px',
+                  background: 'rgba(255,255,255,0.65)', borderRadius: 8,
+                  fontSize: 13, color: '#475569', display: 'flex', gap: 8, alignItems: 'flex-start',
+                }}>
+                  <AlertCircle size={14} color="#d97706" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span><strong>Committee note: </strong>{s.adminNotes}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ padding: '24px 24px 20px' }}>
+              <StatusStepper status={s.status} />
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Link
-              to="/portal/acceptance-letter"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '12px 22px',
-                fontSize: 13, fontWeight: 700,
-                background: '#ffffff',
-                color: '#15803d',
-                border: '1.5px solid #4ade80',
-                borderRadius: 8, textDecoration: 'none',
-                boxShadow: '0 2px 8px rgba(22,163,74,0.12)',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf4'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; }}
-            >
-              <Download size={15} />
-              Acceptance Letter
-            </Link>
-            <Link
-              to="/registration"
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '12px 22px',
-                fontSize: 13, fontWeight: 700,
-                background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 8, textDecoration: 'none',
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--brand) 30%, transparent)',
-                transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-            >
-              <ExternalLink size={15} />
-              Register Now
-            </Link>
+
+          {/* Accepted action */}
+          {isAccepted && (
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+              border: '1.5px solid #86efac',
+              borderRadius: 16, padding: 24,
+              boxShadow: '0 1px 8px rgba(22,163,74,0.06)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <CheckCircle size={20} color="#16a34a" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#14532d' }}>Congratulations!</div>
+                  <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>Your abstract has been accepted. Complete your registration to confirm participation.</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Link to="/portal/acceptance-letter" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  padding: '10px 18px', fontSize: 12, fontWeight: 700,
+                  background: '#fff', color: '#15803d',
+                  border: '1.5px solid #4ade80', borderRadius: 9,
+                  textDecoration: 'none', boxShadow: '0 1px 6px rgba(22,163,74,0.1)',
+                  transition: 'background 0.15s',
+                }}>
+                  <Download size={14} /> Acceptance Letter
+                </Link>
+                <Link to="/registration" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  padding: '10px 18px', fontSize: 12, fontWeight: 700,
+                  background: 'linear-gradient(135deg, var(--brand-dark), var(--brand))',
+                  color: '#fff', border: 'none', borderRadius: 9,
+                  textDecoration: 'none',
+                  boxShadow: '0 2px 8px color-mix(in srgb, var(--brand) 30%, transparent)',
+                }}>
+                  <ExternalLink size={14} /> Register Now
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Quick info strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+            {[
+              { label: 'Reference ID', value: s._id?.slice(-12), mono: true },
+              { label: 'Login ID', value: s.loginId, mono: true },
+              { label: 'Submitted', value: s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : null },
+              { label: 'Presentation', value: PRESENTATION_LABELS[s.presentationType] || s.presentationType },
+            ].filter((r) => r.value).map(({ label, value, mono }) => (
+              <div key={label} style={{ background: '#fff', borderRadius: 12, border: '1px solid #f1f5f9', padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', fontFamily: mono ? 'monospace' : undefined }}>{value}</div>
+              </div>
+            ))}
           </div>
+
+          {/* View abstract shortcut */}
+          <button
+            onClick={() => setTab('abstract')}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', borderRadius: 12,
+              background: '#fff', border: '1.5px solid #e2e8f0',
+              cursor: 'pointer', width: '100%', textAlign: 'left',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.boxShadow = '0 2px 10px color-mix(in srgb, var(--brand) 12%, transparent)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.03)'; }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: 9, background: 'color-mix(in srgb, var(--brand) 10%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FileText size={16} color="var(--brand-dark)" />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{s.abstractTitle || 'My Abstract'}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                  {s.fileUrl ? 'File uploaded · Click to view details & download' : 'Click to view full abstract details'}
+                </div>
+              </div>
+            </div>
+            <ChevronRight size={16} color="#94a3b8" />
+          </button>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
-        {/* Abstract Details */}
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '24px', gridColumn: isAccepted ? '1 / -1' : undefined }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <FileText size={15} color="var(--brand)" />
-            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Abstract Submission</h2>
+      {/* ── My Abstract tab ── */}
+      {tab === 'abstract' && (
+        <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+          {/* Title section */}
+          <div style={{ padding: '24px 28px', borderBottom: '1px solid #f1f5f9', background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Abstract Title</div>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a', lineHeight: 1.35 }}>{s.abstractTitle}</h2>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Title</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', lineHeight: 1.4 }}>{s.abstractTitle}</div>
+          <div style={{ padding: '0 28px' }}>
+            {/* Author details */}
+            <div style={{ paddingTop: 8, paddingBottom: 4 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '16px 0 6px' }}>Author Information</div>
+              <InfoRow label="Full Name" value={`${s.firstName} ${s.lastName}`} />
+              <InfoRow label="Email" value={s.email} />
+              <InfoRow label="Country" value={s.country} />
+              <InfoRow label="Organization" value={s.organization} />
+            </div>
+
+            {/* Submission details */}
+            <div style={{ paddingBottom: 4 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '16px 0 6px' }}>Submission Details</div>
+              <InfoRow label="Presentation Type" value={PRESENTATION_LABELS[s.presentationType] || s.presentationType} />
+              <InfoRow label="Edition" value={s.edition?.title ? `${s.edition.title}${s.edition.year ? ' (' + s.edition.year + ')' : ''}` : null} />
+              <InfoRow label="Topic" value={s.topic?.title || s.topicText} />
+              <InfoRow label="Keywords" value={s.keywords} />
+              <InfoRow label="Co-Authors" value={s.coAuthors} />
+              <InfoRow label="Login ID" value={s.loginId} mono />
+              <InfoRow label="Reference ID" value={s._id} mono />
+              <InfoRow
+                label="Submitted"
+                value={s.createdAt ? new Date(s.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : null}
+              />
+              <InfoRow
+                label="Last Updated"
+                value={s.updatedAt ? new Date(s.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : null}
+              />
+            </div>
           </div>
 
-          <dl style={{ margin: 0 }}>
-            <InfoRow label="Author" value={`${s.firstName} ${s.lastName}`} />
-            <InfoRow label="Email" value={s.email} />
-            <InfoRow label="Country" value={s.country} />
-            <InfoRow label="Organization" value={s.organization} />
-            <InfoRow label="Presentation Type" value={PRESENTATION_LABELS[s.presentationType] || s.presentationType} />
-            <InfoRow label="Edition" value={s.edition?.title ? `${s.edition.title} (${s.edition.year})` : null} />
-            <InfoRow label="Topic" value={s.topic?.title || s.topicText} />
-            <InfoRow label="Keywords" value={s.keywords} />
-            <InfoRow label="Co-Authors" value={s.coAuthors} />
-          </dl>
-
+          {/* Abstract text */}
           {s.abstractText && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Abstract Text</div>
-              <div style={{
-                background: '#f8fafc', borderRadius: 8, padding: '14px 16px',
-                fontSize: 13, color: '#475569', lineHeight: 1.7, whiteSpace: 'pre-wrap',
-                maxHeight: 200, overflowY: 'auto',
-              }}>
+            <div style={{ margin: '0 28px', borderRadius: 12, background: '#f8fafc', border: '1px solid #f1f5f9', padding: '16px 20px', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Abstract Text</div>
+              <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.75, whiteSpace: 'pre-wrap', maxHeight: 220, overflowY: 'auto' }}>
                 {s.abstractText}
               </div>
             </div>
           )}
 
+          {/* File download */}
           {s.fileUrl && (
-            <div style={{ marginTop: 16 }}>
-              <a
-                href={s.fileUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontSize: 13, fontWeight: 600, color: 'var(--brand-dark)',
-                  textDecoration: 'none',
-                }}
-              >
-                <Download size={14} /> Download Submitted File
-              </a>
+            <div style={{ margin: '0 28px 28px', padding: '16px 20px', borderRadius: 12, background: 'color-mix(in srgb, var(--brand) 6%, transparent)', border: '1.5px solid color-mix(in srgb, var(--brand) 20%, transparent)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 9, background: '#fff', border: '1px solid color-mix(in srgb, var(--brand) 25%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <FileText size={16} color="var(--brand-dark)" />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{s.fileName || 'Abstract Document'}</div>
+                    <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>The file you submitted with this abstract</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <a
+                    href={s.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '9px 14px', fontSize: 12, fontWeight: 700,
+                      background: '#fff', color: 'var(--brand-dark)',
+                      border: '1.5px solid color-mix(in srgb, var(--brand) 30%, transparent)',
+                      borderRadius: 9, textDecoration: 'none',
+                    }}
+                  >
+                    <Eye size={14} /> View
+                  </a>
+                  <button
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '9px 16px', fontSize: 12, fontWeight: 700,
+                      background: 'var(--brand-dark)', color: '#fff',
+                      border: 'none', borderRadius: 9,
+                      cursor: downloading ? 'not-allowed' : 'pointer',
+                      opacity: downloading ? 0.65 : 1,
+                      boxShadow: '0 2px 6px color-mix(in srgb, var(--brand) 25%, transparent)',
+                    }}
+                  >
+                    {downloading ? (
+                      <>
+                        <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+                        Downloading…
+                      </>
+                    ) : (
+                      <><Download size={14} /> Download</>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Submission Info */}
-        <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '24px' }}>
-          <h2 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#0f172a' }}>Submission Info</h2>
-          <dl style={{ margin: 0 }}>
-            <InfoRow label="Reference ID" value={s._id} />
-            <InfoRow label="Login ID" value={s.loginId} />
-            <InfoRow
-              label="Submitted"
-              value={s.createdAt ? new Date(s.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : null}
-            />
-            <InfoRow
-              label="Last Updated"
-              value={s.updatedAt ? new Date(s.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : null}
-            />
-          </dl>
+          {!s.fileUrl && <div style={{ height: 28 }} />}
         </div>
-      </div>
+      )}
+
+      {/* ── Security tab ── */}
+      {tab === 'security' && (
+        <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 28, boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+          <ChangePasswordForm />
+        </div>
+      )}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </PortalLayout>

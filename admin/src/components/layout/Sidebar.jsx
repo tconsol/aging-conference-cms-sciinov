@@ -2,11 +2,38 @@ import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, X, Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { navGroups } from '../../config/navGroups';
+import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
-function NavGroup({ group }) {
+// Pill badge component
+function CountBadge({ count, active }) {
+  if (!count) return null;
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 18,
+      height: 18,
+      borderRadius: 999,
+      fontSize: 10,
+      fontWeight: 700,
+      padding: '0 4px',
+      background: '#dc2626',
+      color: '#fff',
+      lineHeight: 1,
+    }}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
+function NavGroup({ group, badges = {} }) {
   const location = useLocation();
   const isActive = group.items?.some((item) => location.pathname.startsWith(item.href));
   const [open, setOpen] = useState(isActive);
+
+  // Group pill = sum of all badged items inside the group
+  const groupBadge = (group.items || []).reduce((sum, item) => sum + (badges[item.href] || 0), 0);
 
   return (
     <div>
@@ -14,9 +41,12 @@ function NavGroup({ group }) {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-3 py-1.5 rounded-md transition-colors hover:bg-slate-100"
       >
-        <span className={`text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-teal-700' : 'text-slate-400'}`}>
-          {group.label}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-teal-700' : 'text-slate-400'}`}>
+            {group.label}
+          </span>
+          {groupBadge > 0 && !open && <CountBadge count={groupBadge} active={isActive} />}
+        </div>
         <ChevronDown
           size={12}
           strokeWidth={2.5}
@@ -26,35 +56,44 @@ function NavGroup({ group }) {
 
       {open && (
         <div className="mt-0.5 mb-2 space-y-0.5">
-          {group.items.map((item) => (
-            <NavLink
-              key={item.href}
-              to={item.href}
-              className={({ isActive: active }) =>
-                `flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-all duration-150 ${
-                  active
-                    ? 'bg-teal-50 text-teal-800 font-semibold border-l-2 border-teal-600'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-l-2 border-transparent'
-                }`
-              }
-            >
-              <item.icon size={14} className="flex-shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          ))}
+          {group.items.map((item) => {
+            const itemBadge = badges[item.href] || 0;
+            return (
+              <NavLink
+                key={item.href}
+                to={item.href}
+                className={({ isActive: active }) =>
+                  `flex items-center gap-2.5 px-3 py-2 text-sm rounded-md transition-all duration-150 ${
+                    active
+                      ? 'bg-teal-50 text-teal-800 font-semibold border-l-2 border-teal-600'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-l-2 border-transparent'
+                  }`
+                }
+              >
+                {({ isActive: active }) => (
+                  <>
+                    <item.icon size={14} className="flex-shrink-0" />
+                    <span className="truncate flex-1">{item.label}</span>
+                    {itemBadge > 0 && <CountBadge count={itemBadge} active={active} />}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-function CollapsedLink({ item }) {
+function CollapsedLink({ item, badges = {} }) {
+  const itemBadge = badges[item.href] || 0;
   return (
     <NavLink
       to={item.href}
       title={item.label}
       className={({ isActive }) =>
-        `flex items-center justify-center w-10 h-10 mx-auto rounded-md transition-all duration-150 ${
+        `relative flex items-center justify-center w-10 h-10 mx-auto rounded-md transition-all duration-150 ${
           isActive
             ? 'bg-teal-50 text-teal-700'
             : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
@@ -62,6 +101,18 @@ function CollapsedLink({ item }) {
       }
     >
       <item.icon size={17} className="flex-shrink-0" />
+      {itemBadge > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: 4,
+          right: 4,
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: '#dc2626',
+          border: '1.5px solid #fff',
+        }} />
+      )}
     </NavLink>
   );
 }
@@ -100,6 +151,8 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
 }
 
 function SidebarContent({ collapsed, onToggleCollapsed, showCollapseToggle, logo }) {
+  const { badges } = useRegistrationBadge();
+
   return (
     <>
       {/* Logo */}
@@ -131,11 +184,11 @@ function SidebarContent({ collapsed, onToggleCollapsed, showCollapseToggle, logo
         <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
           {navGroups.map((group) =>
             group.single ? (
-              <CollapsedLink key={group.href} item={group} />
+              <CollapsedLink key={group.href} item={group} badges={badges} />
             ) : (
               <div key={group.label} className="space-y-1 pb-1 mb-1 border-b border-slate-100 last:border-0">
                 {group.items.map((item) => (
-                  <CollapsedLink key={item.href} item={item} />
+                  <CollapsedLink key={item.href} item={item} badges={badges} />
                 ))}
               </div>
             )
@@ -160,7 +213,7 @@ function SidebarContent({ collapsed, onToggleCollapsed, showCollapseToggle, logo
                 {group.label}
               </NavLink>
             ) : (
-              <NavGroup key={group.label} group={group} />
+              <NavGroup key={group.label} group={group} badges={badges} />
             )
           )}
         </nav>

@@ -1,5 +1,40 @@
 const jwt = require('jsonwebtoken');
 const Abstract = require('../models/Abstract');
+const { streamGCSFile, gcsPathFromUrl } = require('../utils/gcs');
+
+// Streams the submitter's own uploaded file back as an attachment.
+exports.downloadMyFile = async (req, res, next) => {
+  try {
+    const abstract = await Abstract.findById(req.submitter.abstractId).select('fileUrl filePublicId fileName');
+    if (!abstract) return res.status(404).json({ success: false, message: 'Submission not found.' });
+
+    const path = abstract.filePublicId || gcsPathFromUrl(abstract.fileUrl);
+    if (!path) return res.status(404).json({ success: false, message: 'No file attached.' });
+
+    const ok = await streamGCSFile(res, { filename: path, downloadName: abstract.fileName || 'abstract' });
+    if (!ok) return res.status(404).json({ success: false, message: 'File no longer available.' });
+  } catch (err) { next(err); }
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Both current and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+    }
+    const abstract = await Abstract.findById(req.submitter.abstractId);
+    if (!abstract) return res.status(404).json({ success: false, message: 'Submission not found.' });
+    if (abstract.loginPassword !== currentPassword) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
+    }
+    abstract.loginPassword = newPassword;
+    await abstract.save();
+    res.json({ success: true, message: 'Password updated successfully.' });
+  } catch (err) { next(err); }
+};
 
 exports.login = async (req, res, next) => {
   try {

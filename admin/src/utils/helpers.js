@@ -70,6 +70,25 @@ export const CATEGORY_LABELS = {
   student: 'Student',
 };
 
+export const ATTENDANCE_MODE_LABELS = {
+  in_person: 'In-Person',
+  virtual: 'Virtual',
+};
+
+export const PAYMENT_METHOD_LABELS = {
+  paypal: 'PayPal',
+  razorpay: 'Razorpay',
+  bank_transfer: 'Bank Transfer',
+  upi: 'UPI Transfer',
+  card: 'Card',
+  cash: 'Cash',
+  cheque: 'Cheque',
+  other: 'Other',
+};
+
+export const PAYMENT_METHOD_OPTIONS = Object.entries(PAYMENT_METHOD_LABELS)
+  .map(([value, label]) => ({ value, label }));
+
 export const getNextDisplayOrder = (items, field = 'displayOrder') => {
   if (!items.length) return 1;
   const max = Math.max(...items.map((i) => Number(i[field] ?? 0)));

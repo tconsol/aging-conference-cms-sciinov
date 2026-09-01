@@ -1,6 +1,8 @@
 const Abstract = require('../models/Abstract');
-const { uploadToGCS, deleteFromGCS, gcsFilename } = require('../utils/gcs');
+const { uploadToGCS, deleteFromGCS, gcsFilename, streamGCSFile, gcsPathFromUrl } = require('../utils/gcs');
 const { sendEmail } = require('../utils/email');
+const { broadcastToAbstract } = require('../utils/ssePortalClients');
+const { broadcast } = require('../utils/sseClients');
 
 const STATUS_INFO = {
   received_accepted: {
@@ -92,6 +94,20 @@ exports.getOne = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Streams the uploaded abstract file back as an attachment (admin).
+exports.downloadFile = async (req, res, next) => {
+  try {
+    const abstract = await Abstract.findById(req.params.id).select('fileUrl filePublicId fileName');
+    if (!abstract) return res.status(404).json({ success: false, message: 'Abstract not found.' });
+
+    const path = abstract.filePublicId || gcsPathFromUrl(abstract.fileUrl);
+    if (!path) return res.status(404).json({ success: false, message: 'No file attached.' });
+
+    const ok = await streamGCSFile(res, { filename: path, downloadName: abstract.fileName || 'abstract' });
+    if (!ok) return res.status(404).json({ success: false, message: 'File no longer available.' });
+  } catch (err) { next(err); }
+};
+
 exports.submit = async (req, res, next) => {
   try {
     const data = { ...req.body };
@@ -107,6 +123,18 @@ exports.submit = async (req, res, next) => {
     data.loginPassword = generatePassword();
 
     const abstract = await Abstract.create(data);
+
+    // Notify connected admin panels (sidebar badge + live table refresh)
+    broadcast('new_abstract', {
+      id: abstract._id,
+      abstractTitle: abstract.abstractTitle,
+      firstName: abstract.firstName,
+      lastName: abstract.lastName,
+      email: abstract.email,
+      loginId: abstract.loginId,
+      hasFile: Boolean(abstract.fileUrl),
+      createdAt: abstract.createdAt,
+    });
 
     const portalUrl = process.env.PORTAL_URL || process.env.FRONTEND_URL || '';
 
@@ -194,6 +222,11 @@ exports.updateStatus = async (req, res, next) => {
         // Non-critical
       }
     }
+
+    broadcastToAbstract(abstract._id, 'status_update', {
+      status: abstract.status,
+      adminNotes: abstract.adminNotes || null,
+    });
 
     res.json({ success: true, data: abstract });
   } catch (err) { next(err); }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Eye, Trash2, FileText, Clock, CheckCircle, XCircle, ChevronDown, Loader2 } from 'lucide-react';
+import { Eye, Trash2, FileText, Clock, CheckCircle, XCircle, ChevronDown, Loader2, Download } from 'lucide-react';
 import Spinner from '../../components/ui/Spinner';
 import Pagination from '../../components/ui/Pagination';
 import SearchBar from '../../components/ui/SearchBar';
@@ -14,6 +14,7 @@ import Dropdown from '../../components/ui/Dropdown';
 import { abstractsAPI } from '../../api/submissions';
 import { editionsAPI } from '../../api/congress';
 import { formatDate, truncate, getErrorMessage } from '../../utils/helpers';
+import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 
 const STATUS_CONFIG = {
   pending:           { label: 'Pending',          bg: '#fffbeb', color: '#92400e', dot: '#f59e0b', border: '#fcd34d' },
@@ -200,6 +201,7 @@ function InlineStatusDropdown({ item, onUpdate, updating }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function Abstracts() {
   const navigate = useNavigate();
+  const { lastAbstractEventTime, resetAbstractCount } = useRegistrationBadge();
 
   const [items, setItems]     = useState([]);
   const [editions, setEditions] = useState([]);
@@ -247,6 +249,15 @@ export default function Abstracts() {
   useEffect(() => { fetchEditions(); }, []);
   useEffect(() => { fetchItems(); }, [fetchItems]);
   useEffect(() => { setPage(1); }, [search, editionFilter, statusFilter]);
+
+  // Clear the sidebar badge as soon as this page is opened
+  useEffect(() => { resetAbstractCount(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Live push: a new abstract arrived while this page is open — refresh the table
+  useEffect(() => {
+    if (!lastAbstractEventTime) return;
+    fetchItems();
+  }, [lastAbstractEventTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Inline status update ─────────────────────────────────────────────────
   const handleStatusUpdate = async (id, newStatus) => {
@@ -425,6 +436,19 @@ export default function Abstracts() {
                         >
                           <Eye size={14} />
                         </button>
+                        {item.fileUrl && (
+                          <a
+                            href={item.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            title={`Download: ${item.fileName || 'Abstract File'}`}
+                            style={actionBtn}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#1d4ed8'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
+                          >
+                            <Download size={14} />
+                          </a>
+                        )}
                         <button
                           onClick={() => setDeleteDialog({ open: true, id: item._id })}
                           title="Delete"

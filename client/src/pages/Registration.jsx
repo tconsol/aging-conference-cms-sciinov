@@ -255,6 +255,12 @@ export default function Registration() {
       lastName: formData.lastName,
       title: formData.title,
       country: formData.country,
+      category: selectedCategory,
+      pricingTierLabel: activeTier?.label || activeTier?.name || '',
+      participants,
+      accompanying,
+      amount: Math.round(finalAmount * 100) / 100,
+      edition: formData.edition || selectedEdition,
     }).catch(() => {});
   };
 

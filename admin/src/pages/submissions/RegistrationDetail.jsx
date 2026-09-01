@@ -9,13 +9,26 @@ import Select from '../../components/ui/Select';
 import Badge, { statusBadge } from '../../components/ui/Badge';
 import Spinner from '../../components/ui/Spinner';
 import { registrationsAPI } from '../../api/submissions';
-import { formatDateTime, formatCurrency, CATEGORY_LABELS, getErrorMessage } from '../../utils/helpers';
+import {
+  formatDateTime, formatCurrency, CATEGORY_LABELS, ATTENDANCE_MODE_LABELS,
+  PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS, getErrorMessage,
+} from '../../utils/helpers';
 
 const paymentStatusOptions = [
   { value: 'pending', label: 'Pending' },
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
+
+const paymentMethodOptions = [{ value: '', label: '— Not set —' }, ...PAYMENT_METHOD_OPTIONS];
+
+// Registrations confirmed before paymentMethod was tracked were all PayPal,
+// so fall back to that rather than showing a blank.
+function resolvePaymentMethod(reg) {
+  if (reg?.paymentMethod) return PAYMENT_METHOD_LABELS[reg.paymentMethod] || reg.paymentMethod;
+  if (reg?.paymentStatus === 'confirmed' && reg?.transactionId) return 'PayPal';
+  return null;
+}
 
 function DetailRow({ label, value }) {
   return (
@@ -44,6 +57,7 @@ export default function RegistrationDetail() {
       setRegistration(data);
       reset({
         paymentStatus: data.paymentStatus || 'pending',
+        paymentMethod: data.paymentMethod || '',
         transactionId: data.transactionId || '',
       });
     } catch (err) {
@@ -60,6 +74,7 @@ export default function RegistrationDetail() {
     try {
       await registrationsAPI.updatePayment(id, {
         paymentStatus: formData.paymentStatus,
+        paymentMethod: formData.paymentMethod,
         transactionId: formData.transactionId,
       });
       toast.success('Payment status updated successfully.');
@@ -134,11 +149,11 @@ export default function RegistrationDetail() {
             <dl>
               <DetailRow label="Edition" value={registration.edition?.title || registration.editionId} />
               <DetailRow label="Category" value={CATEGORY_LABELS[registration.category] || registration.category} />
-              <DetailRow label="Attendance Mode" value={registration.attendanceMode} />
-              <DetailRow label="Amount" value={formatCurrency(registration.amount)} />
+              <DetailRow label="Attendance Mode" value={ATTENDANCE_MODE_LABELS[registration.attendanceMode] || registration.attendanceMode} />
+              <DetailRow label="Amount" value={formatCurrency(registration.amount, registration.currency)} />
               <DetailRow label="Currency" value={registration.currency} />
               <DetailRow label="Transaction ID" value={registration.transactionId} />
-              <DetailRow label="Payment Method" value={registration.paymentMethod} />
+              <DetailRow label="Payment Method" value={resolvePaymentMethod(registration)} />
               <DetailRow label="Registered At" value={formatDateTime(registration.createdAt)} />
             </dl>
           </div>
@@ -157,6 +172,14 @@ export default function RegistrationDetail() {
                 options={paymentStatusOptions}
                 required
                 defaultValue={registration?.paymentStatus || 'pending'}
+              />
+              <Select
+                label="Payment Method"
+                name="paymentMethod"
+                register={register}
+                error={errors.paymentMethod?.message}
+                options={paymentMethodOptions}
+                defaultValue={registration?.paymentMethod || ''}
               />
               <Input
                 label="Transaction ID"

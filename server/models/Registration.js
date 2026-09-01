@@ -39,8 +39,14 @@ const registrationSchema = new mongoose.Schema(
       enum: ['pending', 'confirmed', 'cancelled'],
       default: 'pending',
     },
+    paymentMethod: {
+      type: String,
+      enum: ['paypal', 'razorpay', 'bank_transfer', 'upi', 'card', 'cash', 'cheque', 'other'],
+    },
     transactionId: String,
     notes: String,
+    // Set when an admin creates the record by hand instead of it coming from the public form
+    createdByAdmin: { type: Boolean, default: false },
     registeredAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
