@@ -617,29 +617,76 @@ exports.trackIntent = async (req, res, next) => {
       lastAttemptAt: intent.lastAttemptAt,
     });
 
-    const data = { email, firstName, lastName, title, country, category, pricingTierLabel, participants, accompanying, amount };
-    try {
-      const ctx = await getSiteCtx();
-      if (attemptNumber === 1) {
-        await sendEmail({
-          to: email,
-          subject: `${ctx.editionLabel || ctx.siteName} – Registration Reminder: Payment Pending`,
-          html: buildPendingReminderEmail(data, ctx),
-        });
-        console.log(`[Intent] Reminder email → ${email} (attempt 1)`);
-      } else {
-        await sendEmail({
-          to: email,
-          subject: `${ctx.editionLabel || ctx.siteName} – Registration Assistance Available`,
-          html: buildMultipleAttemptsEmail(data, ctx),
-        });
-        console.log(`[Intent] Multiple-attempts email → ${email} (attempt ${attemptNumber})`);
-      }
-    } catch (emailErr) {
-      console.error('[Intent] Email failed:', emailErr.message);
+    // No email here. Reaching the payment step is not abandonment — mailing at
+    // this point means anyone who pays a minute later still gets an
+    // "incomplete registration" notice. The reminder is sent by
+    // `abandonIntent` once the user actually leaves without paying.
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+// Don't re-mail the same person on every back-navigation or refresh
+const ABANDON_REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Called when a user leaves the payment step without completing payment
+ * (back button, tab close, or the payment session timing out).
+ *
+ * Public, like /intent, and reached via sendBeacon — so it stays deliberately
+ * conservative: it only ever mails an address that already has a tracked
+ * intent, never one supplied out of the blue, and it silently no-ops rather
+ * than erroring so an unload-time beacon can't surface failures to the user.
+ */
+exports.abandonIntent = async (req, res, next) => {
+  try {
+    const email = String(req.body?.email || '').toLowerCase().trim();
+    if (!email) return res.json({ success: true, sent: false, reason: 'no-email' });
+
+    const intent = await RegistrationIntent.findOne({ email });
+    if (!intent) return res.json({ success: true, sent: false, reason: 'no-intent' });
+
+    // They may have completed payment in another tab, or previously
+    const paid = await Registration.findOne({ email, paymentStatus: 'confirmed' }).select('_id').lean();
+    if (paid) return res.json({ success: true, sent: false, reason: 'already-paid' });
+
+    if (intent.lastReminderAt && Date.now() - new Date(intent.lastReminderAt).getTime() < ABANDON_REMINDER_COOLDOWN_MS) {
+      return res.json({ success: true, sent: false, reason: 'cooldown' });
     }
 
-    res.json({ success: true });
+    const data = {
+      email,
+      firstName: intent.firstName,
+      lastName: intent.lastName,
+      title: intent.title,
+      country: intent.country,
+      category: intent.category,
+      pricingTierLabel: intent.pricingTierLabel,
+      participants: intent.participants,
+      accompanying: intent.accompanying,
+      amount: intent.amount,
+    };
+
+    try {
+      const ctx = await getSiteCtx();
+      const repeat = (intent.attemptCount || 1) > 1;
+      await sendEmail({
+        to: email,
+        subject: repeat
+          ? `${ctx.editionLabel || ctx.siteName} – Registration Assistance Available`
+          : `${ctx.editionLabel || ctx.siteName} – Registration Reminder: Payment Pending`,
+        html: repeat ? buildMultipleAttemptsEmail(data, ctx) : buildPendingReminderEmail(data, ctx),
+      });
+
+      intent.lastReminderAt = new Date();
+      intent.reminderCount = (intent.reminderCount || 0) + 1;
+      await intent.save();
+
+      console.log(`[Intent] Abandonment reminder → ${email} (attempt ${intent.attemptCount}, reminder ${intent.reminderCount})`);
+      return res.json({ success: true, sent: true });
+    } catch (emailErr) {
+      console.error('[Intent] Abandonment email failed:', emailErr.message);
+      return res.json({ success: true, sent: false, reason: 'email-failed' });
+    }
   } catch (err) { next(err); }
 };
 

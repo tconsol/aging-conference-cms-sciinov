@@ -12,6 +12,8 @@ router.post('/submit', ctrl.submit);
 
 // Intent tracking called when user enters payment step
 router.post('/intent', ctrl.trackIntent);
+// Fired (often via sendBeacon) when someone leaves the payment step unpaid
+router.post('/intent/abandon', ctrl.abandonIntent);
 
 // PayPal payment (public user initiates)
 router.post('/paypal/create-order', ctrl.createPaypalOrder);

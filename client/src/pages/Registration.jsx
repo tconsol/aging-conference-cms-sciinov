@@ -170,6 +170,7 @@ export default function Registration() {
   const [captchaSolvedOnce, setCaptchaSolvedOnce] = useState(false);
   const recaptchaRef = useRef(null);
   const registrationIdRef = useRef(null);
+  const pendingDataRef = useRef(null);
   const contentRef = useRef(null);
 
   // Pricing step state
@@ -258,6 +259,8 @@ export default function Registration() {
       currency: 'USD',
     };
     setPendingData(payload);
+    pendingDataRef.current = payload;
+    abandonReportedRef.current = false; // new attempt -> allow a fresh reminder
     setCaptchaToken(null);
     setCaptchaSolvedOnce(false);
     recaptchaRef.current?.reset();
@@ -312,6 +315,8 @@ export default function Registration() {
       setSubmitted(true);
       setStep('form');
       setPendingData(null);
+      pendingDataRef.current = null;
+      abandonReportedRef.current = true; // paid - never send a reminder
       registrationIdRef.current = null;
       setCaptchaToken(null);
       setCaptchaSolvedOnce(false);
@@ -323,6 +328,48 @@ export default function Registration() {
       setPaypalCapturing(false);
     }
   };
+
+  /* ── Abandonment reminder ────────────────────────────────────────────────
+     Fires when the user leaves the payment step without paying: back button,
+     tab/window close, or the session timing out. sendBeacon is used because a
+     normal request is cancelled during unload; the server no-ops if the person
+     has actually paid or was already reminded recently.                     */
+  const abandonReportedRef = useRef(false);
+
+  const reportAbandonment = () => {
+    const email = pendingDataRef.current?.email;
+    if (!email || abandonReportedRef.current) return;
+    abandonReportedRef.current = true;
+
+    const url = `${import.meta.env.VITE_API_URL}/registrations/intent/abandon`;
+    const body = JSON.stringify({ email });
+
+    // sendBeacon survives page unload; fetch+keepalive is the fallback
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+    } else {
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  };
+
+  // Closing or navigating away from the payment step counts as abandoning.
+  // `pagehide` over `beforeunload` because iOS Safari ignores the latter.
+  //
+  // Deliberately NOT listening to `visibilitychange`: the PayPal window takes
+  // focus when it opens, and users tab away to fetch their card — both would
+  // look like abandonment and email someone mid-payment.
+  useEffect(() => {
+    if (step !== 'payment') return;
+
+    const onHide = () => reportAbandonment();
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onPaypalError = (err) => {
     console.error('[PayPal] checkout error:', err);
@@ -337,6 +384,7 @@ export default function Registration() {
      mid-payment would strand a charge that PayPal has already taken.        */
   const resetPaymentSession = () => {
     setPendingData(null);
+    pendingDataRef.current = null;
     registrationIdRef.current = null;
     setCaptchaToken(null);
     setCaptchaSolvedOnce(false);
@@ -354,6 +402,7 @@ export default function Registration() {
         if (s <= 1) {
           clearInterval(id);
           toast.error('Payment session expired. Please start your registration again.');
+          reportAbandonment();
           resetPaymentSession();
           setStep('form');
           contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -402,7 +451,8 @@ export default function Registration() {
           <div className="container-custom">
             <div className="max-w-lg mx-auto" ref={contentRef}>
               <StepBar current="payment" />
-              <button onClick={() => setStep('pricing')}
+              <button
+                onClick={() => { reportAbandonment(); setStep('pricing'); }}
                 className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-5 transition-colors">
                 <ArrowLeft size={15} /> Back to Registration Type
               </button>
@@ -457,16 +507,12 @@ export default function Registration() {
                       setCaptchaToken(t);
                       if (t) setCaptchaSolvedOnce(true);
                     }}
+                    // Clears only the token, never captchaSolvedOnce — the
+                    // buttons must stay mounted or the library's unmount
+                    // cleanup closes an open payment window. The widget shows
+                    // its own expiry message, so no extra notice is needed.
                     onExpired={() => setCaptchaToken(null)}
                   />
-
-                  {/* Token expired but the buttons stay mounted, so an open
-                      payment window is never destroyed underneath the user. */}
-                  {captchaSolvedOnce && !captchaToken && (
-                    <p className="text-xs text-amber-600 text-center max-w-xs">
-                      Verification expired — please tick the box again before paying.
-                    </p>
-                  )}
                 </div>
               )}
 
