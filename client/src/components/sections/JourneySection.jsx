@@ -17,7 +17,7 @@ const SPEAKER_STEPS = [
     icon: Search,
     title: 'Review & Acceptance',
     desc: 'Your submission is reviewed by the Scientific Committee. Upon acceptance, you will receive an official acceptance notification.',
-    link: { label: 'Learn more', href: '/about' },
+    link: { label: 'Learn more', href: '/guidelines' },
   },
   {
     number: '03',

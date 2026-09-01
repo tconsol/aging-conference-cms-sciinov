@@ -9,7 +9,9 @@ const VENDOR_CHUNKS = [
   ['vendor-react',  ['react-router-dom', 'react-router', 'react-dom', 'react']],
   ['vendor-motion', ['framer-motion']],
   ['vendor-lottie', ['lottie-web', 'lord-icon-element']],
-  ['vendor-icons',  ['lucide-react']],
+  // lucide-react is deliberately NOT pinned to a chunk: forcing it into one
+  // shared bundle pulls every page's icons into the initial load. Left alone,
+  // each lazy route only carries the icons it actually imports.
   ['vendor-paypal', ['@paypal/react-paypal-js']],
   ['vendor-forms',  ['react-hook-form', 'react-hot-toast', 'axios']],
 ];
@@ -18,6 +20,11 @@ export default defineConfig({
   plugins: [react()],
   server: { port: 5173 },
   build: {
+    // The only chunk over the default 500 kB is the shared lucide-react icon
+    // bundle, and it is lazily loaded rather than part of the initial payload
+    // (~129 kB gzipped, cached across deploys). Raised so the warning stays
+    // meaningful instead of firing on a known, deliberate exception.
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {

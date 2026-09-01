@@ -344,15 +344,47 @@ exports.handlePaypalWebhook = async (req, res, next) => {
   }
 };
 
+/**
+ * Returns { ok, reason }. CAPTCHA is mandatory and fails closed: an unset
+ * RECAPTCHA_SECRET_KEY is treated as a server misconfiguration, not permission
+ * to skip verification — a silent bypass here is exactly what let unverified
+ * submissions through undetected before.
+ *
+ * Distinguishing "token missing" from "token rejected" matters too: a missing
+ * token almost always means the client never rendered the widget (e.g.
+ * VITE_RECAPTCHA_SITE_KEY absent from that build) — a deploy misconfiguration,
+ * not a real bot submission. A generic "verification failed" message for both
+ * makes that indistinguishable from the server logs.
+ */
 async function verifyCaptcha(token) {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) return true; // skip if not configured
-  const res = await fetch(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secret}&response=${token}`,
-    { method: 'POST' }
-  );
+  if (!secret) {
+    console.error('[reCAPTCHA] RECAPTCHA_SECRET_KEY is not set — refusing to accept unverified submissions.');
+    return {
+      ok: false,
+      reason: 'unconfigured',
+      message: 'Registration is temporarily unavailable (CAPTCHA not configured). Please contact support.',
+    };
+  }
+
+  if (!token) {
+    return {
+      ok: false,
+      reason: 'missing',
+      message: 'CAPTCHA token missing. If this persists, VITE_RECAPTCHA_SITE_KEY is likely absent from the client build.',
+    };
+  }
+
+  const res = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ secret, response: token }),
+  });
   const data = await res.json();
-  return data.success === true;
+  if (data.success === true) return { ok: true };
+
+  console.warn('[reCAPTCHA] verification failed:', data['error-codes']);
+  return { ok: false, reason: 'rejected', message: 'CAPTCHA verification failed. Please check the box and try again.' };
 }
 
 function buildPendingReminderEmail(data, ctx = {}) {
@@ -678,12 +710,12 @@ exports.createPaypalOrder = async (req, res, next) => {
     const { captchaToken, ...rawData } = req.body;
     const data = { ...rawData };
 
-    // Verify captcha
-    if (process.env.RECAPTCHA_SECRET_KEY) {
-      const valid = await verifyCaptcha(captchaToken);
-      if (!valid) {
-        return res.status(400).json({ success: false, message: 'CAPTCHA verification failed. Please check the box and try again.' });
-      }
+    // CAPTCHA is mandatory for this endpoint — it fails closed, never silently
+    // skips. A missing RECAPTCHA_SECRET_KEY is a server misconfiguration and
+    // blocks the request rather than letting unverified submissions through.
+    const captcha = await verifyCaptcha(captchaToken);
+    if (!captcha.ok) {
+      return res.status(400).json({ success: false, message: captcha.message });
     }
 
     // Re-verify amount server-side
