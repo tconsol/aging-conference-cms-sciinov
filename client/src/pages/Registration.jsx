@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
   CheckCircle, ArrowLeft, CreditCard, ShieldCheck,
   Mic, Video, Image, Monitor, Users, Globe, GraduationCap,
-  Tag, Minus, Plus, Clock,
+  Tag, Minus, Plus, Clock, X,
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import ReCAPTCHA from 'react-google-recaptcha';
@@ -28,6 +28,12 @@ const TAX_RATE = 0.048;
 const ACCOMPANYING_RATE = 300;
 // How long a pending payment stays valid before the form resets itself
 const PAYMENT_WINDOW_SECONDS = 10 * 60;
+// Google expires a v2 token after ~120s. Expire ours slightly earlier so the
+// user is asked to re-verify instead of the server rejecting a stale token.
+const CAPTCHA_TOKEN_TTL_MS = 100 * 1000;
+// Long enough for the widget's green tick to register, short enough not to feel
+// like a hang before the modal disappears.
+const CAPTCHA_CLOSE_DELAY_MS = 700;
 
 const TIER_LABELS = { early_bird: 'Early Bird', mid_term: 'Mid Term', on_spot: 'On Spot' };
 
@@ -168,6 +174,10 @@ export default function Registration() {
   // Mount on "was solved at least once" instead; createPaypalOrder still
   // refuses to run without a currently-valid token.
   const [captchaSolvedOnce, setCaptchaSolvedOnce] = useState(false);
+  // The widget lives in a modal, so it is unmounted while the modal is closed
+  // and its own onExpired can never fire. This timer stands in for it.
+  const [captchaModalOpen, setCaptchaModalOpen] = useState(false);
+  const captchaExpiryRef = useRef(null);
   const recaptchaRef = useRef(null);
   const registrationIdRef = useRef(null);
   const pendingDataRef = useRef(null);
@@ -239,6 +249,48 @@ export default function Registration() {
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  /* ── CAPTCHA modal ───────────────────────────────────────────────────────
+     Verification runs in a popup so the payment card is not half CAPTCHA.
+     Solving it closes the popup by itself — there is nothing else to do in
+     there, so a "Done" button would only add a click.                      */
+  const clearCaptchaExpiry = () => {
+    clearTimeout(captchaExpiryRef.current);
+    captchaExpiryRef.current = null;
+  };
+
+  const resetCaptcha = () => {
+    clearCaptchaExpiry();
+    setCaptchaToken(null);
+    setCaptchaSolvedOnce(false);
+    setCaptchaModalOpen(false);
+    recaptchaRef.current?.reset();
+  };
+
+  const handleCaptchaChange = (token) => {
+    // null arrives when the widget itself expires while the modal is open
+    if (!token) { setCaptchaToken(null); return; }
+    setCaptchaToken(token);
+    setCaptchaSolvedOnce(true);
+    clearCaptchaExpiry();
+    captchaExpiryRef.current = setTimeout(() => setCaptchaToken(null), CAPTCHA_TOKEN_TTL_MS);
+    setTimeout(() => setCaptchaModalOpen(false), CAPTCHA_CLOSE_DELAY_MS);
+  };
+
+  useEffect(() => clearCaptchaExpiry, []);
+
+  // Escape closes the popup, and the page behind it must not scroll under it.
+  useEffect(() => {
+    if (!captchaModalOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setCaptchaModalOpen(false); };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [captchaModalOpen]);
+
   /* Step 2 → payment */
   const proceedToPayment = () => {
     if (!selectedCategory) { toast.error('Please select a registration category.'); return; }
@@ -261,10 +313,11 @@ export default function Registration() {
     setPendingData(payload);
     pendingDataRef.current = payload;
     abandonReportedRef.current = false; // new attempt -> allow a fresh reminder
-    setCaptchaToken(null);
-    setCaptchaSolvedOnce(false);
-    recaptchaRef.current?.reset();
+    resetCaptcha();
     setStep('payment');
+    // Verification is the first thing to do on this step, so ask for it up front
+    // rather than making the user hunt for a button.
+    if (RECAPTCHA_SITE_KEY) setCaptchaModalOpen(true);
     contentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // Fire intent tracking email (non-blocking don't delay the UI)
@@ -292,7 +345,10 @@ export default function Registration() {
   /* PayPal handlers */
   const createPaypalOrder = async () => {
     if (RECAPTCHA_SITE_KEY && !captchaToken) {
-      toast.error('Please complete the CAPTCHA verification first.');
+      // Token went stale between verifying and paying — put the popup straight
+      // back up instead of leaving the user to find the re-verify button.
+      setCaptchaModalOpen(true);
+      toast.error('Verification expired. Please verify again.');
       throw new Error('captcha required');
     }
     setOrderCreating(true);
@@ -318,9 +374,7 @@ export default function Registration() {
       pendingDataRef.current = null;
       abandonReportedRef.current = true; // paid - never send a reminder
       registrationIdRef.current = null;
-      setCaptchaToken(null);
-      setCaptchaSolvedOnce(false);
-      recaptchaRef.current?.reset();
+      resetCaptcha();
     } catch (err) {
       console.error('[PayPal] capture failed after approval:', err);
       toast.error('Payment processed but confirmation failed. Please contact support.');
@@ -386,9 +440,7 @@ export default function Registration() {
     setPendingData(null);
     pendingDataRef.current = null;
     registrationIdRef.current = null;
-    setCaptchaToken(null);
-    setCaptchaSolvedOnce(false);
-    recaptchaRef.current?.reset();
+    resetCaptcha();
     setSecondsLeft(null);
   };
 
@@ -495,24 +547,23 @@ export default function Registration() {
                 </div>
               </div>
 
+              {/* Status only — the widget itself lives in the popup below */}
               {RECAPTCHA_SITE_KEY && (
-                <div className="flex flex-col items-center gap-2 my-5">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-                    <ShieldCheck size={13} /> Verify you&apos;re human before proceeding
-                  </div>
-                  <ReCAPTCHA
-                    ref={recaptchaRef}
-                    sitekey={RECAPTCHA_SITE_KEY}
-                    onChange={(t) => {
-                      setCaptchaToken(t);
-                      if (t) setCaptchaSolvedOnce(true);
-                    }}
-                    // Clears only the token, never captchaSolvedOnce — the
-                    // buttons must stay mounted or the library's unmount
-                    // cleanup closes an open payment window. The widget shows
-                    // its own expiry message, so no extra notice is needed.
-                    onExpired={() => setCaptchaToken(null)}
-                  />
+                <div className="my-5">
+                  {captchaToken ? (
+                    <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-green-200 bg-green-50 text-sm font-medium text-green-700">
+                      <CheckCircle size={15} className="shrink-0" /> Verified — you&apos;re human
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCaptchaModalOpen(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 text-sm font-medium text-amber-800 hover:bg-amber-100 transition-colors"
+                    >
+                      <ShieldCheck size={15} className="shrink-0" />
+                      {captchaSolvedOnce ? 'Verification expired — verify again' : 'Verify you’re human to continue'}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -569,7 +620,7 @@ export default function Registration() {
                 </div>
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center text-sm text-slate-500">
-                  Complete the CAPTCHA above to enable payment.
+                  Complete the verification above to enable payment.
                 </div>
               )}
 
@@ -946,6 +997,56 @@ export default function Registration() {
             </div>
           </div>
         </section>
+      )}
+
+      {/* ══ CAPTCHA popup ═══════════════════════════════════════════════════
+          Mounted only while open, so a fresh widget is drawn every time and a
+          stale "already solved" tick can never be shown for a dead token.   */}
+      {captchaModalOpen && RECAPTCHA_SITE_KEY && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setCaptchaModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Human verification"
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setCaptchaModalOpen(false)}
+              aria-label="Close verification"
+              className="absolute top-3 right-3 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col items-center text-center gap-1.5 mb-5">
+              <div className="w-11 h-11 rounded-full bg-teal-50 flex items-center justify-center">
+                <ShieldCheck size={20} className="text-teal-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mt-1">Verify you’re human</h3>
+              <p className="text-xs text-slate-500">
+                This closes on its own once you’re verified.
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <ReCAPTCHA
+                ref={recaptchaRef}
+                sitekey={RECAPTCHA_SITE_KEY}
+                onChange={handleCaptchaChange}
+                // Only clears the token — captchaSolvedOnce stays true so the
+                // PayPal buttons are never unmounted, whose cleanup would close
+                // an open payment window mid-checkout.
+                onExpired={() => setCaptchaToken(null)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </PayPalScriptProvider>

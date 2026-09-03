@@ -19,8 +19,14 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await authAPI.login(data);
-      login(res.data.token, res.data.admin);
-      toast.success(`Welcome back, ${res.data.admin.name}!`);
+      const { token, admin } = res.data || {};
+      // A misconfigured API base URL returns the SPA's own index.html with a
+      // 200, so a "successful" response is not proof of a real login payload.
+      if (!token || !admin) {
+        throw new Error('Unexpected response from the server. Check the admin API configuration.');
+      }
+      login(token, admin);
+      toast.success(`Welcome back, ${admin.name}!`);
       navigate('/dashboard');
     } catch (err) {
       toast.error(getErrorMessage(err));
