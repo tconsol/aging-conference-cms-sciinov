@@ -31,14 +31,22 @@ const app = express();
 connectDB();
 
 app.use(helmet());
+// Browsers send Origin without a trailing slash, so an env value copied from
+// the address bar ("https://example.com/") would never match. Normalise both
+// sides instead of trusting whoever typed the Cloud Run env var.
+const normaliseOrigin = o => o.trim().replace(/\/+$/, '');
 const _allowedOrigins = [
   ...(process.env.CLIENT_URL || '').split(','),
   ...(process.env.ADMIN_URL || '').split(','),
-].map(o => o.trim()).filter(Boolean);
+].map(normaliseOrigin).filter(Boolean);
+console.log('CORS allowed origins:', _allowedOrigins.join(', ') || '(none configured)');
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || _allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error(`CORS: origin ${origin} not allowed`));
+    if (!origin || _allowedOrigins.includes(normaliseOrigin(origin))) return cb(null, true);
+    // Reject without throwing: a thrown error becomes a 500 from the error
+    // handler, which hides the real cause behind an opaque server error.
+    console.warn(`CORS: origin ${origin} not allowed`);
+    cb(null, false);
   },
   credentials: true,
 }));
