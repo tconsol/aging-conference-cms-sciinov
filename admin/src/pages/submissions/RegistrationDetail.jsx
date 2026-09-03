@@ -10,7 +10,7 @@ import Badge, { statusBadge } from '../../components/ui/Badge';
 import Spinner from '../../components/ui/Spinner';
 import { registrationsAPI } from '../../api/submissions';
 import {
-  formatDateTime, formatCurrency, CATEGORY_LABELS, ATTENDANCE_MODE_LABELS,
+  formatDateTime, formatCurrency, CATEGORY_LABELS, categoryLabel, ATTENDANCE_MODE_LABELS,
   PAYMENT_METHOD_LABELS, PAYMENT_METHOD_OPTIONS, getErrorMessage,
 } from '../../utils/helpers';
 

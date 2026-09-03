@@ -25,6 +25,7 @@ const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
+const { verifyTransport } = require('./utils/email');
 
 const app = express();
 
@@ -165,4 +166,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  // Reported at boot so a broken mail config is visible in the logs straight
+  // away, rather than only when a registration silently fails to notify anyone.
+  // Not awaited: mail being down must never stop the API from serving.
+  verifyTransport();
 });

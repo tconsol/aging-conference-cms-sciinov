@@ -5,7 +5,7 @@ import { ArrowLeft, Mail, Clock, RefreshCw } from 'lucide-react';
 import Spinner from '../../components/ui/Spinner';
 import Button from '../../components/ui/Button';
 import { registrationsAPI } from '../../api/submissions';
-import { formatDateTime, CATEGORY_LABELS, getErrorMessage } from '../../utils/helpers';
+import { formatDateTime, CATEGORY_LABELS, categoryLabel, getErrorMessage } from '../../utils/helpers';
 
 function DetailRow({ label, value }) {
   return (

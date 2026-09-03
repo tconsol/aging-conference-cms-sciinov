@@ -12,7 +12,7 @@ import Dropdown from '../../components/ui/Dropdown';
 import { statusBadge } from '../../components/ui/Badge';
 import { registrationsAPI } from '../../api/submissions';
 import { editionsAPI } from '../../api/congress';
-import { formatDateTime, formatCurrency, CATEGORY_LABELS, getErrorMessage, downloadBlob } from '../../utils/helpers';
+import { formatDateTime, formatCurrency, CATEGORY_LABELS, categoryLabel, getErrorMessage, downloadBlob } from '../../utils/helpers';
 import { useRegistrationBadge } from '../../context/RegistrationBadgeContext';
 import ManualRegistrationModal from './ManualRegistrationModal';
 

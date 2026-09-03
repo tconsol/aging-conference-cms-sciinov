@@ -21,7 +21,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('admin_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // "undefined" is a truthy string — sending `Bearer undefined` would turn a
+  // config problem into a confusing 401 instead of an anonymous request.
+  if (token && token !== 'undefined' && token !== 'null') {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
