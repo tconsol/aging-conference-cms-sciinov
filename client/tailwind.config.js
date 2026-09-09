@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography';
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
@@ -8,5 +10,8 @@ export default {
       },
     },
   },
-  plugins: [],
+  // Every CMS-rendered block uses `prose`. Without this plugin those classes do
+  // nothing, and Tailwind's preflight zeroes <p> margins — which is why
+  // admin-authored paragraphs ran together with no spacing on the public site.
+  plugins: [typography],
 };

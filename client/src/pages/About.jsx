@@ -164,7 +164,7 @@ export default function About() {
                   )}
                 </div>
                 <div className="pt-2">
-                  <p className="text-lg text-slate-600 leading-relaxed mb-6">
+                  <p className="text-lg font-bold text-slate-900 leading-relaxed mb-6">
                     {page?.subtitle || 'The Aging Congress is dedicated to accelerating scientific discovery in geroscience, bringing together the brightest minds to tackle the fundamental questions of human aging.'}
                   </p>
                   {page?.content ? (

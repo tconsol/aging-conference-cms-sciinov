@@ -8,7 +8,6 @@ import react from '@vitejs/plugin-react';
 const VENDOR_CHUNKS = [
   ['vendor-react',  ['react-router-dom', 'react-router', 'react-dom', 'react']],
   ['vendor-motion', ['framer-motion']],
-  ['vendor-lottie', ['lottie-web', 'lord-icon-element']],
   // lucide-react is deliberately NOT pinned to a chunk: forcing it into one
   // shared bundle pulls every page's icons into the initial load. Left alone,
   // each lazy route only carries the icons it actually imports.

@@ -8,6 +8,7 @@ import {
 import { siteSettingsAPI } from '../../api/settings';
 import { getErrorMessage } from '../../utils/helpers';
 import Button from './Button';
+import Select from './Select';
 import Spinner from './Spinner';
 
 // Must stay in step with the ICONS map in client/src/pages/About.jsx — anything
@@ -27,6 +28,8 @@ const EMPTY = {
 const inputCls =
   'w-full h-10 px-3 rounded-lg border border-slate-200 text-sm focus:outline-none focus:border-teal-500 transition-colors';
 
+const ICON_OPTIONS = ICON_NAMES.map((n) => ({ value: n, label: n }));
+
 function IconSelect({ value, onChange }) {
   const Current = ICON_CHOICES[value] || Target;
   return (
@@ -34,13 +37,14 @@ function IconSelect({ value, onChange }) {
       <span className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center shrink-0">
         <Current size={17} className="text-teal-700" />
       </span>
-      <select
-        value={ICON_NAMES.includes(value) ? value : 'Target'}
-        onChange={(e) => onChange(e.target.value)}
-        className={inputCls}
-      >
-        {ICON_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
-      </select>
+      <div className="flex-1 min-w-0">
+        <Select
+          options={ICON_OPTIONS}
+          value={ICON_NAMES.includes(value) ? value : 'Target'}
+          onChange={onChange}
+          placeholder="Select icon..."
+        />
+      </div>
     </div>
   );
 }

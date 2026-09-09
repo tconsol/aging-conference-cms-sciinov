@@ -13,8 +13,6 @@
     "framer-motion": "^12.43.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
-    "lord-icon-element": "^4.1.2",
-    "lottie-web": "^5.13.0",
     "lucide-react": "^0.462.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -24,6 +22,7 @@
     "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

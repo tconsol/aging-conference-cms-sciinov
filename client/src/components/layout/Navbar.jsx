@@ -387,32 +387,17 @@ export default function Navbar() {
                     flexShrink: 0,
                   }}
                 />
-              ) : (
-                <div
-                  style={{
-                    width: 38,
-                    height: 38,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%)',
-                    clipPath: 'polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px))',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 900,
-                      color: '#ffffff',
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1,
-                    }}
-                  >
-                    AC
-                  </span>
-                </div>
+              ) : null}
+
+              {/* Either half may be absent: no logo → text alone, no site name →
+                  logo alone. No initials placeholder when both are missing —
+                  an invented "AC" mark is branding the congress never chose.
+                  With neither set, the header falls back to plain "Home" so the
+                  link is still visible and clickable. */}
+              {!hasLogo && !siteName && (
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Home</span>
               )}
-              {/* No site name configured → the logo stands alone */}
+
               {siteName && (
                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
                   <span

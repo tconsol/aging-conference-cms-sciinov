@@ -9,6 +9,7 @@
     "seed": "node scripts/seed.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:about": "node scripts/seedAboutPage.js",
+    "seed:packages": "node scripts/seedPackages.js",
     "seed:force": "node scripts/seed.js --force"
   },
   "dependencies": {
