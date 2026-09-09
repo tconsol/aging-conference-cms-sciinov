@@ -6,6 +6,7 @@ import {
   ArrowLeft, Download, Edit2, Key, Copy, Check, Eye,
   User, FileText, Building, ChevronDown, ChevronUp,
   Layers, CalendarDays, Clock, Loader2, Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import Button from '../../components/ui/Button';
 import Select from '../../components/ui/Select';
@@ -361,6 +362,23 @@ export default function AbstractDetail() {
 
           {/* Uploaded file first, it's the thing reviewers reach for */}
           {abstract.fileUrl && <UploadedFileCard abstract={abstract} />}
+
+          {/* Optional figure supplied by the author */}
+          {abstract.imageUrl && (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+              <SectionHeader icon={ImageIcon} title="Submitted Image" color="#7c3aed" />
+              <a href={abstract.imageUrl} target="_blank" rel="noreferrer" className="block mt-4">
+                <img
+                  src={abstract.imageUrl}
+                  alt={abstract.imageName || 'Submitted figure'}
+                  className="max-h-96 w-auto rounded-xl border border-slate-200"
+                />
+              </a>
+              <p className="text-xs text-slate-500 mt-2 truncate">
+                {abstract.imageName || 'Image'} · click to open full size
+              </p>
+            </div>
+          )}
 
           {/* Author card */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { usecongress } from '../../context/congressContext';
 import { congressAPI } from '../../api/congress';
+import { useGoogleFont } from '../../hooks/useGoogleFont';
 
 const BASE_NAV_ITEMS = [
   {
@@ -305,7 +306,12 @@ export default function Navbar() {
   const { activeEdition, siteSettings } = usecongress();
   const location = useLocation();
   const navigate = useNavigate();
-  const siteName = siteSettings?.siteName || 'Aging Congress';
+  // Deliberately no fallback name: an empty site name means "logo only".
+  const siteName = (siteSettings?.siteName || '').trim();
+  const siteNameFont = (siteSettings?.siteNameFont || '').trim();
+  const hasLogo = Boolean(siteSettings?.logo);
+
+  useGoogleFont(siteNameFont);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -367,11 +373,19 @@ export default function Navbar() {
               to="/"
               style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}
             >
-              {siteSettings?.logo ? (
+              {hasLogo ? (
                 <img
                   src={siteSettings.logo}
-                  alt={siteName}
-                  style={{ width: 38, height: 38, objectFit: 'contain', flexShrink: 0 }}
+                  alt={siteName || 'Home'}
+                  // Taller and unconstrained in width when it stands alone, since
+                  // then it is the whole identity rather than a mark beside text.
+                  style={{
+                    height: siteName ? 38 : 46,
+                    width: siteName ? 38 : 'auto',
+                    maxWidth: 220,
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                  }}
                 />
               ) : (
                 <div
@@ -398,31 +412,39 @@ export default function Navbar() {
                   </span>
                 </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-                <span
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#0f172a',
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {siteName}
-                </span>
-                <span
-                  style={{
-                    fontSize: 9.5,
-                    color: 'var(--brand)',
-                    letterSpacing: '0.18em',
-                    marginTop: 3,
-                    textTransform: 'uppercase',
-                    fontWeight: 600,
-                  }}
-                >
-                  {year} Edition
-                </span>
-              </div>
+              {/* No site name configured → the logo stands alone */}
+              {siteName && (
+                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      // Falls back to the theme stack while the webfont loads,
+                      // and permanently if the family fails to load at all.
+                      fontFamily: siteNameFont
+                        ? `'${siteNameFont}', var(--font-sans, system-ui, sans-serif)`
+                        : undefined,
+                    }}
+                  >
+                    {siteName}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 9.5,
+                      color: 'var(--brand)',
+                      letterSpacing: '0.18em',
+                      marginTop: 3,
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {year} Edition
+                  </span>
+                </div>
+              )}
             </Link>
 
             {/* Desktop Nav */}

@@ -9,6 +9,16 @@ export const pricingAPI = {
   delete: (id) => api.delete(`/pricing/${id}`),
 };
 
+// Sponsorship / exhibitor / other packages shown on the public sponsorship page
+export const packagesAPI = {
+  getAll: (params) => api.get('/packages', { params }),
+  getCategories: () => api.get('/packages/categories'),
+  getOne: (id) => api.get(`/packages/${id}`),
+  create: (data) => api.post('/packages', data),
+  update: (id, data) => api.patch(`/packages/${id}`, data),
+  delete: (id) => api.delete(`/packages/${id}`),
+};
+
 // Sponsorship Inquiries
 export const sponsorshipAPI = {
   getAll: (params) => api.get('/sponsorship', { params }),

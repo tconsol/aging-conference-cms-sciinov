@@ -5,6 +5,7 @@ import {
   FileCheck, Handshake, MessageSquareQuote, Mail, MessageCircle,
   LifeBuoy, Settings, ShieldCheck, Building,
   UserPlus, Layers, Info, Ticket, LayoutTemplate, Palette,
+  Package as PackageIcon,
 } from 'lucide-react';
 
 // Grouped to mirror the public client site's navbar (Overview / Speakers / Program /
@@ -20,6 +21,7 @@ export const navGroups = [
       { label: 'Scientific Committee', icon: Users2, href: '/committee' },
       { label: 'Become a Speaker', icon: UserPlus, href: '/speaker-applications' },
       { label: 'Sponsor / Exhibit', icon: Handshake, href: '/sponsorship' },
+      { label: 'Sponsor / Exhibit Packages', icon: PackageIcon, href: '/packages' },
       { label: 'Organizer Info', icon: Building2, href: '/organizers' },
     ],
   },

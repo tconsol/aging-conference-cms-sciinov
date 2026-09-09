@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import {
@@ -8,16 +8,33 @@ import {
 import PageHero from '../components/ui/PageHero';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
+import Spinner from '../components/ui/Spinner';
 import { contactAPI } from '../api/contact';
+import { communityAPI } from '../api/community';
 import { getErrorMessage } from '../utils/helpers';
 
-const SPONSORSHIP_TYPES = [
-  { value: 'platinum', label: 'Platinum $25,000' },
-  { value: 'gold',     label: 'Gold $15,000' },
-  { value: 'silver',   label: 'Silver $8,000' },
-  { value: 'bronze',   label: 'Bronze $3,500' },
-  { value: 'custom',   label: 'Custom Package' },
-];
+// Headings for the groupings the admin panel ships with. Anything else an admin
+// creates falls through to a title-cased version of its own key, so a new
+// category appears as its own section without a code change.
+const CATEGORY_TITLES = {
+  sponsorship: 'Sponsorship Packages',
+  exhibitor:   'Exhibitor Packages',
+  other:       'Other Packages',
+};
+
+// Fixes the order of the built-ins; unknown categories sort after them, by name.
+const CATEGORY_ORDER = ['sponsorship', 'exhibitor', 'other'];
+
+const categoryTitle = (key) =>
+  CATEGORY_TITLES[key] ||
+  String(key || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase()) ||
+  'Packages';
+
+// Always offered, whatever the admin has configured — someone wanting something
+// off-menu still needs a way to say so.
+const CUSTOM_OPTION = { value: 'custom', label: 'Custom Package' };
 
 const INPUT_CLS = 'w-full h-11 px-4 border border-slate-200 rounded-xl text-sm focus:outline-none bg-slate-50 focus:bg-white transition-colors';
 const FOCUS = (e) => { e.target.style.borderColor = 'var(--brand)'; e.target.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent)'; };
@@ -32,59 +49,55 @@ const BENEFITS = [
   { icon: LayoutGrid,   title: 'Exhibition Space',           desc: 'Dedicated booth space in the exhibition hall for product showcases and demos.' },
 ];
 
-const TIERS = [
-  {
-    name: 'Platinum', price: '$25,000', highlight: true,
-    perks: [
-      'Premier logo on all congress materials',
-      'Keynote session naming rights',
-      'Exhibition booth prime location (20×20 ft)',
-      '8 complimentary full registrations',
-      'Full-page ad in congress proceedings',
-      'Exclusive VIP dinner invitation (4 guests)',
-      'Dedicated social media campaign',
-      'Post-congress attendee summary report',
-    ],
-  },
-  {
-    name: 'Gold', price: '$15,000', highlight: false,
-    accent: '#b45309',
-    perks: [
-      'Logo on all congress materials',
-      'Exhibition booth standard location (10×10 ft)',
-      '5 complimentary full registrations',
-      'Speaking opportunity (10 min)',
-      'Full-page ad in congress proceedings',
-      'Social media recognition package',
-    ],
-  },
-  {
-    name: 'Silver', price: '$8,000', highlight: false,
-    accent: '#475569',
-    perks: [
-      'Logo on website and event signage',
-      'Exhibition table (6 ft)',
-      '3 complimentary registrations',
-      'Half-page ad in proceedings',
-      'Social media mention',
-    ],
-  },
-  {
-    name: 'Bronze', price: '$3,500', highlight: false,
-    accent: '#9a5121',
-    perks: [
-      'Logo on congress website',
-      '2 complimentary registrations',
-      'Quarter-page ad in proceedings',
-      'Social media mention',
-    ],
-  },
-];
-
 export default function Sponsorship() {
   const [submitted, setSubmitted]   = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [packages, setPackages]     = useState([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
   const { register, handleSubmit, control, formState: { errors }, reset } = useForm();
+
+  useEffect(() => {
+    communityAPI.getPackages()
+      .then((res) => {
+        const data = res.data?.data ?? res.data ?? [];
+        setPackages(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setPackages([]))
+      .finally(() => setLoadingPackages(false));
+  }, []);
+
+  // [categoryKey, packages[]] with the built-in categories first.
+  const grouped = useMemo(() => {
+    const map = new Map();
+    for (const pkg of packages) {
+      const key = pkg.category || 'other';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(pkg);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    }
+    return [...map.entries()].sort(([a], [b]) => {
+      const ia = CATEGORY_ORDER.indexOf(a);
+      const ib = CATEGORY_ORDER.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }, [packages]);
+
+  // Dropdown mirrors what is actually on offer, prefixed by its category so
+  // "Gold" under Sponsorship and "Gold" under Exhibitor stay distinguishable.
+  const packageOptions = useMemo(() => {
+    const opts = grouped.flatMap(([category, items]) =>
+      items.map((pkg) => ({
+        value: `${category}:${pkg.name}`,
+        label: `${categoryTitle(category).replace(/ Packages$/, '')} — ${pkg.name}${pkg.price ? ` (${pkg.price})` : ''}`,
+      }))
+    );
+    return [...opts, CUSTOM_OPTION];
+  }, [grouped]);
 
   const onSubmit = async (data) => {
     setSubmitting(true);
@@ -149,91 +162,120 @@ export default function Sponsorship() {
         </div>
       </section>
 
-      {/* ── TIERS ────────────────────────────────────────────────────── */}
-      <section className="section-padding" style={{ background: '#f8fafc' }}>
-        <div className="container-custom">
-          <div className="mb-12 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.25em] mb-2" style={{ color: 'var(--brand)' }}>Packages</p>
-            <h2 className="text-3xl font-black text-slate-900 mb-3">Choose Your Partnership Level</h2>
-            <p className="text-slate-500 max-w-lg mx-auto">
-              Each tier is designed to maximise your visibility and engagement with congress attendees.
-            </p>
-          </div>
+      {/* ── PACKAGES ─────────────────────────────────────────────────── */}
+      {(loadingPackages || grouped.length > 0) && (
+        <section className="section-padding" style={{ background: '#f8fafc' }}>
+          <div className="container-custom">
+            <div className="mb-12 text-center">
+              <p className="text-xs font-black uppercase tracking-[0.25em] mb-2" style={{ color: 'var(--brand)' }}>Packages</p>
+              <h2 className="text-3xl font-black text-slate-900 mb-3">Choose Your Partnership Level</h2>
+              <p className="text-slate-500 max-w-lg mx-auto">
+                Each package is designed to maximise your visibility and engagement with congress attendees.
+              </p>
+            </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {TIERS.map((tier) => (
-              <div
-                key={tier.name}
-                className="relative rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1"
-                style={{
-                  background: tier.highlight
-                    ? 'linear-gradient(150deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 70%, black) 100%)'
-                    : 'white',
-                  border: tier.highlight ? 'none' : '1.5px solid #e2e8f0',
-                  boxShadow: tier.highlight ? '0 20px 60px rgba(0,0,0,0.18)' : '0 2px 12px rgba(0,0,0,0.05)',
-                }}
-              >
-                {tier.highlight && (
-                  <div className="absolute top-4 right-4">
-                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
-                      <Star size={9} /> Premium
-                    </span>
-                  </div>
-                )}
+            {loadingPackages ? (
+              <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+            ) : (
+              <div className="space-y-16">
+                {grouped.map(([category, items]) => (
+                  <div key={category}>
+                    {/* Only label the groups when there is more than one, so a
+                        site using sponsorship tiers alone reads as before. */}
+                    {grouped.length > 1 && (
+                      <div className="flex items-center gap-4 mb-8">
+                        <h3 className="text-xl font-black text-slate-900 shrink-0">
+                          {categoryTitle(category)}
+                        </h3>
+                        <div className="h-px flex-1" style={{ background: '#e2e8f0' }} />
+                      </div>
+                    )}
 
-                <div className="p-6">
-                  <h3
-                    className="font-black text-xl mb-1"
-                    style={{ color: tier.highlight ? 'white' : (tier.accent || '#0f172a') }}
-                  >
-                    {tier.name}
-                  </h3>
-                  <div className="flex items-end gap-1 mb-5">
-                    <span className="text-4xl font-black tabular-nums" style={{ color: tier.highlight ? 'white' : '#0f172a' }}>
-                      {tier.price}
-                    </span>
-                    <span className="text-xs mb-1.5" style={{ color: tier.highlight ? 'rgba(255,255,255,0.4)' : '#94a3b8' }}>/ edition</span>
-                  </div>
-
-                  <div className="w-full h-px mb-5" style={{ background: tier.highlight ? 'rgba(255,255,255,0.1)' : '#f1f5f9' }} />
-
-                  <ul className="flex flex-col gap-2.5 mb-6">
-                    {tier.perks.map((perk) => (
-                      <li key={perk} className="flex items-start gap-2.5">
-                        <CheckCircle
-                          size={13}
-                          className="shrink-0 mt-0.5"
-                          style={{ color: tier.highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-dark)' }}
-                        />
-                        <span
-                          className="text-xs leading-snug"
-                          style={{ color: tier.highlight ? 'rgba(255,255,255,0.75)' : '#475569' }}
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {items.map((tier) => (
+                        <div
+                          key={tier._id}
+                          className="relative rounded-3xl overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1"
+                          style={{
+                            background: tier.highlight
+                              ? 'linear-gradient(150deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 70%, black) 100%)'
+                              : 'white',
+                            border: tier.highlight ? 'none' : '1.5px solid #e2e8f0',
+                            boxShadow: tier.highlight ? '0 20px 60px rgba(0,0,0,0.18)' : '0 2px 12px rgba(0,0,0,0.05)',
+                          }}
                         >
-                          {perk}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                          {tier.highlight && (
+                            <div className="absolute top-4 right-4">
+                              <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
+                                <Star size={9} /> Premium
+                              </span>
+                            </div>
+                          )}
 
-                <div className="px-6 pb-6 mt-auto">
-                  <a
-                    href="#inquire"
-                    className="flex items-center justify-center gap-2 w-full font-bold py-3 rounded-2xl text-sm transition-all"
-                    style={
-                      tier.highlight
-                        ? { background: 'white', color: 'var(--brand-dark)' }
-                        : { background: 'var(--brand-light)', color: 'var(--brand-dark)', border: '1.5px solid color-mix(in srgb, var(--brand) 30%, transparent)' }
-                    }
-                  >
-                    Inquire Now <ArrowRight size={13} />
-                  </a>
-                </div>
+                          <div className="p-6">
+                            <h3
+                              className="font-black text-xl mb-1"
+                              style={{ color: tier.highlight ? 'white' : (tier.accentColor || '#0f172a') }}
+                            >
+                              {tier.name}
+                            </h3>
+                            {tier.price && (
+                              <div className="flex items-end gap-1 mb-5">
+                                <span className="text-4xl font-black tabular-nums" style={{ color: tier.highlight ? 'white' : '#0f172a' }}>
+                                  {tier.price}
+                                </span>
+                                {tier.priceNote && (
+                                  <span className="text-xs mb-1.5" style={{ color: tier.highlight ? 'rgba(255,255,255,0.4)' : '#94a3b8' }}>
+                                    {tier.priceNote}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            <div className="w-full h-px mb-5" style={{ background: tier.highlight ? 'rgba(255,255,255,0.1)' : '#f1f5f9' }} />
+
+                            <ul className="flex flex-col gap-2.5 mb-6">
+                              {(tier.perks || []).map((perk, i) => (
+                                <li key={`${tier._id}-${i}`} className="flex items-start gap-2.5">
+                                  <CheckCircle
+                                    size={13}
+                                    className="shrink-0 mt-0.5"
+                                    style={{ color: tier.highlight ? 'rgba(255,255,255,0.7)' : 'var(--brand-dark)' }}
+                                  />
+                                  <span
+                                    className="text-xs leading-snug"
+                                    style={{ color: tier.highlight ? 'rgba(255,255,255,0.75)' : '#475569' }}
+                                  >
+                                    {perk}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          <div className="px-6 pb-6 mt-auto">
+                            <a
+                              href="#inquire"
+                              className="flex items-center justify-center gap-2 w-full font-bold py-3 rounded-2xl text-sm transition-all"
+                              style={
+                                tier.highlight
+                                  ? { background: 'white', color: 'var(--brand-dark)' }
+                                  : { background: 'var(--brand-light)', color: 'var(--brand-dark)', border: '1.5px solid color-mix(in srgb, var(--brand) 30%, transparent)' }
+                              }
+                            >
+                              Inquire Now <ArrowRight size={13} />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── INQUIRY FORM ─────────────────────────────────────────────── */}
       <section id="inquire" className="section-padding bg-white">
@@ -304,10 +346,10 @@ export default function Sponsorship() {
                         rules={{ required: 'Please select a sponsorship type' }}
                         render={({ field }) => (
                           <Select
-                            label="Sponsorship Type"
+                            label="Package of Interest"
                             required
-                            placeholder="Select a tier..."
-                            options={SPONSORSHIP_TYPES}
+                            placeholder="Select a package..."
+                            options={packageOptions}
                             value={field.value}
                             onChange={field.onChange}
                             error={errors.sponsorshipType?.message}

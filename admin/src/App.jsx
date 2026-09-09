@@ -36,6 +36,7 @@ import IntentDetail from './pages/submissions/IntentDetail';
 
 // Finance
 import Pricing from './pages/finance/Pricing';
+import Packages from './pages/finance/Packages';
 import Sponsorship from './pages/finance/Sponsorship';
 import SponsorshipDetail from './pages/finance/SponsorshipDetail';
 
@@ -115,6 +116,7 @@ export default function App() {
 
           {/* Finance */}
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/packages" element={<Packages />} />
           <Route path="/sponsorship" element={<Sponsorship />} />
           <Route path="/sponsorship/:id" element={<SponsorshipDetail />} />
 

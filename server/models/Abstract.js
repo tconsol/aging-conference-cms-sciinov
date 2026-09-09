@@ -34,6 +34,11 @@ const abstractSchema = new mongoose.Schema(
     filePublicId: String,
     fileName: String,
 
+    // Optional figure/graphical abstract supplied by the author.
+    imageUrl: String,
+    imagePublicId: String,
+    imageName: String,
+
     // Letter of Acceptance, uploaded by an admin when the abstract is accepted.
     // Emailed to the author as an attachment and downloadable from their portal.
     acceptanceLetterUrl: String,

@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Save } from 'lucide-react';
+import { Save, Trash2 } from 'lucide-react';
 import { siteSettingsAPI } from '../../api/settings';
 import { buildFormData, getErrorMessage } from '../../utils/helpers';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import ImageUpload from '../../components/ui/ImageUpload';
+import FontPicker from '../../components/ui/FontPicker';
 import Spinner from '../../components/ui/Spinner';
 
 function SectionDivider({ title }) {
@@ -24,6 +25,8 @@ export default function SiteSettings() {
   const [saving, setSaving] = useState(false);
   const [currentLogo, setCurrentLogo] = useState(null);
   const [currentFavicon, setCurrentFavicon] = useState(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [siteNameFont, setSiteNameFont] = useState('');
 
   const {
     register,
@@ -58,6 +61,8 @@ export default function SiteSettings() {
         const d = res.data.data || res.data;
         setCurrentLogo(d.logo || null);
         setCurrentFavicon(d.favicon || null);
+        setSiteNameFont(d.siteNameFont || '');
+        setRemoveLogo(false);
         reset({
           siteName: d.siteName || '',
           tagline: d.tagline || '',
@@ -102,7 +107,8 @@ export default function SiteSettings() {
       };
 
       const payload = {
-        siteName: data.siteName,
+        siteName: data.siteName || '',
+        siteNameFont: siteNameFont || '',
         tagline: data.tagline || '',
         contactEmail: data.contactEmail || '',
         contactPhone: data.contactPhone || '',
@@ -117,6 +123,9 @@ export default function SiteSettings() {
         payload.logo = logoFiles[0];
       } else if (logoFiles instanceof File) {
         payload.logo = logoFiles;
+      } else if (removeLogo) {
+        // Only when no replacement was picked — a new upload supersedes removal.
+        payload.removeLogo = 'true';
       }
 
       const faviconFiles = data.favicon;
@@ -127,7 +136,10 @@ export default function SiteSettings() {
       }
 
       const fd = buildFormData(payload);
-      await siteSettingsAPI.update(fd);
+      const res = await siteSettingsAPI.update(fd);
+      const d = res.data?.data || {};
+      setCurrentLogo(d.logo || null);
+      setRemoveLogo(false);
       toast.success('Site settings saved successfully.');
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -163,9 +175,9 @@ export default function SiteSettings() {
               label="Site Name"
               name="siteName"
               register={register}
-              required="Site name is required"
               error={errors.siteName?.message}
-              placeholder="congress Name"
+              placeholder="Leave empty to show the logo only"
+              hint="Optional. When empty, the header and footer show just the logo."
             />
             <Input
               label="Tagline"
@@ -210,15 +222,66 @@ export default function SiteSettings() {
 
           {/* Branding */}
           <SectionDivider title="Branding" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <ImageUpload
-              label="Logo"
-              name="logo"
-              register={register}
-              watch={watch}
-              currentImage={currentLogo}
-              error={errors.logo?.message}
+
+          <div className="mb-6">
+            <FontPicker
+              label="Site Name Font"
+              value={siteNameFont}
+              onChange={setSiteNameFont}
+              hint="Google Font applied to the site name in the header and footer."
             />
+            {watch('siteName') && (
+              <div className="mt-3 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200">
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Preview
+                </p>
+                <span
+                  className="text-sm font-bold text-slate-900 uppercase"
+                  style={{
+                    letterSpacing: '0.04em',
+                    fontFamily: siteNameFont ? `'${siteNameFont}', system-ui, sans-serif` : undefined,
+                  }}
+                >
+                  {watch('siteName')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <ImageUpload
+                label="Logo"
+                name="logo"
+                register={register}
+                watch={watch}
+                currentImage={removeLogo ? null : currentLogo}
+                error={errors.logo?.message}
+              />
+              {currentLogo && !removeLogo && (
+                <button
+                  type="button"
+                  onClick={() => setRemoveLogo(true)}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700"
+                >
+                  <Trash2 size={13} /> Remove logo on save
+                </button>
+              )}
+              {removeLogo && (
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-xs font-semibold text-red-600">
+                    Logo will be removed when you save.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveLogo(false)}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-700 underline"
+                  >
+                    Undo
+                  </button>
+                </div>
+              )}
+            </div>
             <ImageUpload
               label="Favicon"
               name="favicon"

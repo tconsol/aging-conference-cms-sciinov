@@ -16,10 +16,17 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 
+// Sentinel, never stored: picking it reveals a free-text field and whatever the
+// admin types is what gets saved as `type`.
+const OTHER = '__other__';
+
+const BUILT_IN_TYPES = ['partner', 'media_partner', 'sponsor'];
+
 const TYPE_OPTIONS = [
   { value: 'partner', label: 'Partner' },
   { value: 'media_partner', label: 'Media Partner' },
   { value: 'sponsor', label: 'Sponsor' },
+  { value: OTHER, label: 'Other (enter your own)…' },
 ];
 
 const typeBadgeVariant = {
@@ -28,11 +35,20 @@ const typeBadgeVariant = {
   sponsor: 'purple',
 };
 
-const typeLabel = {
+const BUILT_IN_LABELS = {
   partner: 'Partner',
   media_partner: 'Media Partner',
   sponsor: 'Sponsor',
 };
+
+// Custom types are stored verbatim, so render them readably rather than showing
+// a raw slug: "industry_partner" → "Industry Partner".
+const typeLabel = (value) =>
+  BUILT_IN_LABELS[value] ||
+  String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase()) ||
+  '—';
 
 export default function Partners() {
   const [partners, setPartners] = useState([]);
@@ -88,6 +104,7 @@ export default function Partners() {
       name: '',
       website: '',
       type: '',
+      customType: '',
       displayOrder: getNextDisplayOrder(partners),
       isActive: true,
     });
@@ -96,10 +113,14 @@ export default function Partners() {
 
   const openEdit = (item) => {
     setEditingItem(item);
+    // A stored type outside the built-ins is a custom one: select "Other" and
+    // preload the text field, so editing does not silently reset it.
+    const isCustom = item.type && !BUILT_IN_TYPES.includes(item.type);
     reset({
       name: item.name || '',
       website: item.website || '',
-      type: item.type || '',
+      type: isCustom ? OTHER : (item.type || ''),
+      customType: isCustom ? item.type : '',
       displayOrder: item.displayOrder ?? '',
       isActive: item.isActive ?? true,
     });
@@ -115,10 +136,15 @@ export default function Partners() {
     try {
       setSaving(true);
       const logoFiles = data.logo;
+      // "Other" is a UI sentinel — send the typed value, normalised to the same
+      // lower_snake shape the built-ins use so badges and filters stay uniform.
+      const resolvedType = data.type === OTHER
+        ? data.customType.trim().toLowerCase().replace(/\s+/g, '_')
+        : data.type;
       const payload = {
         name: data.name,
         website: data.website || '',
-        type: data.type,
+        type: resolvedType,
         displayOrder: data.displayOrder !== '' ? Number(data.displayOrder) : undefined,
         isActive: data.isActive,
       };
@@ -247,7 +273,7 @@ export default function Partners() {
                     </td>
                     <td className="px-6 py-3">
                       <Badge variant={typeBadgeVariant[item.type] || 'default'}>
-                        {typeLabel[item.type] || item.type}
+                        {typeLabel(item.type)}
                       </Badge>
                     </td>
                     <td className="px-6 py-3">
@@ -333,6 +359,16 @@ export default function Partners() {
             placeholder="Select type..."
             defaultValue={editingItem?.type || ''}
           />
+          {watch('type') === OTHER && (
+            <Input
+              label="Custom Type"
+              name="customType"
+              register={register}
+              required="Enter the custom type"
+              error={errors.customType?.message}
+              placeholder="e.g. Academic Partner"
+            />
+          )}
           <Input
             label="Display Order"
             name="displayOrder"

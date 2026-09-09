@@ -3,6 +3,10 @@ const { uploadToGCS, deleteFromGCS, gcsFilename, streamGCSFile, gcsPathFromUrl }
 const { sendEmail } = require('../utils/email');
 const { broadcastToAbstract } = require('../utils/ssePortalClients');
 const { broadcast } = require('../utils/sseClients');
+const {
+  ALLOWED_IMAGE_TYPES: IMAGE_MIME_TYPES,
+  ALLOWED_DOC_TYPES: DOC_MIME_TYPES,
+} = require('../middleware/upload');
 
 const STATUS_INFO = {
   received_accepted: {
@@ -129,12 +133,31 @@ exports.downloadAcceptanceLetter = async (req, res, next) => {
 exports.submit = async (req, res, next) => {
   try {
     const data = { ...req.body };
-    if (req.file) {
-      const dest = gcsFilename('aging-congress/abstracts', req.file.mimetype, req.file.originalname);
-      const result = await uploadToGCS(req.file.buffer, { destination: dest, contentType: req.file.mimetype });
+
+    // The route uses uploadAny.fields(), so enforce the per-field type here.
+    const docFile = req.files?.file?.[0];
+    const imageFile = req.files?.image?.[0];
+
+    if (docFile) {
+      if (!DOC_MIME_TYPES.includes(docFile.mimetype)) {
+        return res.status(400).json({ success: false, message: 'Abstract file must be a PDF, DOC or DOCX.' });
+      }
+      const dest = gcsFilename('aging-congress/abstracts', docFile.mimetype, docFile.originalname);
+      const result = await uploadToGCS(docFile.buffer, { destination: dest, contentType: docFile.mimetype });
       data.fileUrl = result.url;
       data.filePublicId = result.filename;
-      data.fileName = req.file.originalname;
+      data.fileName = docFile.originalname;
+    }
+
+    if (imageFile) {
+      if (!IMAGE_MIME_TYPES.includes(imageFile.mimetype)) {
+        return res.status(400).json({ success: false, message: 'Image must be a JPEG, PNG or WebP.' });
+      }
+      const dest = gcsFilename('aging-congress/abstracts', imageFile.mimetype, imageFile.originalname);
+      const result = await uploadToGCS(imageFile.buffer, { destination: dest, contentType: imageFile.mimetype });
+      data.imageUrl = result.url;
+      data.imagePublicId = result.filename;
+      data.imageName = imageFile.originalname;
     }
 
     data.loginId = await generateLoginId();

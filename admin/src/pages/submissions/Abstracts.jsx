@@ -11,6 +11,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import StatsCard from '../../components/ui/StatsCard';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import Dropdown from '../../components/ui/Dropdown';
+import SampleAbstractPanel from '../../components/ui/SampleAbstractPanel';
 import { abstractsAPI } from '../../api/submissions';
 import { editionsAPI } from '../../api/congress';
 import { formatDate, truncate, getErrorMessage } from '../../utils/helpers';
@@ -307,6 +308,8 @@ export default function Abstracts() {
   return (
     <div>
       <PageHeader title="Abstract Submissions" subtitle="Manage all submitted abstracts" />
+
+      <SampleAbstractPanel />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

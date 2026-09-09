@@ -2,7 +2,12 @@ const mongoose = require('mongoose');
 
 const siteSettingsSchema = new mongoose.Schema(
   {
-    siteName: { type: String, default: 'Aging congress', trim: true },
+    // Optional on purpose: with no site name the header shows the logo alone.
+    // No `default` — a default would reappear every time an admin cleared it.
+    siteName: { type: String, default: '', trim: true },
+    // Google Font family applied to the site name in the header, e.g. "Poppins".
+    // Empty means the theme's own font stack.
+    siteNameFont: { type: String, default: '', trim: true },
     tagline: { type: String, trim: true },
     logo: String,
     logoPublicId: String,
@@ -24,6 +29,23 @@ const siteSettingsSchema = new mongoose.Schema(
       keywords: String,
     },
     footerText: String,
+    // Rich text shown below the organizer profiles on the public organizers page.
+    // Was being sent by the admin panel long before it existed here, and Mongoose
+    // silently dropped it on every save — which is why edits never appeared.
+    organizerPageContent: { type: String, default: '' },
+    // Sample abstract template, offered as a download on the submission page.
+    sampleAbstractUrl: String,
+    sampleAbstractPublicId: String,
+    sampleAbstractName: String,
+    // Structured content for the public About page. Mirrors how `homepage`
+    // below holds the homepage CMS, so both pages are edited the same way.
+    // `icon` stores a lucide icon name, resolved to a component on the client.
+    aboutPage: {
+      stats:    [{ value: String, label: String }],
+      values:   [{ icon: String, label: String, title: String, desc: String }],
+      benefits: [String],
+      audience: [{ icon: String, title: String, desc: String }],
+    },
     theme: {
       primaryColor: { type: String, default: '#0d9488' },
       primaryDark:  { type: String, default: '#0f766e' },

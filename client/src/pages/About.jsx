@@ -36,6 +36,18 @@ function StatNumber({ value }) {
   return <span ref={ref}>{num >= 1000 ? count.toLocaleString() : count}{suffix}</span>;
 }
 
+// Icons are stored as lucide names in the database. Only the ones actually
+// offered in the admin picker are mapped — anything unknown falls back to Target
+// rather than rendering `undefined` as a component and crashing the page.
+const ICONS = {
+  Target, Globe, Heart, BookOpen, Users, Award,
+  Microscope, Stethoscope, GraduationCap, Briefcase, Landmark,
+  CheckCircle, ArrowRight,
+};
+const iconFor = (name) => ICONS[name] || Target;
+
+// Fallbacks, used only until `npm run seed:about` has populated the database
+// (and if an admin empties a section). Kept in sync with server/scripts/seedAboutPage.js.
 const VALUES = [
   { icon: Target,   label: '01', title: 'Scientific Excellence', desc: 'Rigorous peer-reviewed research and evidence-based discussions at every session.' },
   { icon: Globe,    label: '02', title: 'Global Collaboration',  desc: 'Fostering international partnerships across research institutions worldwide.' },
@@ -69,8 +81,31 @@ const STATS = [
   { value: '500+',   label: 'Research Papers' },
 ];
 
+/**
+ * Unwraps every <a> in the admin-authored HTML, keeping the text.
+ * The rich text editor auto-links pasted URLs and emails, which we do not want
+ * rendered as clickable links on this page — the copy should read as plain prose.
+ */
+function stripLinks(html) {
+  if (!html) return '';
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+    // No DOM available (SSR / prerender): fall back to a tag-only strip, which
+    // leaves the link text in place exactly as the DOM path would.
+    return html.replace(/<a\b[^>]*>/gi, '').replace(/<\/a>/gi, '');
+  }
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('a').forEach((a) => {
+      a.replaceWith(...a.childNodes);
+    });
+    return doc.body.innerHTML;
+  } catch {
+    return html.replace(/<a\b[^>]*>/gi, '').replace(/<\/a>/gi, '');
+  }
+}
+
 export default function About() {
-  const { activeEdition } = usecongress();
+  const { activeEdition, siteSettings } = usecongress();
   const [page, setPage]     = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -80,6 +115,14 @@ export default function About() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Each section falls back to its built-in list while the database is empty,
+  // so the page never renders as a blank shell.
+  const about    = siteSettings?.aboutPage || {};
+  const stats    = about.stats?.length    ? about.stats    : STATS;
+  const values   = about.values?.length   ? about.values   : VALUES;
+  const benefits = about.benefits?.length ? about.benefits : WHY_ATTEND;
+  const audience = about.audience?.length ? about.audience : AUDIENCE;
 
   return (
     <div>
@@ -103,15 +146,29 @@ export default function About() {
 
               {/* Two-column: headline left, body right */}
               <div className="grid lg:grid-cols-2 gap-12 items-start mb-16">
-                <h2 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight" style={{ textWrap: 'balance' }}>
-                  {page?.title || 'Advancing Aging Science for Humanity'}
-                </h2>
+                {/* Left column: headline, then the admin-uploaded image fills the
+                    space that used to sit empty beneath it. */}
+                <div>
+                  <h2 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight" style={{ textWrap: 'balance' }}>
+                    {page?.title || 'Advancing Aging Science for Humanity'}
+                  </h2>
+                  {page?.image && (
+                    <div className="mt-8 rounded-3xl overflow-hidden shadow-lg">
+                      <img
+                        src={page.image}
+                        alt={page.title || 'About the congress'}
+                        className="w-full h-auto object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="pt-2">
                   <p className="text-lg text-slate-600 leading-relaxed mb-6">
                     {page?.subtitle || 'The Aging Congress is dedicated to accelerating scientific discovery in geroscience, bringing together the brightest minds to tackle the fundamental questions of human aging.'}
                   </p>
                   {page?.content ? (
-                    <div className="prose prose-slate max-w-none text-slate-600 text-base" dangerouslySetInnerHTML={{ __html: page.content }} />
+                    <div className="prose prose-slate max-w-none text-slate-600 text-base" dangerouslySetInnerHTML={{ __html: stripLinks(page.content) }} />
                   ) : (
                     <p className="text-slate-500 leading-relaxed">
                       Founded to address the growing need for a dedicated international forum on aging
@@ -131,11 +188,11 @@ export default function About() {
                 className="grid grid-cols-2 lg:grid-cols-4 rounded-3xl overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 80%, black) 100%)' }}
               >
-                {STATS.map(({ value, label }, i) => (
+                {stats.map(({ value, label }, i) => (
                   <div
-                    key={label}
+                    key={`${label}-${i}`}
                     className="text-center px-6 py-10 relative"
-                    style={{ borderRight: i < STATS.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}
+                    style={{ borderRight: i < stats.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}
                   >
                     <div className="text-4xl lg:text-5xl font-black text-white mb-2 tabular-nums">
                       <StatNumber value={value} />
@@ -160,9 +217,13 @@ export default function About() {
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-px" style={{ background: '#e2e8f0', borderRadius: 20, overflow: 'hidden' }}>
-            {VALUES.map(({ icon: Icon, label, title, desc }) => (
+            {values.map(({ icon, label, title, desc }, i) => {
+              // Seeded rows carry an icon name; the fallback array carries the
+              // component itself, so accept either.
+              const Icon = typeof icon === 'string' ? iconFor(icon) : (icon || Target);
+              return (
               <div
-                key={title}
+                key={`${title}-${i}`}
                 className="group bg-white hover:bg-slate-900 transition-colors duration-300 p-7 flex flex-col gap-4"
               >
                 <div className="flex items-start justify-between">
@@ -181,7 +242,8 @@ export default function About() {
                   <p className="text-sm text-slate-500 group-hover:text-slate-300 transition-colors duration-300 leading-relaxed">{desc}</p>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -196,7 +258,7 @@ export default function About() {
               <p className="text-xs font-black uppercase tracking-[0.25em] mb-3" style={{ color: 'var(--brand)' }}>Benefits</p>
               <h2 className="text-2xl font-black text-slate-900 mb-7">Why You Should Attend</h2>
               <ul className="space-y-4">
-                {WHY_ATTEND.map((item, i) => (
+                {benefits.map((item, i) => (
                   <li key={i} className="flex items-start gap-4">
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5"
@@ -221,8 +283,10 @@ export default function About() {
               <p className="text-xs font-black uppercase tracking-[0.25em] mb-3 text-white/40">Audience</p>
               <h2 className="text-2xl font-black text-white mb-7">Built for the Whole Community</h2>
               <div className="space-y-5">
-                {AUDIENCE.map(({ icon: Icon, title, desc }, i) => (
-                  <div key={title} className="flex items-start gap-4">
+                {audience.map(({ icon, title, desc }, i) => {
+                  const Icon = typeof icon === 'string' ? iconFor(icon) : (icon || Target);
+                  return (
+                  <div key={`${title}-${i}`} className="flex items-start gap-4">
                     <div
                       className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
                       style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
@@ -234,7 +298,8 @@ export default function About() {
                       <p className="text-xs text-white/50 mt-0.5 leading-relaxed">{desc}</p>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

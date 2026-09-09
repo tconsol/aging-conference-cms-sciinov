@@ -1,7 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Send, FileText, AlertCircle, CheckCircle, Key, ExternalLink, UploadCloud, X } from 'lucide-react';
+import {
+  Send, FileText, AlertCircle, CheckCircle, Key, ExternalLink, UploadCloud, X,
+  Download, Image as ImageIcon,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import SectionHeader from '../components/ui/SectionHeader';
@@ -10,8 +13,9 @@ import Select from '../components/ui/Select';
 import Spinner from '../components/ui/Spinner';
 import { submissionsAPI } from '../api/submissions';
 import { congressAPI } from '../api/congress';
+import { contentAPI } from '../api/content';
 import { usecongress } from '../context/congressContext';
-import { getErrorMessage } from '../utils/helpers';
+import { getErrorMessage, downloadBlob } from '../utils/helpers';
 import { COUNTRY_OPTIONS } from '../utils/countries';
 
 const PRESENTATION_TYPES = [
@@ -41,10 +45,15 @@ export default function AbstractSubmission() {
   const [dates, setDates]         = useState([]);
   const [topics, setTopics]       = useState([]);
 
+  const [sampleAbstract, setSampleAbstract] = useState(null);
+  const [downloadingSample, setDownloadingSample] = useState(false);
+
   const { register, handleSubmit, control, formState: { errors }, reset, watch } = useForm();
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const fileReg = register('file');
+  const imageInputRef = useRef(null);
+  const imageReg = register('image');
 
   useEffect(() => {
     const params = activeEdition?._id ? { edition: activeEdition._id } : {};
@@ -62,16 +71,48 @@ export default function AbstractSubmission() {
       .catch(() => setTopics([]));
   }, [activeEdition]);
 
+  // Sample template is site-wide, not per edition, so it is fetched once.
+  useEffect(() => {
+    contentAPI.getSiteSettings()
+      .then((res) => {
+        const s = res.data?.data ?? res.data ?? {};
+        if (s.sampleAbstractUrl) {
+          setSampleAbstract({ url: s.sampleAbstractUrl, name: s.sampleAbstractName || 'sample-abstract' });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Fetched as a blob rather than linked with <a download>: the file is served
+  // from cloud storage on another origin, where the download attribute is
+  // ignored and the browser would navigate to the file instead of saving it.
+  const downloadSample = async () => {
+    if (!sampleAbstract) return;
+    setDownloadingSample(true);
+    try {
+      const res = await fetch(sampleAbstract.url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      downloadBlob(await res.blob(), sampleAbstract.name);
+    } catch {
+      // Saving failed (offline, CORS, storage hiccup) — opening it still lets
+      // the visitor get at the file rather than leaving the button dead.
+      window.open(sampleAbstract.url, '_blank', 'noopener');
+    } finally {
+      setDownloadingSample(false);
+    }
+  };
+
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const { file, ...rest } = data;
+      const { file, image, ...rest } = data;
       const fd = new FormData();
       Object.entries(rest).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') fd.append(key, value);
       });
       fd.append('edition', activeEdition?._id || '');
       if (file instanceof FileList && file.length > 0) fd.append('file', file[0]);
+      if (image instanceof FileList && image.length > 0) fd.append('image', image[0]);
       const res = await submissionsAPI.submitAbstract(fd);
       setSubmittedData(res.data?.data || null);
       setSubmitted(true);
@@ -140,6 +181,36 @@ export default function AbstractSubmission() {
 
             {/* Form */}
             <div className="lg:col-span-2">
+
+              {/* Sample template + portal login, side by side above the form */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                {sampleAbstract && (
+                  <button
+                    type="button"
+                    onClick={downloadSample}
+                    disabled={downloadingSample}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-60"
+                    style={{
+                      background: 'var(--brand-light)',
+                      color: 'var(--brand-dark)',
+                      border: '1.5px solid color-mix(in srgb, var(--brand) 30%, transparent)',
+                    }}
+                  >
+                    <Download size={15} />
+                    {downloadingSample ? 'Downloading…' : 'Download Sample Abstract'}
+                  </button>
+                )}
+
+                <Link
+                  to="/portal/login"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition-all"
+                  style={{ background: 'var(--brand-dark)' }}
+                >
+                  <Key size={15} />
+                  Abstract Login
+                </Link>
+              </div>
+
               {submitted ? (
                 <div className="flex flex-col gap-5">
                   {/* Success header */}
@@ -414,6 +485,91 @@ export default function AbstractSubmission() {
                                 if (fileInputRef.current) {
                                   fileInputRef.current.value = '';
                                   fileReg.onChange({ target: fileInputRef.current });
+                                }
+                              }}
+                              style={{ padding: 6, borderRadius: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                      Image <span className="font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      name={imageReg.name}
+                      onChange={imageReg.onChange}
+                      onBlur={imageReg.onBlur}
+                      ref={(el) => { imageReg.ref(el); imageInputRef.current = el; }}
+                      style={{ display: 'none' }}
+                      id="abstract-image-upload"
+                    />
+                    {(() => {
+                      const selected = watch('image');
+                      const has = selected instanceof FileList && selected.length > 0;
+                      const previewUrl = has ? URL.createObjectURL(selected[0]) : null;
+                      return (
+                        <div
+                          onClick={() => imageInputRef.current?.click()}
+                          style={{
+                            border: `2px dashed ${has ? '#22c55e' : '#cbd5e1'}`,
+                            borderRadius: 14,
+                            padding: '20px 16px',
+                            background: has ? '#f0fdf4' : '#f8fafc',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 14,
+                            userSelect: 'none',
+                          }}
+                        >
+                          <div style={{
+                            width: 44, height: 44, borderRadius: 10, flexShrink: 0, overflow: 'hidden',
+                            background: has ? '#dcfce7' : '#e2e8f0',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            {has
+                              ? <img src={previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <ImageIcon size={20} style={{ color: '#94a3b8' }} />
+                            }
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {has ? (
+                              <>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#166534', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {selected[0].name}
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#4ade80' }}>
+                                  {(selected[0].size / 1024).toFixed(0)} KB · Click to change
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#475569' }}>
+                                  Click to upload an image
+                                </p>
+                                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94a3b8' }}>
+                                  JPEG, PNG, WebP · figure or graphical abstract
+                                </p>
+                              </>
+                            )}
+                          </div>
+                          {has && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (imageInputRef.current) {
+                                  imageInputRef.current.value = '';
+                                  imageReg.onChange({ target: imageInputRef.current });
                                 }
                               }}
                               style={{ padding: 6, borderRadius: 8, background: '#fee2e2', border: 'none', color: '#dc2626', cursor: 'pointer', flexShrink: 0 }}

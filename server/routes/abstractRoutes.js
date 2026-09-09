@@ -4,13 +4,19 @@ const ctrl = require('../controllers/abstractController');
 const portalCtrl = require('../controllers/portalController');
 const { protect } = require('../middleware/auth');
 const submitterAuth = require('../middleware/submitterAuth');
-const { uploadDoc } = require('../middleware/upload');
+const { uploadDoc, uploadAny } = require('../middleware/upload');
 const { addPortalClient, removePortalClient } = require('../utils/ssePortalClients');
 
 const router = express.Router();
 
-// Public submission
-router.post('/submit', uploadDoc.single('file'), ctrl.submit);
+// Public submission. uploadAny because two different kinds of file arrive on the
+// same request: the abstract document and an optional figure image. Each field
+// is type-checked in the controller, since multer applies one filter per request.
+router.post(
+  '/submit',
+  uploadAny.fields([{ name: 'file', maxCount: 1 }, { name: 'image', maxCount: 1 }]),
+  ctrl.submit
+);
 
 // Submitter portal (public login + token-protected me)
 router.post('/portal/login', portalCtrl.login);

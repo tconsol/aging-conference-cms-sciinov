@@ -39,4 +39,12 @@ const uploadImage = multer({ storage, fileFilter: imageFilter, limits: { fileSiz
 const uploadDoc = multer({ storage, fileFilter: docFilter, limits: { fileSize: 20 * 1024 * 1024 } });
 const uploadAny = multer({ storage, fileFilter: anyFilter, limits: { fileSize: 20 * 1024 * 1024 } });
 
-module.exports = { uploadImage, uploadDoc, uploadAny };
+// Exported so routes using uploadAny.fields() can enforce the per-field type in
+// their controller — multer applies a single filter per request, not per field.
+module.exports = {
+  uploadImage,
+  uploadDoc,
+  uploadAny,
+  ALLOWED_IMAGE_TYPES,
+  ALLOWED_DOC_TYPES,
+};

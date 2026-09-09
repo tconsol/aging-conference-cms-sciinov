@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Activity, Linkedin, Twitter, Facebook, Youtube, Instagram } from 'lucide-react';
 import { usecongress } from '../../context/congressContext';
 import NewsletterWidget from '../ui/NewsletterWidget';
+import { useGoogleFont } from '../../hooks/useGoogleFont';
 
 const QUICK_LINKS = [
   { label: 'Home', to: '/' },
@@ -45,7 +46,10 @@ const DEFAULT_SOCIALS = [
 
 export default function Footer() {
   const { siteSettings } = usecongress();
-  const siteName = siteSettings?.siteName || 'Aging Congress';
+  // Empty means "logo only", same rule as the header.
+  const siteName = (siteSettings?.siteName || '').trim();
+  const siteNameFont = (siteSettings?.siteNameFont || '').trim();
+  useGoogleFont(siteNameFont);
 
   const activeSocials = Object.entries(siteSettings?.socialLinks || {})
     .filter(([, url]) => Boolean(url))
@@ -61,18 +65,32 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-5">
               {siteSettings?.logo ? (
-                <img src={siteSettings.logo} alt={siteName} className="w-8 h-8 object-contain" />
+                <img
+                  src={siteSettings.logo}
+                  alt={siteName || 'Home'}
+                  className="object-contain"
+                  style={{ height: siteName ? 32 : 40, width: siteName ? 32 : 'auto', maxWidth: 180 }}
+                />
               ) : (
                 <div className="w-8 h-8 bg-teal-700 flex items-center justify-center">
                   <Activity size={16} className="text-white" />
                 </div>
               )}
-              <div className="flex flex-col leading-none">
-                <span className="text-sm font-black text-white tracking-tight">
-                  {siteName}
-                </span>
-                <span className="text-xs text-teal-400 font-semibold">International Series</span>
-              </div>
+              {siteName && (
+                <div className="flex flex-col leading-none">
+                  <span
+                    className="text-sm font-black text-white tracking-tight"
+                    style={{
+                      fontFamily: siteNameFont
+                        ? `'${siteNameFont}', var(--font-sans, system-ui, sans-serif)`
+                        : undefined,
+                    }}
+                  >
+                    {siteName}
+                  </span>
+                  <span className="text-xs text-teal-400 font-semibold">International Series</span>
+                </div>
+              )}
             </Link>
 
             <p className="text-sm text-slate-500 leading-relaxed mb-6">
@@ -171,7 +189,8 @@ export default function Footer() {
       <div className="border-t border-slate-800">
         <div className="container-custom py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
+            {/* Without a site name this must not read "© 2026 . All rights reserved." */}
+            &copy; {new Date().getFullYear()}{siteName ? ` ${siteName}.` : ''} All rights reserved.
           </p>
           <div className="flex items-center gap-5">
             {[

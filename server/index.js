@@ -142,6 +142,7 @@ app.use('/api/important-dates', require('./routes/importantDateRoutes'));
 app.use('/api/venues', require('./routes/venueRoutes'));
 app.use('/api/sponsorship', require('./routes/sponsorshipRoutes'));
 app.use('/api/partners', require('./routes/partnerRoutes'));
+app.use('/api/packages', require('./routes/packageRoutes'));
 app.use('/api/news', require('./routes/newsRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/downloads', require('./routes/downloadRoutes'));
@@ -154,6 +155,7 @@ app.use('/api/faq-topics', require('./routes/faqTopicRoutes'));
 app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/site-settings', require('./routes/siteSettingsRoutes'));
+app.use('/api/fonts', require('./routes/fontRoutes'));
 app.use('/api/admin-users', require('./routes/adminUserRoutes'));
 
 // 404
