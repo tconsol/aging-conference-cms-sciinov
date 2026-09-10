@@ -147,9 +147,9 @@ function NavItem({ item, isActive }) {
   }, []);
 
   const linkStyle = {
-    fontSize: '10.5px',
+    fontSize: '12.5px',
     fontWeight: 700,
-    letterSpacing: '0.06em',
+    letterSpacing: '0.05em',
     textTransform: 'uppercase',
     padding: '6px 10px',
     position: 'relative',
@@ -224,9 +224,9 @@ function MobileNavItem({ item, onClose }) {
     justifyContent: 'space-between',
     width: '100%',
     padding: '13px 24px',
-    fontSize: '10.5px',
+    fontSize: '12.5px',
     fontWeight: 700,
-    letterSpacing: '0.14em',
+    letterSpacing: '0.1em',
     textTransform: 'uppercase',
     borderBottom: '1px solid #f1f5f9',
     background: 'none',
@@ -530,9 +530,9 @@ export default function Navbar() {
                 title="Track My Abstract Submission"
                 className="hidden lg:inline-flex items-center gap-1.5"
                 style={{
-                  fontSize: '10px',
+                  fontSize: '11.5px',
                   fontWeight: 700,
-                  letterSpacing: '0.08em',
+                  letterSpacing: '0.06em',
                   textTransform: 'uppercase',
                   padding: '7px 12px',
                   borderRadius: 6,

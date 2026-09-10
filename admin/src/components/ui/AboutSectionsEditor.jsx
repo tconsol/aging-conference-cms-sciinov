@@ -1,13 +1,8 @@
-import { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
 import {
-  Save, Plus, Trash2, GripVertical,
+  Plus, Trash2, GripVertical,
   Target, Globe, Heart, BookOpen, Users, Award,
   Microscope, Stethoscope, GraduationCap, Briefcase, Landmark, CheckCircle,
 } from 'lucide-react';
-import { siteSettingsAPI } from '../../api/settings';
-import { getErrorMessage } from '../../utils/helpers';
-import Button from './Button';
 import Select from './Select';
 import Spinner from './Spinner';
 
@@ -107,26 +102,21 @@ function RowShell({ index, onRemove, onMove, total, children }) {
   );
 }
 
-export default function AboutSectionsEditor() {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [stats, setStats] = useState([]);
-  const [values, setValues] = useState([]);
-  const [benefits, setBenefits] = useState([]);
-  const [audience, setAudience] = useState([]);
+/**
+ * Controlled. The parent owns the data and the single Save button — an earlier
+ * version saved itself, which meant picking an image above and then clicking
+ * this component's own save silently discarded the image.
+ */
+export default function AboutSectionsEditor({ value, onChange, loading = false }) {
+  const stats    = value?.stats    || [];
+  const values   = value?.values   || [];
+  const benefits = value?.benefits || [];
+  const audience = value?.audience || [];
 
-  useEffect(() => {
-    siteSettingsAPI.get()
-      .then((res) => {
-        const a = (res.data?.data || res.data || {}).aboutPage || {};
-        setStats(a.stats || []);
-        setValues(a.values || []);
-        setBenefits(a.benefits || []);
-        setAudience(a.audience || []);
-      })
-      .catch((err) => toast.error(getErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
+  const setStats    = (next) => onChange({ ...value, stats: next });
+  const setValues   = (next) => onChange({ ...value, values: next });
+  const setBenefits = (next) => onChange({ ...value, benefits: next });
+  const setAudience = (next) => onChange({ ...value, audience: next });
 
   // One generic set of list helpers rather than four near-identical copies.
   const makeHandlers = (list, setList, empty) => ({
@@ -159,41 +149,19 @@ export default function AboutSectionsEditor() {
     },
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await siteSettingsAPI.updateAboutPage({
-        // Blank rows would render as empty cards on the public page.
-        stats:    stats.filter((s) => s.value?.trim() || s.label?.trim()),
-        values:   values.filter((v) => v.title?.trim()),
-        benefits: benefits.map((b) => b.trim()).filter(Boolean),
-        audience: audience.filter((a) => a.title?.trim()),
-      });
-      toast.success('About page sections saved.');
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return <div className="flex justify-center py-12"><Spinner size="lg" /></div>;
   }
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-base font-bold text-slate-800">About Page Sections</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Stats, values, benefits and audience shown on the public About page.
-            Empty sections fall back to the built-in defaults.
-          </p>
-        </div>
-        <Button onClick={handleSave} loading={saving} size="sm">
-          <Save size={14} /> Save Sections
-        </Button>
+      <div>
+        <h2 className="text-base font-bold text-slate-800">About Page Sections</h2>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Stats, values, benefits and audience shown on the public About page.
+          Empty sections fall back to the built-in defaults. Saved with
+          <strong> Save Page</strong> at the top.
+        </p>
       </div>
 
       {/* Stats */}
@@ -314,12 +282,6 @@ export default function AboutSectionsEditor() {
           </div>
         )}
       </SectionCard>
-
-      <div className="flex justify-end">
-        <Button onClick={handleSave} loading={saving}>
-          <Save size={15} /> Save Sections
-        </Button>
-      </div>
     </div>
   );
 }

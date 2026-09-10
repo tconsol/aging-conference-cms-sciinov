@@ -10,6 +10,7 @@ import RichTextEditor from '../../components/ui/RichTextEditor';
 import AboutSectionsEditor from '../../components/ui/AboutSectionsEditor';
 import Spinner from '../../components/ui/Spinner';
 import { pagesAPI } from '../../api/content';
+import { siteSettingsAPI } from '../../api/settings';
 import { buildFormData, getErrorMessage } from '../../utils/helpers';
 
 const PAGE_TITLES = {
@@ -31,6 +32,8 @@ export default function StaticPageEditor() {
   const [content, setContent] = useState('');
   const [currentImage, setCurrentImage] = useState(null);
   const [removeImage, setRemoveImage] = useState(false);
+  const [sections, setSections] = useState({ stats: [], values: [], benefits: [], audience: [] });
+  const [sectionsLoading, setSectionsLoading] = useState(false);
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm();
 
@@ -60,6 +63,22 @@ export default function StaticPageEditor() {
     fetchPage();
   }, [key]);
 
+  // Sections live on SiteSettings, not the page document, so they load separately.
+  useEffect(() => {
+    if (!supportsMedia) return;
+    setSectionsLoading(true);
+    siteSettingsAPI.get()
+      .then((res) => {
+        const a = (res.data?.data || res.data || {}).aboutPage || {};
+        setSections({
+          stats: a.stats || [], values: a.values || [],
+          benefits: a.benefits || [], audience: a.audience || [],
+        });
+      })
+      .catch((err) => toast.error(getErrorMessage(err)))
+      .finally(() => setSectionsLoading(false));
+  }, [key, supportsMedia]);
+
   const onSubmit = async (formData) => {
     setSaving(true);
     try {
@@ -77,6 +96,19 @@ export default function StaticPageEditor() {
       else if (removeImage) payload.removeImage = 'true';
 
       await pagesAPI.update(key, buildFormData(payload));
+
+      // One button saves both halves, so an image picked above can never be
+      // lost by saving the sections instead.
+      if (supportsMedia) {
+        await siteSettingsAPI.updateAboutPage({
+          // Blank rows would render as empty cards on the public page.
+          stats:    (sections.stats || []).filter((s) => s.value?.trim() || s.label?.trim()),
+          values:   (sections.values || []).filter((v) => v.title?.trim()),
+          benefits: (sections.benefits || []).map((b) => b.trim()).filter(Boolean),
+          audience: (sections.audience || []).filter((a) => a.title?.trim()),
+        });
+      }
+
       toast.success('Page saved successfully.');
       fetchPage();
     } catch (err) {
@@ -175,11 +207,15 @@ export default function StaticPageEditor() {
         />
       </div>
 
-      {/* Saved separately from the copy above — different endpoint, and the
-          sections are long enough that one giant save button would be worse. */}
+      {/* Different endpoint from the copy above, but deliberately the same Save
+          button — two separate saves on one screen lost work. */}
       {supportsMedia && (
         <div className="mt-8">
-          <AboutSectionsEditor />
+          <AboutSectionsEditor
+            value={sections}
+            onChange={setSections}
+            loading={sectionsLoading}
+          />
         </div>
       )}
     </div>
