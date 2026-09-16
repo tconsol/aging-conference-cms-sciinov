@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const log = require('./logger').child('smtp');
 
 const REQUIRED_VARS = ['EMAIL_HOST', 'EMAIL_PORT', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
 const missingVars = () => REQUIRED_VARS.filter((k) => !process.env[k]);
@@ -31,23 +32,21 @@ const transporter = nodemailer.createTransport({
 const verifyTransport = async () => {
   const missing = missingVars();
   if (missing.length) {
-    console.error(
-      `[smtp] NOT CONFIGURED — missing env var(s): ${missing.join(', ')}. No email will be sent.`
-    );
+    log.error('Not configured — no email will be sent', { missing: missing.join(', ') });
     return false;
   }
 
-  console.log(
-    `[smtp] connecting to ${process.env.EMAIL_HOST}:${port} ` +
-    `(secure=${port === 465}) as ${process.env.EMAIL_USER}`
-  );
+  log.debug(`Connecting to ${process.env.EMAIL_HOST}:${port}`, {
+    secure: port === 465,
+    user: process.env.EMAIL_USER,
+  });
 
   try {
     await transporter.verify();
-    console.log('[smtp] CONNECTED — authenticated, ready to send');
+    log.info(`Ready · ${process.env.EMAIL_HOST}:${port}`);
     return true;
   } catch (err) {
-    console.error(`[smtp] CONNECTION FAILED — ${err.code || 'ERROR'}: ${err.message}`);
+    log.error(`Connection failed — ${err.message}`, { code: err.code || 'ERROR' });
     return false;
   }
 };
@@ -58,7 +57,7 @@ const sendEmail = async ({ to, subject, html, text, attachments }) => {
   const missing = missingVars();
   if (missing.length) {
     const reason = `SMTP not configured — missing ${missing.join(', ')}`;
-    console.error(`[smtp] SKIPPED "${subject}" → ${to}: ${reason}`);
+    log.error(`Skipped "${subject}" → ${to}`, { reason });
     throw new Error(reason);
   }
 
@@ -71,13 +70,13 @@ const sendEmail = async ({ to, subject, html, text, attachments }) => {
       text,
       ...(attachments?.length ? { attachments } : {}),
     });
-    console.log(`[smtp] sent "${subject}" → ${to} (${info.messageId})`);
+    log.info(`Sent "${subject}" → ${to}`, { messageId: info.messageId });
     return info;
   } catch (err) {
     // Callers deliberately swallow send failures so a notification can never
     // break the request that triggered it. Log here, at the one place every
     // send passes through, or the failure leaves no trace at all.
-    console.error(`[smtp] FAILED "${subject}" → ${to}: ${err.code || 'ERROR'} ${err.message}`);
+    log.error(`Failed "${subject}" → ${to} — ${err.message}`, { code: err.code || 'ERROR' });
     throw err;
   }
 };

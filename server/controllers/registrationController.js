@@ -7,6 +7,11 @@ const { sendEmail } = require('../utils/email');
 const paypal = require('../utils/paypal');
 const { broadcast } = require('../utils/sseClients');
 const { priceFor } = require('../utils/pricing');
+const logger = require('../utils/logger');
+
+const payLog = logger.child('paypal');
+const capLog = logger.child('captcha');
+const intentLog = logger.child('intent');
 
 const CATEGORY_LABELS = {
   oral_inperson:     'Oral Presentation (In-Person)',
@@ -301,7 +306,7 @@ exports.handlePaypalWebhook = async (req, res, next) => {
     });
 
     if (!isValid) {
-      console.warn('[PayPal Webhook] Signature verification failed');
+      payLog.warn('Signature verification failed');
       return res.status(400).json({ error: 'Invalid signature' });
     }
 
@@ -319,7 +324,7 @@ exports.handlePaypalWebhook = async (req, res, next) => {
         { new: true }
       ).populate('edition', 'title year');
       if (registration) {
-        console.log(`[PayPal Webhook] Confirmed registration ${registration._id}`);
+        payLog.info(`Confirmed registration ${registration._id}`);
         try {
           const ctx = await getSiteCtx();
           await sendEmail({
@@ -343,19 +348,19 @@ exports.handlePaypalWebhook = async (req, res, next) => {
         { transactionId: captureId },
         { paymentStatus: 'cancelled' }
       );
-      console.log(`[PayPal Webhook] Marked cancelled (${eventType}) for capture ${captureId}`);
+      payLog.info(`Marked cancelled for capture ${captureId}`, { event: eventType });
     }
 
     if (eventType === 'PAYMENT.CAPTURE.PENDING') {
       // Payment held by PayPal (e.g. eCheck, review) keep as pending, log it
       const captureId = resource.id;
-      console.log(`[PayPal Webhook] Capture pending for ${captureId} awaiting PayPal release`);
+      payLog.info(`Capture pending for ${captureId} — awaiting PayPal release`);
     }
 
     // Always return 200 quickly PayPal retries on any non-2xx
     res.sendStatus(200);
   } catch (err) {
-    console.error('[PayPal Webhook] Error:', err.message);
+    payLog.error(`Webhook failed — ${err.message}`);
     // Still return 200 to stop PayPal retrying on processing errors
     res.sendStatus(200);
   }
@@ -376,7 +381,7 @@ exports.handlePaypalWebhook = async (req, res, next) => {
 async function verifyCaptcha(token) {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) {
-    console.error('[reCAPTCHA] RECAPTCHA_SECRET_KEY is not set — refusing to accept unverified submissions.');
+    capLog.error('RECAPTCHA_SECRET_KEY is not set — refusing unverified submissions');
     return {
       ok: false,
       reason: 'unconfigured',
@@ -400,7 +405,7 @@ async function verifyCaptcha(token) {
   const data = await res.json();
   if (data.success === true) return { ok: true };
 
-  console.warn('[reCAPTCHA] verification failed:', data['error-codes']);
+  capLog.warn('Verification failed', { codes: (data['error-codes'] || []).join(', ') });
   return { ok: false, reason: 'rejected', message: 'CAPTCHA verification failed. Please check the box and try again.' };
 }
 
@@ -681,10 +686,10 @@ exports.abandonIntent = async (req, res, next) => {
       intent.reminderCount = (intent.reminderCount || 0) + 1;
       await intent.save();
 
-      console.log(`[Intent] Abandonment reminder → ${email} (attempt ${intent.attemptCount}, reminder ${intent.reminderCount})`);
+      intentLog.info(`Abandonment reminder → ${email}`, { attempt: intent.attemptCount, reminder: intent.reminderCount });
       return res.json({ success: true, sent: true });
     } catch (emailErr) {
-      console.error('[Intent] Abandonment email failed:', emailErr.message);
+      intentLog.error(`Abandonment email failed — ${emailErr.message}`);
       return res.json({ success: true, sent: false, reason: 'email-failed' });
     }
   } catch (err) { next(err); }

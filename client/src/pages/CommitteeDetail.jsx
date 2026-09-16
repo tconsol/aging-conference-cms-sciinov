@@ -4,6 +4,7 @@ import { ArrowLeft, Building, MapPin } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 function OtherMemberCard({ member }) {
   const initials = member.fullName
@@ -138,7 +139,7 @@ export default function CommitteeDetail() {
                 <p className="text-xs font-black uppercase tracking-[0.25em] mb-4" style={{ color: 'var(--brand)' }}>Biography</p>
                 <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-[15px]">
                   {typeof member.biography === 'string' && member.biography.startsWith('<') ? (
-                    <div dangerouslySetInnerHTML={{ __html: member.biography }} />
+                    <div dangerouslySetInnerHTML={{ __html: cleanCmsHtml(member.biography) }} />
                   ) : (
                     <p>{member.biography}</p>
                   )}

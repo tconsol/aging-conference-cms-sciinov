@@ -64,17 +64,18 @@ export default function Footer() {
           {/* Col 1: Brand + social + newsletter */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-5">
-              {siteSettings?.logo ? (
+              {/* Logo only when the admin has uploaded one — no placeholder mark,
+                  same rule as the header. */}
+              {siteSettings?.logo && (
                 <img
                   src={siteSettings.logo}
                   alt={siteName || 'Home'}
                   className="object-contain"
                   style={{ height: siteName ? 32 : 40, width: siteName ? 32 : 'auto', maxWidth: 180 }}
                 />
-              ) : (
-                <div className="w-8 h-8 bg-teal-700 flex items-center justify-center">
-                  <Activity size={16} className="text-white" />
-                </div>
+              )}
+              {!siteSettings?.logo && !siteName && (
+                <span className="text-sm font-black text-white tracking-tight">Home</span>
               )}
               {siteName && (
                 <div className="flex flex-col leading-none">

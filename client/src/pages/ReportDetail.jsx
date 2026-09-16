@@ -5,6 +5,7 @@ import Spinner from '../components/ui/Spinner';
 import Button from '../components/ui/Button';
 import { contentAPI } from '../api/content';
 import { formatDate } from '../utils/helpers';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 export default function ReportDetail() {
   const { id } = useParams();
@@ -137,7 +138,7 @@ export default function ReportDetail() {
                   </p>
                   <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-[15px]">
                     {typeof report.description === 'string' && report.description.startsWith('<') ? (
-                      <div dangerouslySetInnerHTML={{ __html: report.description }} />
+                      <div dangerouslySetInnerHTML={{ __html: cleanCmsHtml(report.description) }} />
                     ) : (
                       <p>{report.description}</p>
                     )}
@@ -153,10 +154,9 @@ export default function ReportDetail() {
                   <p className="text-xs font-black uppercase tracking-[0.25em] mb-4" style={{ color: 'var(--brand)' }}>
                     Full Content
                   </p>
-                  <div
-                    className="prose prose-slate max-w-none text-slate-600 text-[15px] leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: report.content }}
-                  />
+                  <div className="prose prose-slate max-w-none text-slate-600 text-[15px] leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: cleanCmsHtml(report.content) }}
+              />
                 </div>
               )}
             </div>

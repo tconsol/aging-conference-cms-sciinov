@@ -5,6 +5,7 @@ import Spinner from '../components/ui/Spinner';
 import OrganizerCarousel from '../components/ui/OrganizerCarousel';
 import { peopleAPI } from '../api/people';
 import { contentAPI } from '../api/content';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 export default function Organizers() {
   const [organizers, setOrganizers] = useState([]);
@@ -59,10 +60,9 @@ export default function Organizers() {
               className="w-12 h-1 rounded-full mb-6"
               style={{ background: 'var(--brand-dark)' }}
             />
-            <div
-              className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: orgContent }}
-            />
+            <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: cleanCmsHtml(orgContent) }}
+              />
           </div>
         </section>
       )}

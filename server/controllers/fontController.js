@@ -7,6 +7,8 @@
  * start refetches, which is cheap enough.
  */
 
+const log = require('../utils/logger').child('fonts');
+
 const GOOGLE_FONTS_ENDPOINT = 'https://www.googleapis.com/webfonts/v1/webfonts';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -60,7 +62,7 @@ exports.getFonts = async (req, res, next) => {
   } catch (err) {
     // A font list is decoration: serve the fallback rather than failing the
     // request and leaving the admin with no dropdown at all.
-    console.warn(`[fonts] falling back to built-in list: ${err.message}`);
+    log.warn(`Falling back to built-in list — ${err.message}`);
     cache = { at: Date.now(), fonts: FALLBACK_FONTS, source: 'fallback' };
     res.json({ success: true, source: 'fallback', data: FALLBACK_FONTS });
   }

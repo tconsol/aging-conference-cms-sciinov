@@ -82,27 +82,15 @@ function DropdownMenu({ items, isOpen }) {
           borderTop: '2px solid var(--brand-dark)',
         }}
       >
-        {items.map((item, i) => (
+        {items.map((item) => (
           <Link
             key={item.to}
             to={item.to}
-            className="flex items-center gap-3 px-4 py-2.5 transition-colors duration-150"
+            className="flex items-center px-4 py-2.5 transition-colors duration-150"
             style={{ borderBottom: '1px solid #f1f5f9' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--brand-light)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
           >
-            <span
-              style={{
-                fontSize: '9px',
-                fontFamily: 'monospace',
-                fontWeight: 700,
-                color: 'var(--brand)',
-                letterSpacing: '0.05em',
-                flexShrink: 0,
-              }}
-            >
-              {String(i + 1).padStart(2, '0')}
-            </span>
             <span
               className="text-sm font-medium transition-colors duration-150"
               style={{ color: '#334155' }}
@@ -269,7 +257,7 @@ function MobileNavItem({ item, onClose }) {
       </button>
       {open && (
         <div style={{ background: '#f8fafc' }}>
-          {item.children.map((child, i) => (
+          {item.children.map((child) => (
             <Link
               key={child.to}
               to={child.to}
@@ -277,7 +265,6 @@ function MobileNavItem({ item, onClose }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
                 padding: '10px 24px 10px 32px',
                 fontSize: '13px',
                 fontWeight: 500,
@@ -287,9 +274,6 @@ function MobileNavItem({ item, onClose }) {
                 transition: 'color 0.15s',
               }}
             >
-              <span style={{ fontSize: '9px', color: 'var(--brand)', fontWeight: 700, letterSpacing: '0.05em' }}>
-                {String(i + 1).padStart(2, '0')}
-              </span>
               {child.label}
             </Link>
           ))}
@@ -299,11 +283,46 @@ function MobileNavItem({ item, onClose }) {
   );
 }
 
+// Maps a nav destination onto its key in the server's visibility registry.
+// Anything not listed (the portal, query-string variants of a listed page) has
+// no switch of its own and stays visible.
+const NAV_VISIBILITY_KEYS = {
+  '/about': 'about',
+  '/committee': 'committee',
+  '/become-a-speaker': 'becomeASpeaker',
+  '/sponsorship': 'sponsorship',
+  '/organizers': 'organizers',
+  '/speakers': 'speakers',
+  '/sessions': 'sessions',
+  '/program': 'program',
+  '/abstract-submission': 'abstractSubmission',
+  '/brochure': 'brochure',
+  '/partners': 'partners',
+  '/important-dates': 'importantDates',
+  '/venue': 'venue',
+  '/guidelines': 'guidelines',
+  '/publication-policy': 'publication',
+  '/terms': 'terms',
+  '/pricing': 'pricing',
+  '/downloads': 'downloads',
+  '/news': 'news',
+  '/reports': 'reports',
+  '/editions': 'editions',
+  '/help': 'help',
+  '/contact': 'contact',
+  '/testimonials': 'testimonials',
+  '/newsletter': 'newsletter',
+};
+
+// Speaker children carry ?edition=…, past events carries ?status=past — match
+// on the path alone so those inherit their page's switch.
+const navKeyFor = (to) => NAV_VISIBILITY_KEYS[String(to || '').split('?')[0]];
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [editions, setEditions] = useState([]);
-  const { activeEdition, siteSettings } = usecongress();
+  const { activeEdition, siteSettings, visibility, isVisible } = usecongress();
   const location = useLocation();
   const navigate = useNavigate();
   // Deliberately no fallback name: an empty site name means "logo only".
@@ -337,13 +356,27 @@ export default function Navbar() {
       label: `Speakers ${e.year} ${e.city}`,
       to: `/speakers?edition=${e._id}`,
     }));
-    return BASE_NAV_ITEMS.map((item) => {
+    const withSpeakers = BASE_NAV_ITEMS.map((item) => {
       if (item.label !== 'Speakers') return item;
       return speakersChildren.length > 0
         ? { label: 'Speakers', children: speakersChildren }
         : { label: 'Speakers', to: '/speakers' };
     });
-  }, [editions]);
+
+    // Drop links to pages the admin has switched off, then drop any dropdown
+    // left with no children — a menu that opens onto nothing is worse than no
+    // menu. The pages themselves are guarded separately by VisibilityRoute;
+    // this only keeps the nav honest about what is reachable.
+    return withSpeakers
+      .map((item) => {
+        if (!item.children) {
+          return isVisible(navKeyFor(item.to)) ? item : null;
+        }
+        const children = item.children.filter((c) => isVisible(navKeyFor(c.to)));
+        return children.length ? { ...item, children } : null;
+      })
+      .filter(Boolean);
+  }, [editions, visibility]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

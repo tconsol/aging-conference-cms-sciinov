@@ -9,6 +9,7 @@ import Input from '../../components/ui/Input';
 import Textarea from '../../components/ui/Textarea';
 import ImageUpload from '../../components/ui/ImageUpload';
 import FontPicker from '../../components/ui/FontPicker';
+import SeoStatus from '../../components/ui/SeoStatus';
 import Spinner from '../../components/ui/Spinner';
 
 function SectionDivider({ title }) {
@@ -334,6 +335,13 @@ export default function SiteSettings() {
 
           {/* SEO */}
           <SectionDivider title="SEO" />
+          <div className="mb-4">
+            <SeoStatus
+              title={watch('seoTitle')}
+              description={watch('seoDescription')}
+              keywords={watch('seoKeywords')}
+            />
+          </div>
           <div className="space-y-4">
             <Input
               label="Meta Title"

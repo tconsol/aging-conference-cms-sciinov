@@ -10,7 +10,8 @@
     "seed:admin": "node scripts/seedAdmin.js",
     "seed:about": "node scripts/seedAboutPage.js",
     "seed:packages": "node scripts/seedPackages.js",
-    "seed:force": "node scripts/seed.js --force"
+    "seed:force": "node scripts/seed.js --force",
+    "seo:sitemap": "node scripts/generateSitemap.js"
   },
   "dependencies": {
     "@google-cloud/storage": "^8.0.1",

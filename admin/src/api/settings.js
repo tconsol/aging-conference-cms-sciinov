@@ -29,3 +29,9 @@ export const adminUsersAPI = {
   resetPassword: (id, newPassword) => api.patch(`/admin-users/${id}/reset-password`, { newPassword }),
   delete: (id) => api.delete(`/admin-users/${id}`),
 };
+
+// Show/hide switches for public pages and sections
+export const visibilityAPI = {
+  getAdmin: () => api.get('/visibility/admin'),
+  update: (visibility) => api.patch('/visibility', { visibility }),
+};

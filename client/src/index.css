@@ -319,3 +319,30 @@
 @media (prefers-reduced-motion: reduce) {
   .step-celebrate { animation: none; }
 }
+
+/* ── CMS content typography ───────────────────────────────────────────────
+   Admin-chosen fonts, sizes, colours and highlights are inline styles from the
+   editor, so they win over these rules automatically. Only tables need help:
+   the editor can insert them but Tailwind's reset leaves them unstyled. */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25em 0;
+}
+.prose th,
+.prose td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+.prose th {
+  background: #f8fafc;
+  font-weight: 700;
+}
+/* The editor writes highlights as <mark style="background-color:…">; without
+   this the browser default yellow fights the chosen colour. */
+.prose mark {
+  background-color: inherit;
+  padding: 0.1em 0.2em;
+  border-radius: 2px;
+}

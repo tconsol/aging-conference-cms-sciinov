@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Tag } from 'lucide-react';
 import Spinner from '../components/ui/Spinner';
 import { contentAPI } from '../api/content';
 import { formatDate } from '../utils/helpers';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 export default function NewsDetail() {
   const { slug } = useParams();
@@ -104,9 +105,8 @@ export default function NewsDetail() {
 
             {/* Body */}
             {article.content && (
-              <div
-                className="prose prose-slate prose-lg max-w-none text-slate-700"
-                dangerouslySetInnerHTML={{ __html: article.content }}
+              <div className="prose prose-slate prose-lg max-w-none text-slate-700"
+                dangerouslySetInnerHTML={{ __html: cleanCmsHtml(article.content) }}
               />
             )}
 

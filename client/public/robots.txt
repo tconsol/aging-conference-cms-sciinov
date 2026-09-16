@@ -1,0 +1,9 @@
+# Public congress site — indexing is wanted.
+User-agent: *
+Allow: /
+
+# The submitter portal is per-person and behind a login; nothing there belongs
+# in search results.
+Disallow: /portal/
+
+Sitemap: https://globalagingcongress.com/sitemap.xml

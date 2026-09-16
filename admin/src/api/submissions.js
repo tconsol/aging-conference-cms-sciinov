@@ -25,3 +25,9 @@ export const registrationsAPI = {
   getOneIntent: (id) => api.get(`/registrations/intents/${id}`),
   sendIntentReminder: (id) => api.post(`/registrations/intents/${id}/remind`),
 };
+
+// Unified feed of everything submitted through the public site
+export const allSubmissionsAPI = {
+  getAll: (params) => api.get('/submissions', { params }),
+  getMeta: () => api.get('/submissions/meta'),
+};

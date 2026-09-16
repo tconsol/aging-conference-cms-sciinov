@@ -102,3 +102,33 @@ body.admin-themed .focus\:border-teal-500:focus { border-color: var(--brand)    
     @apply float-left text-slate-400 pointer-events-none h-0;
   }
 }
+
+/* ── Editor: show formatting marks (Word's ¶ button) ──────────────────────
+   Editor-only affordance: these are CSS pseudo-elements, so they are never
+   part of the HTML that gets saved or published. */
+.show-formatting-marks .prose-editor-inner p::after,
+.show-formatting-marks .prose-editor-inner h1::after,
+.show-formatting-marks .prose-editor-inner h2::after,
+.show-formatting-marks .prose-editor-inner h3::after,
+.show-formatting-marks .prose-editor-inner h4::after {
+  content: '¶';
+  color: #94a3b8;
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+/* Tables inserted from the toolbar need visible cell edges while editing. */
+.prose-editor-inner table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75em 0;
+}
+.prose-editor-inner th,
+.prose-editor-inner td {
+  border: 1px solid #cbd5e1;
+  padding: 0.4em 0.6em;
+}
+.prose-editor-inner th {
+  background: #f1f5f9;
+  font-weight: 700;
+}

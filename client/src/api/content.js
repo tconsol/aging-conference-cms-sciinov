@@ -10,4 +10,5 @@ export const contentAPI = {
   getBrochure: () => api.get('/brochure/latest'),
   getPage: (key) => api.get(`/pages/${key}`),
   getSiteSettings: () => api.get('/site-settings'),
+  getVisibility: () => api.get('/visibility'),
 };

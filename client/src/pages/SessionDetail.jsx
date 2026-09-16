@@ -7,6 +7,7 @@ import Button from '../components/ui/Button';
 import { congressAPI } from '../api/congress';
 import { usecongress } from '../context/congressContext';
 import { formatDate } from '../utils/helpers';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 function toPascalCase(str) {
   return str.split(/[-_\s]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('');
@@ -138,7 +139,7 @@ export default function SessionDetail() {
                   </p>
                   <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed text-[15px]">
                     {session.description.startsWith?.('<') ? (
-                      <div dangerouslySetInnerHTML={{ __html: session.description }} />
+                      <div dangerouslySetInnerHTML={{ __html: cleanCmsHtml(session.description) }} />
                     ) : (
                       <p>{session.description}</p>
                     )}

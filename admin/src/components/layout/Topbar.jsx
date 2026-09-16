@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, User, ChevronDown, Search, X, Palette, Check } from 'lucide-react';
+import { Menu, LogOut, User, ChevronDown, Search, X, Palette, Check, Inbox } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { NAV_SEARCH_INDEX } from '../../config/navGroups';
 import { THEME_PRESETS } from '../../config/themePresets';
 import { siteSettingsAPI } from '../../api/settings';
@@ -300,6 +300,23 @@ export default function Topbar({ onMenuClick }) {
 
       {/* Right side */}
       <div className="flex items-center gap-2 ml-auto">
+
+        {/* All Submissions — the screen the team reaches for most, so it gets a
+            permanent shortcut rather than living only in the sidebar. */}
+        <NavLink
+          to="/submissions"
+          title="All Submissions"
+          className={({ isActive }) =>
+            `inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-semibold transition-colors ${
+              isActive
+                ? 'border-transparent text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            }`}
+          style={({ isActive }) => (isActive ? { background: 'var(--brand-dark)' } : undefined)}
+        >
+          <Inbox size={14} />
+          <span className="hidden sm:inline">All Submissions</span>
+        </NavLink>
 
         {/* Theme switcher */}
         <ThemeSwitcher />

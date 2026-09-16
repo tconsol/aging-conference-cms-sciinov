@@ -6,6 +6,7 @@ import { SubmitterAuthProvider } from './context/submitterAuthContext';
 
 // Pages
 import Home from './pages/Home';
+import VisibilityRoute from './components/layout/VisibilityRoute';
 const About = lazy(() => import('./pages/About'));
 const Editions = lazy(() => import('./pages/Editions'));
 const EditionDetail = lazy(() => import('./pages/EditionDetail'));
@@ -77,39 +78,39 @@ export default function App() {
         {/* Public site */}
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/editions" element={<Editions />} />
-          <Route path="/editions/:id" element={<EditionDetail />} />
-          <Route path="/sessions" element={<Sessions />} />
-          <Route path="/sessions/:id" element={<SessionDetail />} />
-          <Route path="/program" element={<Program />} />
-          <Route path="/important-dates" element={<ImportantDates />} />
-          <Route path="/venue" element={<Venue />} />
-          <Route path="/speakers" element={<Speakers />} />
-          <Route path="/speakers/:slug" element={<SpeakerDetail />} />
-          <Route path="/committee" element={<Committee />} />
-          <Route path="/committee/:id" element={<CommitteeDetail />} />
-          <Route path="/organizers" element={<Organizers />} />
-          <Route path="/abstract-submission" element={<AbstractSubmission />} />
-          <Route path="/registration" element={<Registration />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/news" element={<News />} />
-          <Route path="/news/:slug" element={<NewsDetail />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/reports/:id" element={<ReportDetail />} />
-          <Route path="/downloads" element={<Downloads />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/help" element={<Help />} />
+          <Route path="/about" element={<VisibilityRoute pageKey="about"><About /></VisibilityRoute>} />
+          <Route path="/editions" element={<VisibilityRoute pageKey="editions"><Editions /></VisibilityRoute>} />
+          <Route path="/editions/:id" element={<VisibilityRoute pageKey="editions"><EditionDetail /></VisibilityRoute>} />
+          <Route path="/sessions" element={<VisibilityRoute pageKey="sessions"><Sessions /></VisibilityRoute>} />
+          <Route path="/sessions/:id" element={<VisibilityRoute pageKey="sessions"><SessionDetail /></VisibilityRoute>} />
+          <Route path="/program" element={<VisibilityRoute pageKey="program"><Program /></VisibilityRoute>} />
+          <Route path="/important-dates" element={<VisibilityRoute pageKey="importantDates"><ImportantDates /></VisibilityRoute>} />
+          <Route path="/venue" element={<VisibilityRoute pageKey="venue"><Venue /></VisibilityRoute>} />
+          <Route path="/speakers" element={<VisibilityRoute pageKey="speakers"><Speakers /></VisibilityRoute>} />
+          <Route path="/speakers/:slug" element={<VisibilityRoute pageKey="speakers"><SpeakerDetail /></VisibilityRoute>} />
+          <Route path="/committee" element={<VisibilityRoute pageKey="committee"><Committee /></VisibilityRoute>} />
+          <Route path="/committee/:id" element={<VisibilityRoute pageKey="committee"><CommitteeDetail /></VisibilityRoute>} />
+          <Route path="/organizers" element={<VisibilityRoute pageKey="organizers"><Organizers /></VisibilityRoute>} />
+          <Route path="/abstract-submission" element={<VisibilityRoute pageKey="abstractSubmission"><AbstractSubmission /></VisibilityRoute>} />
+          <Route path="/registration" element={<VisibilityRoute pageKey="registration"><Registration /></VisibilityRoute>} />
+          <Route path="/pricing" element={<VisibilityRoute pageKey="pricing"><Pricing /></VisibilityRoute>} />
+          <Route path="/news" element={<VisibilityRoute pageKey="news"><News /></VisibilityRoute>} />
+          <Route path="/news/:slug" element={<VisibilityRoute pageKey="news"><NewsDetail /></VisibilityRoute>} />
+          <Route path="/reports" element={<VisibilityRoute pageKey="reports"><Reports /></VisibilityRoute>} />
+          <Route path="/reports/:id" element={<VisibilityRoute pageKey="reports"><ReportDetail /></VisibilityRoute>} />
+          <Route path="/downloads" element={<VisibilityRoute pageKey="downloads"><Downloads /></VisibilityRoute>} />
+          <Route path="/contact" element={<VisibilityRoute pageKey="contact"><Contact /></VisibilityRoute>} />
+          <Route path="/help" element={<VisibilityRoute pageKey="help"><Help /></VisibilityRoute>} />
           <Route path="/support-tickets" element={<SupportTickets />} />
-          <Route path="/sponsorship" element={<Sponsorship />} />
-          <Route path="/partners" element={<Partners />} />
-          <Route path="/testimonials" element={<Testimonials />} />
-          <Route path="/become-a-speaker" element={<BecomeASpeaker />} />
-          <Route path="/brochure" element={<Brochure />} />
-          <Route path="/guidelines" element={<StaticPage pageKey="guidelines" />} />
-          <Route path="/publication-policy" element={<StaticPage pageKey="publication" />} />
-          <Route path="/terms" element={<StaticPage pageKey="terms" />} />
-          <Route path="/newsletter" element={<Newsletter />} />
+          <Route path="/sponsorship" element={<VisibilityRoute pageKey="sponsorship"><Sponsorship /></VisibilityRoute>} />
+          <Route path="/partners" element={<VisibilityRoute pageKey="partners"><Partners /></VisibilityRoute>} />
+          <Route path="/testimonials" element={<VisibilityRoute pageKey="testimonials"><Testimonials /></VisibilityRoute>} />
+          <Route path="/become-a-speaker" element={<VisibilityRoute pageKey="becomeASpeaker"><BecomeASpeaker /></VisibilityRoute>} />
+          <Route path="/brochure" element={<VisibilityRoute pageKey="brochure"><Brochure /></VisibilityRoute>} />
+          <Route path="/guidelines" element={<VisibilityRoute pageKey="guidelines"><StaticPage pageKey="guidelines" /></VisibilityRoute>} />
+          <Route path="/publication-policy" element={<VisibilityRoute pageKey="publication"><StaticPage pageKey="publication" /></VisibilityRoute>} />
+          <Route path="/terms" element={<VisibilityRoute pageKey="terms"><StaticPage pageKey="terms" /></VisibilityRoute>} />
+          <Route path="/newsletter" element={<VisibilityRoute pageKey="newsletter"><Newsletter /></VisibilityRoute>} />
         </Route>
 
         {/* Submitter portal own layout, own auth context */}

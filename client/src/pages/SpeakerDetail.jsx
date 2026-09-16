@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Building, MapPin } from 'lucide-react';
 import Spinner from '../components/ui/Spinner';
 import { peopleAPI } from '../api/people';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 export default function SpeakerDetail() {
   const { slug } = useParams();
@@ -306,7 +307,7 @@ export default function SpeakerDetail() {
                   {/* Bio text */}
                   <div className="sd-bio-text">
                     {typeof speaker.biography === 'string' && speaker.biography.trim().startsWith('<') ? (
-                      <div dangerouslySetInnerHTML={{ __html: speaker.biography }} />
+                      <div dangerouslySetInnerHTML={{ __html: cleanCmsHtml(speaker.biography) }} />
                     ) : (
                       <p>{speaker.biography}</p>
                     )}

@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const logger = require('./utils/logger');
+
 // ── JWT secret guard ──────────────────────────────────────────────────────────
 (function validateSecrets() {
   const WEAK_PLACEHOLDERS = [
@@ -8,11 +10,16 @@ require('dotenv').config();
   ];
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32 || WEAK_PLACEHOLDERS.some(p => secret.toLowerCase().includes(p))) {
+    const auth = logger.child('auth');
     if (process.env.NODE_ENV === 'production') {
-      console.error('FATAL: JWT_SECRET is missing or insecure. Set a 64+ char random hex string in .env');
+      auth.error('JWT_SECRET is missing or insecure — refusing to start', {
+        fix: 'Set a 64+ character random hex string as JWT_SECRET',
+      });
       process.exit(1);
     } else {
-      console.warn('WARNING: JWT_SECRET is weak or not set. Run: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))" and set it in .env');
+      auth.warn('JWT_SECRET is weak or unset', {
+        fix: 'node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"',
+      });
     }
   }
 })();
@@ -21,7 +28,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const morgan = require('morgan');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 const { protect } = require('./middleware/auth');
@@ -40,18 +46,18 @@ const _allowedOrigins = [
   ...(process.env.CLIENT_URL || '').split(','),
   ...(process.env.ADMIN_URL || '').split(','),
 ].map(normaliseOrigin).filter(Boolean);
-console.log('CORS allowed origins:', _allowedOrigins.join(', ') || '(none configured)');
+const corsLog = logger.child('cors');
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || _allowedOrigins.includes(normaliseOrigin(origin))) return cb(null, true);
     // Reject without throwing: a thrown error becomes a 500 from the error
     // handler, which hides the real cause behind an opaque server error.
-    console.warn(`CORS: origin ${origin} not allowed`);
+    corsLog.warn(`Blocked origin ${origin}`, { allowed: _allowedOrigins.join(', ') || '(none)' });
     cb(null, false);
   },
   credentials: true,
 }));
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+app.use(logger.requests());
 
 // PayPal webhook needs raw body for signature verification must come before express.json()
 app.post(
@@ -156,6 +162,8 @@ app.use('/api/newsletter', require('./routes/newsletterRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 app.use('/api/site-settings', require('./routes/siteSettingsRoutes'));
 app.use('/api/fonts', require('./routes/fontRoutes'));
+app.use('/api/visibility', require('./routes/visibilityRoutes'));
+app.use('/api/submissions', require('./routes/submissionRoutes'));
 app.use('/api/admin-users', require('./routes/adminUserRoutes'));
 
 // 404
@@ -167,7 +175,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  logger.banner('Aging Congress API');
+  logger.item('environment', process.env.NODE_ENV || 'development');
+  logger.item('listening', `http://localhost:${PORT}`);
+  logger.item('cors origins', _allowedOrigins.join(', ') || 'none configured', _allowedOrigins.length > 0);
+  logger.item('log level', process.env.LOG_LEVEL || (logger.isProd ? 'http' : 'debug'));
+  if (!logger.isProd) process.stdout.write('\n');
+
   // Reported at boot so a broken mail config is visible in the logs straight
   // away, rather than only when a registration silently fails to notify anyone.
   // Not awaited: mail being down must never stop the API from serving.

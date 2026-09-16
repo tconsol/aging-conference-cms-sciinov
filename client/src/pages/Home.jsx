@@ -118,7 +118,7 @@ const DEFAULT_FEATURES = [
 ];
 
 export default function Home() {
-  const { activeEdition, siteSettings, loading: congressLoading } = usecongress();
+  const { activeEdition, siteSettings, isVisible, loading: congressLoading } = usecongress();
   const [speakers, setSpeakers] = useState([]);
   const [news, setNews] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -350,6 +350,7 @@ export default function Home() {
       </section>
 
       {/* ── STATS BAR ── */}
+      {isVisible('home-stats', stats) && (
       <section className="bg-teal-700 py-10">
         <div className="container-custom">
           <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-teal-600">
@@ -362,11 +363,13 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── JOURNEY ── */}
       <JourneySection />
 
       {/* ── ABOUT ── */}
+      {isVisible('home-about') && (
       <section className="section-padding bg-white">
         <div className="container-custom">
           <div className="grid lg:grid-cols-2 gap-16 items-start">
@@ -409,9 +412,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── FEATURED SPEAKERS ── */}
-      {speakers.length > 0 && (
+      {isVisible('home-speakers', speakers) && (
         <section className="section-padding bg-stone-50 border-t border-stone-100">
           <div className="container-custom">
             <div className="flex items-end justify-between mb-12">
@@ -502,7 +506,7 @@ export default function Home() {
       )}
 
       {/* ── IMPORTANT DATES ── */}
-      {dates.length > 0 && (
+      {isVisible('home-dates', dates) && (
         <section className="section-padding bg-slate-950">
           <div className="container-custom">
             <SectionHeader
@@ -536,7 +540,7 @@ export default function Home() {
       )}
 
       {/* ── LATEST NEWS ── */}
-      {news.length > 0 && (
+      {isVisible('home-news', news) && (
         <section className="section-padding bg-white border-t border-stone-200">
           <div className="container-custom">
             <div className="flex items-end justify-between mb-12">
@@ -603,7 +607,7 @@ export default function Home() {
       )}
 
       {/* ── TESTIMONIALS ── */}
-      {testimonials.length > 0 && (
+      {isVisible('home-testimonials', testimonials) && (
         <section className="py-20 bg-slate-950 border-t border-slate-800 overflow-hidden">
           <style>{`
             @keyframes marquee-left  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
@@ -650,6 +654,7 @@ export default function Home() {
       )}
 
       {/* ── CTA BANNER ── */}
+      {isVisible('home-cta') && (
       <section className="section-padding bg-teal-700">
         <div className="container-custom">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -680,6 +685,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
     </div>
   );
 }

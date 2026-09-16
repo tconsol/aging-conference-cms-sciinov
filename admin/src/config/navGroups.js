@@ -5,7 +5,7 @@ import {
   FileCheck, Handshake, MessageSquareQuote, Mail, MessageCircle,
   LifeBuoy, Settings, ShieldCheck, Building,
   UserPlus, Layers, Info, Ticket, LayoutTemplate, Palette,
-  Package as PackageIcon,
+  Package as PackageIcon, Inbox, EyeOff,
 } from 'lucide-react';
 
 // Grouped to mirror the public client site's navbar (Overview / Speakers / Program /
@@ -14,6 +14,9 @@ import {
 // Shared between Sidebar.jsx (renders the groups) and Topbar.jsx (quick search over all links).
 export const navGroups = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', single: true },
+  // Top level rather than inside a group: it is the page the team opens most,
+  // and burying the busiest screen two clicks deep made it easy to miss.
+  { label: 'All Submissions', icon: Inbox, href: '/submissions', single: true },
   {
     label: 'Overview',
     items: [
@@ -79,6 +82,7 @@ export const navGroups = [
       { label: 'Homepage CMS', icon: LayoutTemplate, href: '/homepage' },
       { label: 'Theme Colors', icon: Palette, href: '/theme' },
       { label: 'Site Settings', icon: Settings, href: '/settings' },
+      { label: 'Page Visibility', icon: EyeOff, href: '/visibility' },
       { label: 'Admin Users', icon: ShieldCheck, href: '/admin-users' },
     ],
   },

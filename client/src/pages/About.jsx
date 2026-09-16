@@ -8,6 +8,7 @@ import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import { contentAPI } from '../api/content';
 import { usecongress } from '../context/congressContext';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 /* ── Scroll-reveal count-up ─────────────────────────────────────────── */
 function StatNumber({ value }) {
@@ -81,31 +82,12 @@ const STATS = [
   { value: '500+',   label: 'Research Papers' },
 ];
 
-/**
- * Unwraps every <a> in the admin-authored HTML, keeping the text.
- * The rich text editor auto-links pasted URLs and emails, which we do not want
- * rendered as clickable links on this page — the copy should read as plain prose.
- */
-function stripLinks(html) {
-  if (!html) return '';
-  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
-    // No DOM available (SSR / prerender): fall back to a tag-only strip, which
-    // leaves the link text in place exactly as the DOM path would.
-    return html.replace(/<a\b[^>]*>/gi, '').replace(/<\/a>/gi, '');
-  }
-  try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    doc.querySelectorAll('a').forEach((a) => {
-      a.replaceWith(...a.childNodes);
-    });
-    return doc.body.innerHTML;
-  } catch {
-    return html.replace(/<a\b[^>]*>/gi, '').replace(/<\/a>/gi, '');
-  }
-}
+// This page shows its copy as plain prose, so links are unwrapped as well as
+// the usual font normalisation every CMS block gets.
+const stripLinks = (html) => cleanCmsHtml(html, { stripLinks: true });
 
 export default function About() {
-  const { activeEdition, siteSettings } = usecongress();
+  const { activeEdition, siteSettings, isVisible } = usecongress();
   const [page, setPage]     = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -123,6 +105,15 @@ export default function About() {
   const values   = about.values?.length   ? about.values   : VALUES;
   const benefits = about.benefits?.length ? about.benefits : WHY_ATTEND;
   const audience = about.audience?.length ? about.audience : AUDIENCE;
+
+  // Each section is shown only if the admin has not switched it off AND it has
+  // something to show — the second half is what makes empty sections disappear
+  // on their own.
+  const showImage    = isVisible('about-image', page?.image);
+  const showStats    = isVisible('about-stats', stats);
+  const showValues   = isVisible('about-values', values);
+  const showBenefits = isVisible('about-benefits', benefits);
+  const showAudience = isVisible('about-audience', audience);
 
   return (
     <div>
@@ -152,7 +143,7 @@ export default function About() {
                   <h2 className="text-4xl lg:text-5xl font-black text-slate-900 leading-[1.08] tracking-tight" style={{ textWrap: 'balance' }}>
                     {page?.title || 'Advancing Aging Science for Humanity'}
                   </h2>
-                  {page?.image && (
+                  {showImage && (
                     <div className="mt-8 rounded-3xl overflow-hidden shadow-lg">
                       <img
                         src={page.image}
@@ -184,6 +175,7 @@ export default function About() {
               </div>
 
               {/* Stats row large typographic numbers */}
+              {showStats && (
               <div
                 className="grid grid-cols-2 lg:grid-cols-4 rounded-3xl overflow-hidden"
                 style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 80%, black) 100%)' }}
@@ -201,12 +193,14 @@ export default function About() {
                   </div>
                 ))}
               </div>
+              )}
             </>
           )}
         </div>
       </section>
 
       {/* ── VALUES ───────────────────────────────────────────────────── */}
+      {showValues && (
       <section className="section-padding" style={{ background: '#f8fafc' }}>
         <div className="container-custom">
           <div className="flex items-end justify-between mb-12 flex-wrap gap-4">
@@ -247,13 +241,19 @@ export default function About() {
           </div>
         </div>
       </section>
+      )}
 
-      {/* ── WHY ATTEND + AUDIENCE ────────────────────────────────────── */}
+      {/* ── WHY ATTEND + AUDIENCE ──────────────────────────────────────
+          Two cards side by side. With only one shown the grid collapses to a
+          single column so the survivor spans the full width instead of leaving
+          a gap where the other used to be. */}
+      {(showBenefits || showAudience) && (
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className={`grid gap-8 ${showBenefits && showAudience ? 'lg:grid-cols-2' : 'grid-cols-1'}`}>
 
             {/* Why Attend */}
+            {showBenefits && (
             <div className="rounded-3xl border border-slate-100 p-8 lg:p-10 shadow-sm">
               <p className="text-xs font-black uppercase tracking-[0.25em] mb-3" style={{ color: 'var(--brand)' }}>Benefits</p>
               <h2 className="text-2xl font-black text-slate-900 mb-7">Why You Should Attend</h2>
@@ -274,8 +274,10 @@ export default function About() {
                 <Button to="/registration" size="lg">Register Now <ArrowRight size={16} /></Button>
               </div>
             </div>
+            )}
 
             {/* Who Should Attend */}
+            {showAudience && (
             <div
               className="rounded-3xl p-8 lg:p-10"
               style={{ background: 'linear-gradient(150deg, var(--brand-dark) 0%, color-mix(in srgb, var(--brand-dark) 70%, black) 100%)' }}
@@ -302,9 +304,11 @@ export default function About() {
                 })}
               </div>
             </div>
+            )}
           </div>
         </div>
       </section>
+      )}
 
       {/* ── CTA ──────────────────────────────────────────────────────── */}
       {activeEdition && (

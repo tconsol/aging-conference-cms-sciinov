@@ -2,6 +2,7 @@
 import PageHero from '../components/ui/PageHero';
 import Spinner from '../components/ui/Spinner';
 import { contentAPI } from '../api/content';
+import { cleanCmsHtml } from '../utils/cmsHtml';
 
 const PAGE_TITLES = {
   guidelines: 'Submission Guidelines',
@@ -83,15 +84,14 @@ export default function StaticPage({ pageKey }) {
             <div className="flex justify-center py-20"><Spinner size="lg" /></div>
           ) : (
             <div className="max-w-3xl mx-auto">
-              <div
-                className="prose prose-slate prose-lg max-w-none
+              <div className="prose prose-slate prose-lg max-w-none
                   prose-headings:text-slate-900
                   prose-h2:text-2xl prose-h2:font-bold prose-h2:mt-10 prose-h2:mb-4
                   prose-h3:text-lg prose-h3:font-bold prose-h3:mt-6 prose-h3:mb-3
                   prose-p:text-slate-600 prose-p:leading-relaxed
                   prose-li:text-slate-600
                   prose-a:text-teal-700 prose-a:no-underline hover:prose-a:underline"
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: cleanCmsHtml(content) }}
               />
             </div>
           )}

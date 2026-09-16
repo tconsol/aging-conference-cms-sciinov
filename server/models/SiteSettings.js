@@ -37,6 +37,15 @@ const siteSettingsSchema = new mongoose.Schema(
     sampleAbstractUrl: String,
     sampleAbstractPublicId: String,
     sampleAbstractName: String,
+    // Per-page and per-section show/hide switches, keyed by the ids in
+    // config/visibilityRegistry.js. A key that is absent means "visible" — the
+    // public site only hides on an explicit `false`, so adding a new page to
+    // the registry never hides it retroactively.
+    visibility: {
+      type: Map,
+      of: Boolean,
+      default: () => new Map(),
+    },
     // Structured content for the public About page. Mirrors how `homepage`
     // below holds the homepage CMS, so both pages are edited the same way.
     // `icon` stores a lucide icon name, resolved to a component on the client.
